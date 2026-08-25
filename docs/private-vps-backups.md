@@ -197,6 +197,8 @@ Then verify a temporary restore smoke write persists after restart:
 5. Reload the edited map, sheet, group inventory, player profile list, encounter table, and any command-backed smoke map to confirm the disposable write and live-play state are still present.
 6. Delete the disposable item from the temporary root, or discard the entire temporary restore root after recording the result.
 
+For campaigns using Deferred Mechanics Closure state, include one representative durable-state check when that state exists in the archive: a terminal or pending generic Skill Check still has its original journal and operation receipt; a readied shield or netted target retains its exact source-bound Encounter effects; and a linked Battle Contest still points bidirectionally to the same Contest, Encounter, map, roster hash, and one set of operation rows. Refresh, stop, and restart the restore-smoke process, then reconnect the GM and one authorized owner. The projections must rebuild from persisted authority without rerolling the check, reapplying the item action, creating another Contest/Encounter/map, duplicating realtime rows, or exposing another owner's private evidence. Do not repair any of these states by editing SQLite or JSON.
+
 After the check, clean up only the staging directory created for this smoke pass:
 
 ```bash

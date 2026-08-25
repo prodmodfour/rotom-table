@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-accepted-move-appeals-v1",
+  "ticket": "P11-069",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-encounter-link-certification.v1.json",
+    "sha256": "03f0e2ae0b99e61d6b2472e56e20cb242e1d88f2fc2642a092e02ad19848f394"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "7f09db8c157af6bdc96e0f5931c0b8396e104e10dba4a51593bee2de5ce673d4",
+    "rowId": "battle",
+    "completionState": "structured",
+    "structuredSemanticsVersion": 1
+  },
+  "authorities": [
+    {
+      "id": "accepted-move-handoff-contract",
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "342daf8d32a76d82a2faa23ec3190513ca3dd2884bdab85cbf7a6e51085ff0b2",
+      "guarantees": ["closed-typed-accepted-move-fact", "exact-source-hash", "scene-round-actor-move-outcome-and-branch-binding", "strict-revision-read-set", "cross-document-write-rejection"]
+    },
+    {
+      "id": "battle-appeal-document-and-receipts",
+      "path": "shared/contests/document.ts",
+      "sha256": "fbbffad4b6cb6211f298cda4c12490862339fe4b5ac0fb02f0abc26f25821445",
+      "guarantees": ["battle-only-handoff-receipts", "unique-source-consumption", "monotonic-contest-revisions", "appeal-receipt-correlation", "unchanged-deferred-voltage-and-consequences"]
+    },
+    {
+      "id": "server-internal-score-command",
+      "path": "shared/contests/operations.ts",
+      "sha256": "77c1fa2a45eef93ff1f6b2ff2f1691bf057e852cc35857c1957cc26267075512",
+      "guarantees": ["source-identities-only", "bounded-five-stat-spend", "strict-unknown-field-rejection", "no-client-outcome-authority"]
+    },
+    {
+      "id": "accepted-source-reconstruction",
+      "path": "server/domain/contests/battleAcceptedMove.ts",
+      "sha256": "36c55fdbbe22e8708977de492f390c54517fa67b2b31669b57389ea2d55ff405",
+      "guarantees": ["persisted-accepted-operation-only", "exact-map-patch-and-history-match", "active-scene-binding", "canonical-source-hash", "struggle-classification", "malformed-source-fail-closed"]
+    },
+    {
+      "id": "contest-owned-battle-appeal-execution",
+      "path": "server/domain/contests/battleAppeal.ts",
+      "sha256": "491e3f8d1068e94ccd3eb6eb6eace0677534004fedd6a272c1760cc17932d0ba",
+      "guarantees": ["performed-hit-or-miss-scoring", "trainer-team-pool-single-spend", "struggle-no-roll-exclusion", "exact-retry-no-reroll", "effect-adjacency-and-voltage-deferral", "contest-document-only-write-plan"]
+    },
+    {
+      "id": "causal-blend-coordinator",
+      "path": "server/useCases/contests.ts",
+      "sha256": "ab41f3add79900b72bed6c3e2f79b85966d1ee7e746c89e0df9a5cae5ba9543a",
+      "guarantees": ["public-command-rejection", "server-derived-actor-and-team", "contest-encounter-map-operation-reread", "contest-only-transactional-commit", "realtime-and-operation-rollback", "deterministic-operation-id"]
+    },
+    {
+      "id": "strict-contest-owned-atomicity",
+      "path": "shared/contests/architecture.ts",
+      "sha256": "149a6f7703997d9e7d586beeeb06f59998d38d41d73cb5217294a554019e7c15",
+      "guarantees": ["encounter-and-operation-read-authority", "contest-and-dice-journal-write-authority", "single-sqlite-transaction", "exact-retry"]
+    },
+    {
+      "id": "privacy-safe-appeal-projections",
+      "path": "shared/contests/projections.ts",
+      "sha256": "9d1170e2c22e40596c92781079f1866ff3778c60d34418f205453deacfd13fdf",
+      "guarantees": ["public-score-arithmetic", "no-operation-or-journal-identities", "no-handoff-or-source-hashes", "diagnostic-only-receipts", "no-sheet-or-provider-authority"]
+    },
+    {
+      "id": "accepted-appeal-realtime-publication",
+      "path": "server/realtime/contestRealtime.ts",
+      "sha256": "55521803b9aa48ccab9452597788e358136d7442110e9710fd1812cd52eb65d3",
+      "guarantees": ["contest-appeal-event", "accepted-contest-revision", "durable-transactional-row"]
+    },
+    {
+      "id": "primary-move-history-index",
+      "path": "server/domain/moveAutomation/recordAcceptedMoveHistory.ts",
+      "sha256": "3d48a5d6000c38621897c5278d62c4d7cc4c41a313ebc0eeb1faf1dc2009d49d",
+      "guarantees": ["one-declaration-and-completion", "operation-and-resolution-binding", "provenance-and-branch-retention", "mixed-case-liveplay-operation-identity", "no-double-action-or-consecutive-mechanics"]
+    },
+    {
+      "id": "primary-only-map-reduction",
+      "path": "server/domain/moveAutomation/reducers/mapOperations.ts",
+      "sha256": "fa7332028677d8d4c3b8d68309d2267bde95816a5a837487a86a3bfd78175571",
+      "guarantees": ["explicit-primary-opt-in", "accepted-history-before-mechanics", "existing-causal-attribution-preserved", "ability-followups-excluded"]
+    },
+    {
+      "id": "native-primary-history-coordination",
+      "path": "server/domain/moveAutomation/planNativeV2MoveState.ts",
+      "sha256": "dd6f7416f121ed9593fdcbc5963ef2962e3d4c270b557426b759a713d3d11587",
+      "guarantees": ["persisted-command-only-indexing", "branch-selection-flattening", "resource-provenance-preservation", "single-accepted-root"]
+    },
+    {
+      "id": "legacy-primary-history-coordination",
+      "path": "server/domain/planAuthoritativeMoveState.ts",
+      "sha256": "685278aad6867bdfeb03a18c608e2c850eb0afc0e405aa0cff84f4a066d23ae3",
+      "guarantees": ["persisted-command-only-indexing", "legacy-provenance-retention", "resource-state-coalescing", "accepted-map-patch-inclusion"]
+    },
+    {
+      "id": "liveplay-operation-history-compatibility",
+      "path": "shared/moveAutomation/encounterHistory.ts",
+      "sha256": "29af758a2ebf9c6070b745eceeccc484cb29571cf34fb6f1491d457014bf0916",
+      "guarantees": ["exact-liveplay-operation-identities", "legacy-stable-identities", "bounded-history-validation", "typed-completion-material"]
+    },
+    {
+      "id": "typed-event-operation-compatibility",
+      "path": "shared/moveAutomation/events.ts",
+      "sha256": "0b0546374f8e6b06363fe6eaeeb5039b15fedcfd99ad03dbdd746b650a88a00f",
+      "guarantees": ["liveplay-operation-id-grammar", "stable-event-identities", "strict-causality", "bounded-source-identity"]
+    },
+    {
+      "id": "battle-appeal-operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "abe47bf43ed2300fff317a9e1c18be0005ba0c2a6e9c98905f7bddfa901528e7",
+      "guarantees": ["causal-not-cross-document-atomic", "unconsumed-fact-retry", "privacy", "canonical-exclusions", "successor-effect-and-voltage-boundary", "structured-not-native-status"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "0bc7bb9da3187530f36c0560b7f78266290b8077ddbd12451d2f3b67f740fe18",
+      "scenarioIds": ["accepted-source-reconstruction", "hit-and-miss-appeals", "team-pool-single-spend", "exact-retry-and-changed-input-conflict", "mixed-case-operation-identity", "public-forgery-rejection", "struggle-exclusion", "maneuver-rejection", "malformed-stale-actor-and-move-fail-closed", "authority-reread-race", "contest-and-realtime-rollback", "projection-privacy", "zero-encounter-writes"]
+    },
+    {
+      "path": "tests/server/abilityFollowUps.test.ts",
+      "sha256": "ec578d0ae6c323726a114b5e7bb73978cea08da8eba608756c86c3f2a73012b6",
+      "scenarioIds": ["ability-followup-does-not-create-primary-move-history"]
+    },
+    {
+      "path": "tests/server/moveAutomationHistory.test.ts",
+      "sha256": "9799b8cfaacb78e27a304094dc6d200854874288b3b8be7123059cabd8d336c1",
+      "scenarioIds": ["exact-operation-provenance", "branch-selection-retention", "bounded-typed-history"]
+    }
+  ],
+  "validation": {
+    "focusedBattleAppealTests": 9,
+    "moveHistoryAndFollowupTests": 10,
+    "registeredMoveConformanceTests": 1649,
+    "registeredMoveConformanceFiles": 33,
+    "nuxtTypecheck": "passed",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "primaryAcceptedMoveHistoryRowsPerOperation": 1,
+    "abilityFollowupPrimaryHistoryRows": 0,
+    "scoredAppealsPerConsumedMoveFact": 1,
+    "missesProduceAppeal": true,
+    "struggleAppealRolls": 0,
+    "struggleContestDiceSpend": 0,
+    "maneuverAppealRolls": 0,
+    "maximumTeamDiceSpendPerAppeal": 3,
+    "contestRevisionStep": 1,
+    "exactRetryRerolls": 0,
+    "exactRetryAdditionalSpend": 0,
+    "encounterDocumentWrites": 0,
+    "encounterMapWrites": 0,
+    "publicSourceIdentityFields": 0,
+    "publicHashFields": 0,
+    "clientAuthoredOutcomeFields": 0,
+    "battleEffectsDeferredTo": "P11-070",
+    "pokemonVoltageDeferredTo": "P11-071",
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-070"
+  }
+}

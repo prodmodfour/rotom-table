@@ -19,10 +19,17 @@ for (const definition of (grants as any).definitions) {
   for (const grant of definition.grants ?? []) grantById.set(grant.grantId, grant)
 }
 
-describe('Deferred Mechanics Closure inventory (P11-001)', () => {
-  it('is a structurally complete activation baseline', () => {
+describe('Deferred Mechanics Closure inventory (P11-001 through P11-089)', () => {
+  it('is a structurally complete final inventory with its activation head preserved', () => {
     expect((inventory as any).schemaVersion).toBe(1)
     expect((inventory as any).ticket).toBe('P11-001')
+    expect((inventory as any).status).toBe('final-acceptance')
+    expect((inventory as any).finalizedBy).toBe('P11-089')
+    expect((inventory as any).activationBaseline).toEqual({
+      ticket: 'P11-001',
+      sha256: '1e5d623174060993ef02f3417c82888eb1e30b4a029980c0c283d55cf1eca3ac',
+      preservation: 'accepted-successor-chain',
+    })
     expect((inventory as any).runtimeProseParsing).toBe(false)
     const ids = rows.map(row => row.id)
     expect(new Set(ids).size).toBe(ids.length)
@@ -36,6 +43,8 @@ describe('Deferred Mechanics Closure inventory (P11-001)', () => {
     for (const row of rows) {
       expect((inventory as any).allowedCurrentStates).toContain(row.currentState)
       expect((inventory as any).allowedTargetStates).toContain(row.targetState)
+      expect(row.currentState, row.id).toBe(row.targetState)
+      expect(row.closureEvidenceId, row.id).toMatch(/^p11-/)
       expect(row.owningTickets.length).toBeGreaterThan(0)
       expect(row.owningPaths.length).toBeGreaterThan(0)
       expect(typeof row.canonicalDataStatus).toBe('string')
@@ -45,7 +54,7 @@ describe('Deferred Mechanics Closure inventory (P11-001)', () => {
   })
 
   it('references only real Plan 11 tickets from the authoritative ledger', () => {
-    const ledger = readFileSync(resolve(root, 'implementation-plans/DEFERRED_MECHANICS_CLOSURE_PLAN.md'), 'utf8')
+    const ledger = readFileSync(resolve(root, 'implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md'), 'utf8')
     for (const row of rows) {
       for (const ticket of row.owningTickets) {
         expect(ticket).toMatch(/^P11-0\d\d$/)
@@ -69,26 +78,23 @@ describe('Deferred Mechanics Closure inventory (P11-001)', () => {
     }
   })
 
-  it('tracks monotone closure progress in the grants registry', () => {
+  it('matches every exact final grant state with no stale ticket', () => {
     for (const row of rows.filter(entry => entry.grantId)) {
       const grant = grantById.get(row.grantId)
       expect(grant, row.grantId).toBeDefined()
-      const finalStates = row.targetState === 'guided' ? ['native', 'guided'] : ['native']
       const reviewedState = grant!.finalState ?? grant!.executionStatus
-      expect([row.currentState, ...finalStates]).toContain(reviewedState)
-      if (reviewedState === 'deferred') {
-        const pointer = grant!.deferredTicket as string
-        expect([row.staleDeferredTicket, ...row.owningTickets]).toContain(pointer)
-      }
+      expect(reviewedState, row.id).toBe(row.currentState)
+      expect(grant!.deferredTicket ?? null, row.id).toBeNull()
     }
   })
 
-  it('tracks monotone closure progress in the canonical contest variants', () => {
+  it('matches exact native canonical contest variants', () => {
     for (const row of rows.filter(entry => entry.kind === 'contest-variant')) {
       const variantId = row.id.replace('contest-variant.', '')
       const variant = (contests as any).variants.find((entry: any) => entry.id === variantId)
       expect(variant, variantId).toBeDefined()
-      expect(['reference-only', 'structured', row.targetState]).toContain(variant.completionState)
+      expect(variant.completionState).toBe(row.currentState)
+      expect(row.currentState).toBe('native')
     }
   })
 
@@ -142,11 +148,16 @@ describe('Deferred Mechanics Closure inventory (P11-001)', () => {
       expect(typeof entry.finding).toBe('string')
       expect(['closed-by-later-plan', 'closed-at-source', 'final-state-by-rubric', 'not-a-mechanics-row', 'post-1.0-by-definition']).toContain(entry.classification)
     }
-    const deferredGrantIds = (grants as any).definitions
+    const nonFinalGrantIds = (grants as any).definitions
       .flatMap((definition: any) => definition.grants ?? [])
       .filter((grant: any) => grant.executionStatus && grant.executionStatus !== 'native')
       .map((grant: any) => grant.grantId)
-    const inventoryGrantIds = new Set(rows.filter(entry => entry.grantId).map(entry => entry.grantId))
-    for (const grantId of deferredGrantIds) expect(inventoryGrantIds.has(grantId), grantId).toBe(true)
+    expect(nonFinalGrantIds).toEqual([])
+    expect((inventory as any).counts).toMatchObject({
+      finalRows: 29,
+      nonFinalRows: 0,
+      blockedRows: 0,
+      unregisteredRows: 0,
+    })
   })
 })

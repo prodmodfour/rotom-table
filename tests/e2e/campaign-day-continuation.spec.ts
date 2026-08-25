@@ -1,9 +1,13 @@
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, test, type BrowserContext, type Page, type Route } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
 const evidenceRoot = resolve('.pi/artifacts/ui-validation/campaign-day-continuation')
+const preserveAcceptedScreenshot = async (page: Page, path: string): Promise<void> => {
+  if (existsSync(path) && process.env.ROTOM_REFRESH_UI_EVIDENCE !== '1') return
+  await page.screenshot({ path, fullPage: true, animations: 'disabled', caret: 'hide' })
+}
 const preflightId = `campaign-day-preflight:v1:${'a'.repeat(64)}`
 
 const authenticate = async (context: BrowserContext, role: 'gm' | 'player'): Promise<void> => {
@@ -158,10 +162,7 @@ test('GM preflight and postflight converge remaining continuation work with a pl
     expect(axe.violations.filter(value => ['serious', 'critical'].includes(value.impact ?? ''))).toEqual([])
 
     mkdirSync(evidenceRoot, { recursive: true })
-    await page.screenshot({
-      path: resolve(evidenceRoot, `${testInfo.project.name}-ready.png`),
-      fullPage: true, animations: 'disabled', caret: 'hide',
-    })
+    await preserveAcceptedScreenshot(page, resolve(evidenceRoot, `${testInfo.project.name}-ready.png`))
 
     await dialog.getByLabel('I reviewed these campaign-wide changes.').check()
     const commit = dialog.getByRole('button', { name: 'Advance one day' })
@@ -173,15 +174,12 @@ test('GM preflight and postflight converge remaining continuation work with a pl
     expect(commitBody).not.toBeNull()
     await expect(dashboard).toContainText('Trainer advancement')
 
-    await page.screenshot({
-      path: resolve(evidenceRoot, `${testInfo.project.name}-accepted.png`),
-      fullPage: true, animations: 'disabled', caret: 'hide',
-    })
+    await preserveAcceptedScreenshot(page, resolve(evidenceRoot, `${testInfo.project.name}-accepted.png`))
 
     await page.getByRole('dialog', { name: 'Next day complete' }).getByRole('button', { name: 'Close', exact: true }).click()
     await expect(origin).toBeFocused()
 
-    await playerDashboard.getByRole('button', { name: 'Refresh' }).click()
+    await playerDashboard.locator('.continuation__refresh').click()
     await expect(playerDashboard).toContainText('Trainer advancement')
     await expect(playerDashboard).toContainText('1 open item is waiting before play continues.')
 

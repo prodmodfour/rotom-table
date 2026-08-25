@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest'
 import contests from '../../data/reference/contests.json'
 import manifest from '../../scripts/reviewed-data/deferred-closure-contest-variants.v1.json'
 import acceptance from '../../data/contests/alpha-acceptance.v1.json'
-import { contestVariantIsNative } from '../../shared/contests/catalog'
+import { contestParticipantVariantIsNative, contestVariantAllowsSetup, contestVariantIsNative } from '../../shared/contests/catalog'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex')
 const variants = new Map((contests as any).variants.map((variant: any) => [variant.id, variant]))
@@ -19,11 +20,12 @@ describe('P11-006 reviewed Contest variant successor', () => {
       changedVariantIds: ['trainer-participant', 'battle'],
       target: {
         beforeSha256: 'fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a',
-        afterSha256: sha('data/reference/contests.json'),
+        afterSha256: '95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e',
       },
     })
     expect(acceptance.sourceEvidence.find(row => row.path === 'data/reference/contests.json')?.sha256)
       .toBe(manifest.target.beforeSha256)
+    expect(acceptedSuccessorHead(manifest.target.path, manifest.target.afterSha256)).toBe(sha(manifest.target.path))
     for (const source of manifest.sources) expect(sha(source.path), source.path).toBe(source.sha256)
     expect((contests as any).reviewedSuccessors).toEqual([expect.objectContaining({
       migrationId: manifest.migrationId,
@@ -37,7 +39,7 @@ describe('P11-006 reviewed Contest variant successor', () => {
   it('records both Trainer Participant methods and shared-pool authority', () => {
     const variant = variants.get('trainer-participant') as any
     expect(variant).toMatchObject({
-      completionState: 'structured',
+      completionState: 'native',
       compatibleBaseVariantIds: ['standard', 'supercontest', 'festival', 'rotation'],
       contestantMinimum: 3,
       contestantMaximum: 5,
@@ -60,7 +62,7 @@ describe('P11-006 reviewed Contest variant successor', () => {
 
   it('records Battle Contest scale, appeal, voltage, replacement, and end policies', () => {
     expect(variants.get('battle')).toMatchObject({
-      completionState: 'structured',
+      completionState: 'native',
       trainerCount: 2,
       rosterPolicy: {
         pokemonPerTrainerMinimum: 3,
@@ -68,6 +70,7 @@ describe('P11-006 reviewed Contest variant successor', () => {
         equalDeclaredCountRequired: true,
       },
       roundBudget: { formula: 'twice-pokemon-per-trainer', minimum: 6, maximum: 12 },
+      contestTypePolicy: 'fixed-selected-at-setup',
       introductionPolicy: { skillCheckPerTrainer: 1, contestDicePoolScope: 'trainer-team', affectsInitiative: false },
       encounterPolicy: {
         turnOrder: 'encounter-initiative',
@@ -92,9 +95,12 @@ describe('P11-006 reviewed Contest variant successor', () => {
     })
   })
 
-  it('does not misrepresent structured rows as selectable native variants', () => {
+  it('keeps base-variant and participant-variant native predicates structurally distinct', () => {
     expect(contestVariantIsNative('trainer-participant')).toBe(false)
-    expect(contestVariantIsNative('battle')).toBe(false)
+    expect(contestParticipantVariantIsNative('trainer-participant')).toBe(true)
+    expect(contestParticipantVariantIsNative('battle')).toBe(false)
+    expect(contestVariantIsNative('battle')).toBe(true)
+    expect(contestVariantAllowsSetup('battle')).toBe(true)
     for (const id of manifest.changedVariantIds) {
       const serialized = JSON.stringify(variants.get(id)).toLowerCase()
       expect(serialized).not.toContain('safe reason')

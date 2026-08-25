@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-projections-v1",
+  "ticket": "P11-060",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-integrations-certification.v1.json",
+    "sha256": "8fec6c5cf388bb1f29614f8bbc81879f0bd717b6fbb1bfe4bf67a82d28bc4ae0"
+  },
+  "authorities": [
+    {
+      "id": "role-safe-paired-projection",
+      "path": "shared/contests/projections.ts",
+      "sha256": "e54cfbbc9ebad72551b2dba0438325808adf5e20be3a856824dd32c363dd50d7",
+      "guarantees": ["public-active-trainer-and-pokemon-identities", "public-separate-simultaneous-voltage", "one-entry-position-and-score", "owner-own-complete-snapshot-only", "owner-two-then-one-legal-performer", "gm-exact-current-legal-performer-ids", "diagnostic-only-dice-and-contributor-index"]
+    },
+    {
+      "id": "strict-paired-document",
+      "path": "shared/contests/document.ts",
+      "sha256": "87dfbcd6eb2820ff29c52cfd6d05ee087a15e0802c750b208023d08b66fbf39a",
+      "guarantees": ["exact-performer-voltage-map", "active-rotation-pokemon-binding", "private-sheet-and-provider-authority-retained-in-role-internal-state"]
+    },
+    {
+      "id": "projection-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "bfae2a14ac649974656cc7f36abeecd8015313397c596309d926e1bc24008da8",
+      "guarantees": ["public-owner-gm-boundaries-documented", "paired-identity-and-voltage-documented"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestTrainerParticipantRuntime.test.ts",
+      "sha256": "3d96c0b069097924c1e4935f07582858d6c67ad2825024d2ea86c88888aa8815",
+      "scenarioIds": ["public-paired-identity", "public-no-sheet-slug", "public-no-provider-or-pool", "owner-own-exact-performers", "gm-exact-contestant-state"]
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+      "sha256": "fa0c330f606438c10cac7df8e126ba824d32b732c6305107d81251edc0cbc14b",
+      "scenarioIds": ["public-separate-performer-voltage", "public-no-performer-id-in-score-row", "owner-exact-voltage-map", "owner-required-second-performer"]
+    }
+  ],
+  "acceptance": {
+    "publicPairedIdentities": 2,
+    "simultaneousPublicVoltageValuesPerActivePair": 2,
+    "publicSheetSlugs": 0,
+    "publicProviderLists": 0,
+    "publicDicePools": 0,
+    "ownerOpponentPrivateSnapshots": 0,
+    "gmCurrentLegalAuthority": true,
+    "nextTicket": "P11-061"
+  }
+}

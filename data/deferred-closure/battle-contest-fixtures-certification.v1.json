@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-fixtures-v1",
+  "ticket": "P11-079",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
+    "sha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "d58fa7cf9ffda19f73af37a805faf4ff0ed79023bb411ecdb9bf295e89016972",
+    "rowId": "battle",
+    "completionState": "structured"
+  },
+  "authorities": [
+    {
+      "id": "deterministic-production-engine-replay-generator",
+      "path": "scripts/generate_battle_contest_fixtures.ts",
+      "sha256": "4e0b67416735b30b2bce98189de4d65b1fc7470aae96a3a49d023a5df7b617b4",
+      "guarantees": ["three-and-six-pokemon-teams", "seeded-server-randomness", "existing-setup-introduction-link-appeal-voltage-and-end-authorities", "no-parallel-scorer-voltage-reducer-or-placement-resolver", "byte-exact-drift-check"]
+    },
+    {
+      "id": "battle-scenario-fixture-set",
+      "path": "data/contests/battle-contest-scenarios.v1.json",
+      "sha256": "3435929d055116f4fa746eee223335be2fe0a18fc191981617febd8b5ab3877d",
+      "guarantees": ["four-unique-seeds", "minimum-and-maximum-rosters", "ko-and-round-budget-endings", "ordinary-and-exempt-switches", "exact-appeal-voltage-placement-and-receipt-evidence", "canonical-source-fingerprints"]
+    },
+    {
+      "id": "accepted-move-appeal-authority",
+      "path": "server/domain/contests/battleAppeal.ts",
+      "sha256": "c792c42d7aac211f8d63f8cb7a6f2ac1d53426b393f945f3b8d2cad0cd58882e",
+      "guarantees": ["canonical-move-assembly", "server-seeded-rolls", "team-pool-spend", "per-pokemon-voltage", "source-bound-receipt"]
+    },
+    {
+      "id": "voltage-lifecycle-authority",
+      "path": "server/domain/contests/battleVoltageLifecycle.ts",
+      "sha256": "1feb1aa0967fa09798968e1d0b108659a15c35c24e34c93cceeef26736b88a6a",
+      "guarantees": ["attack-ko-plus-two", "damage-over-time-redirection", "ordinary-recall-minus-two", "canonical-switch-exceptions", "zero-through-five-cap"]
+    },
+    {
+      "id": "terminal-placement-authority",
+      "path": "server/domain/contests/battleEnd.ts",
+      "sha256": "987bc5758c01de20eb9e8711a755cf1297a695e0b42ede2c2deae252a00aaae7",
+      "guarantees": ["immutable-round-budget", "complete-roster-knockout", "appeal-only-placement", "single-terminal-receipt", "journaled-tie-resolution"]
+    },
+    {
+      "id": "fixture-operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "b81982a6a99a9032352fff0a0c69d2fb58936f7dd5e6724d0650e53dc5c6e641",
+      "guarantees": ["fixture-cross-product-documented", "production-authority-reuse-documented", "terminal-ko-boundary-documented", "successor-only-regeneration-policy", "exact-drift-command-documented"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/data/deferredClosureBattleContestFixtures.test.ts",
+      "sha256": "5a3a3b491c5471a1f1a89031e172ef087fbac0242c3fdd1ed53c6c10ba7e8feb",
+      "scenarioIds": ["canonical-successor-fingerprints", "minimum-and-maximum-cross-product", "seeded-appeal-tallies", "appeal-only-placement", "complete-roster-ko", "ordinary-recall", "baton-pass-exception", "u-turn-exception", "attack-ko-voltage", "damage-over-time-voltage", "single-terminal-receipt", "no-parallel-mechanics"]
+    }
+  ],
+  "validation": {
+    "focusedFixtureTests": 4,
+    "deterministicReplayScenarios": 4,
+    "exactFixtureDriftCheck": "passed",
+    "targetedEslintErrors": 0,
+    "nuxtTypecheck": "passed",
+    "contestMigrationAndExistingFixtureCheck": "passed-761-defined-16-unavailable-349-items-18-ordinary-24-participant",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "deterministicScenarios": 4,
+    "trainerTeamsPerScenario": 2,
+    "rosterSizes": [3, 6],
+    "roundBudgets": [6, 12],
+    "endConditions": ["round-budget-exhausted", "one-trainer-all-pokemon-knocked-out"],
+    "switchingRules": ["ordinary-recall-minus-two", "Baton Pass", "U-Turn"],
+    "voltageRules": ["appeal", "attack-knockout", "damage-over-time-knockout", "recall", "recall-exception"],
+    "exactReplayFixtureCheck": true,
+    "duplicateSeeds": 0,
+    "duplicateEvidenceHashes": 0,
+    "parallelMechanicsSimulatorsAdded": 0,
+    "terminalReceiptsPerScenario": 1,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-080"
+  }
+}

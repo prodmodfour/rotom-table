@@ -64,9 +64,19 @@ Every root field of `EncounterSettlementDocument` has one or more declared provi
 
 ## UI contribution rules
 
-Load `.pi/skills/ui-design-workflow/SKILL.md` before visible work. Follow `DESIGN.md`, role-safe projections, and current tokens. Preserve semantic tables, CSS-only mobile reflow, approximately 44-pixel controls, cyan focus/selection, red destructive semantics, reduced motion, no horizontal overflow, and established focus restoration.
+Load the global `ui-design-workflow` pi skill before visible work. Follow `DESIGN.md`, role-safe projections, and current tokens. Preserve semantic tables, CSS-only mobile reflow, approximately 44-pixel controls, cyan focus/selection, red destructive semantics, reduced motion, no horizontal overflow, and established focus restoration.
 
 Generate a target mockup for substantive open visual decisions. Skip it only when the edit is provably non-visual or an exact accepted pattern, and record why.
+
+## Deferred Mechanics Closure extensions
+
+The six ranged profiles, all twelve supplemental weapon Moves, eleven previously incomplete item actions, generic Skill Checks, Trainer Participant Contests, and Battle Contests are current native/guided authorities. Use [Deferred mechanics closure](deferred-mechanics-closure.md) as the cross-surface authority map.
+
+Ranged and weapon actions must continue through equipment grants, the ordinary Encounter presentation, Move planning, action/resource ledgers, map/sheet CAS, accepted history, and exact operation replay. Supplemental weapon Moves stay in `shared/capabilityAutomation/weaponMoves.ts`, outside the frozen Pokémon Move catalog, and fail closed for Contest appeal identity.
+
+Item actions extend the equipment-action or bounded guided-request lifecycle; do not add direct sheet/UI mutation. Generic Skill Checks extend `shared/skillChecks/*` and the schema-v50 repository/use cases. Contest variants extend `ContestDocument` and its distinct public/owner/GM/diagnostic projections. Battle coordination exchanges typed immutable facts and local plans; Encounter and Contest code must not directly rewrite each other's documents.
+
+For every change, preserve complete read sets, server-owned randomness, synchronous transaction planning, post-commit realtime publication, exact retry, role-safe projections, and accepted successor-chain continuity. Run the focused closure gate for the touched cohort before broad validation.
 
 ## Required review gates
 
@@ -76,6 +86,13 @@ npm run check:complete-play-loop-performance
 npm run check:complete-play-loop-accessibility-visual
 npm run check:complete-play-loop-concurrency-failure
 npm run check:complete-play-loop-golden-campaigns
+npm run check:deferred-closure-golden-journeys
+npm run check:deferred-closure-migrations
+npm run check:deferred-closure-backup-restore
+npm run check:deferred-closure-accessibility
+npm run check:deferred-closure-performance
+npm run check:deferred-closure-privacy
+npm run check:deferred-closure-docs
 ```
 
 Use focused one-worker tests while developing. Reserve full test, build, and `scripts/quality-gate.sh` for closure.

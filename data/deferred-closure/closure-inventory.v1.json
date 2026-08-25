@@ -2,7 +2,7 @@
  "schemaVersion": 1,
  "inventoryId": "deferred-mechanics-closure-v1",
  "ticket": "P11-001",
- "status": "activation-baseline",
+ "status": "final-acceptance",
  "runtimeProseParsing": false,
  "frozenSources": [
   {
@@ -14,38 +14,6 @@
    "path": "data/reference/moves.json",
    "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821",
    "policy": "Frozen Pokémon Move catalog; the seven weapon Moves must never silently enter it (decision record 2026-08-22)."
-  }
- ],
- "mutableSurfaces": [
-  {
-   "path": "data/complete-play-loop/equipment-grants.v1.json",
-   "observedSha256": "9e1baaa1a2dd721bf97b9c2d413e0f61590dffdeba52f3fcedf5684b68e7e515",
-   "expectedMutations": [
-    "P11-002 pointer re-homing",
-    "P11-004 ranged class semantics",
-    "P11-042 rebuild"
-   ]
-  },
-  {
-   "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
-   "observedSha256": "53f3c2c06e83d23fded29a03ff2a96021075a366f994925c21a7b1132f230f8c",
-   "expectedMutations": [
-    "P11-042 rebuild after intentional review"
-   ]
-  },
-  {
-   "path": "data/reference/contests.json",
-   "observedSha256": "fadb03c328f2025dcc81fe497365db345717184bea6a9247b2f79d9d3f61362a",
-   "expectedMutations": [
-    "P11-006 successor variant migration"
-   ]
-  },
-  {
-   "path": "shared/capabilityAutomation/weaponMoves.ts",
-   "observedSha256": "6993888fcebf9d63fb1d4e66b95fcbe5270a791f1831964b7da97466bfced611",
-   "expectedMutations": [
-    "P11-005 seven-definition registry extension"
-   ]
   }
  ],
  "finalityDecision": {
@@ -108,25 +76,49 @@
     },
     {
      "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
-     "sha256": "04121681eb574af8cde8d89e4898f0d32390e6aee788f0b6a2f20a64d39710b4"
+     "sha256": "219011073e478a59ff2bafb841bf07f3a11c0e905784e9add2b101f40141e3ee"
     },
     {
      "path": "data/deferred-closure/item-action-recovery-certification.v1.json",
      "sha256": "41feeed87ccac0593c5de75712d352ec1dee715196928ec152b286d40e3f71fb"
     }
    ]
+  },
+  {
+   "id": "p11-081.integrated-golden-journeys",
+   "scope": "all-twenty-nine-closure-inventory-rows-across-three-seeded-campaigns",
+   "ticket": "P11-081",
+   "status": "certified",
+   "certificationPath": "data/deferred-closure/integrated-golden-journeys-certification.v1.json",
+   "sha256": "a7de062f17b3449e774049403d7d1d7d02f9178ea4328956d53479904fd80767",
+   "rowCount": 29,
+   "journeyCount": 3,
+   "mechanicsFixtureCount": 24,
+   "nativeContestVariants": [
+    "trainer-participant",
+    "battle"
+   ],
+   "settlementFixtureCount": 5,
+   "manualRepairRequired": false
+  },
+  {
+   "id": "p11-089.zero-deferred",
+   "scope": "all-twenty-nine-reviewed-closure-rows-and-eight-reviewed-non-gaps",
+   "ticket": "P11-089",
+   "status": "accepted",
+   "acceptancePath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
+   "rowCount": 29,
+   "finalCount": 29,
+   "nonFinalCount": 0,
+   "blockedCount": 0,
+   "unregisteredCount": 0
   }
  ],
  "allowedCurrentStates": [
   "native",
-  "definition-missing",
-  "deferred",
   "guided",
-  "reference-only-deferral",
-  "structured",
-  "absent",
-  "stale-pointer",
-  "stale-deferred-language"
+  "re-homed",
+  "verified-or-retired"
  ],
  "allowedTargetStates": [
   "native",
@@ -143,13 +135,17 @@
   "weaponMoves": 7,
   "itemActions": 11,
   "contestVariants": 2,
-  "runtimeSurfaces": 1
+  "runtimeSurfaces": 1,
+  "finalRows": 29,
+  "nonFinalRows": 0,
+  "blockedRows": 0,
+  "unregisteredRows": 0
  },
  "rows": [
   {
    "id": "weapon-profile.weighted-rope",
    "kind": "weapon-profile",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-004",
@@ -167,7 +163,7 @@
     "server/domain/itemAutomation/equipmentGrants.ts",
     "server/domain/encounterPresentation/buildProjection.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Weighted Rope' is canonical identity ('short-range' class, source 09-gear-and-items.md); ranged class mechanics pend the reviewed generator extension (P11-004).",
+   "canonicalDataStatus": "data/reference/items.json row 'Weighted Rope' is canonical identity; the reviewed equipment registry supplies its native short-range profile through ordinary encounter targeting and accepted-result authority.",
    "privacyImplications": "Encounter declarations and accepted results only; weapon-selector identities stay opaque per the existing P8-047 presentation contract.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -176,12 +172,13 @@
    ],
    "grantId": "equipment.weighted-rope.weapon",
    "canonicalItem": "Weighted Rope",
-   "weaponClass": "short-range"
+   "weaponClass": "short-range",
+   "closureEvidenceId": "p11-022.ranged-weapons"
   },
   {
    "id": "weapon-profile.slingshot",
    "kind": "weapon-profile",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-004",
@@ -199,7 +196,7 @@
     "server/domain/itemAutomation/equipmentGrants.ts",
     "server/domain/encounterPresentation/buildProjection.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Slingshot' is canonical identity ('long-range' class, source 09-gear-and-items.md); ranged class mechanics pend the reviewed generator extension (P11-004).",
+   "canonicalDataStatus": "data/reference/items.json row 'Slingshot' is canonical identity; the reviewed equipment registry supplies its native long-range profile through ordinary encounter targeting and accepted-result authority.",
    "privacyImplications": "Encounter declarations and accepted results only; weapon-selector identities stay opaque per the existing P8-047 presentation contract.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -208,12 +205,13 @@
    ],
    "grantId": "equipment.slingshot.weapon",
    "canonicalItem": "Slingshot",
-   "weaponClass": "long-range"
+   "weaponClass": "long-range",
+   "closureEvidenceId": "p11-022.ranged-weapons"
   },
   {
    "id": "weapon-profile.throwing-hammers",
    "kind": "weapon-profile",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-004",
@@ -231,7 +229,7 @@
     "server/domain/itemAutomation/equipmentGrants.ts",
     "server/domain/encounterPresentation/buildProjection.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Throwing Hammers' is canonical identity ('short-range' class, source 09-gear-and-items.md); ranged class mechanics pend the reviewed generator extension (P11-004).",
+   "canonicalDataStatus": "data/reference/items.json row 'Throwing Hammers' is canonical identity; the reviewed equipment registry supplies its native short-range profile through ordinary encounter targeting and accepted-result authority.",
    "privacyImplications": "Encounter declarations and accepted results only; weapon-selector identities stay opaque per the existing P8-047 presentation contract.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -240,12 +238,13 @@
    ],
    "grantId": "equipment.throwing-hammers.weapon",
    "canonicalItem": "Throwing Hammers",
-   "weaponClass": "short-range"
+   "weaponClass": "short-range",
+   "closureEvidenceId": "p11-022.ranged-weapons"
   },
   {
    "id": "weapon-profile.hunting-bow",
    "kind": "weapon-profile",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-004",
@@ -263,7 +262,7 @@
     "server/domain/itemAutomation/equipmentGrants.ts",
     "server/domain/encounterPresentation/buildProjection.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Hunting Bow' is canonical identity ('long-range' class, source 09-gear-and-items.md); ranged class mechanics pend the reviewed generator extension (P11-004).",
+   "canonicalDataStatus": "data/reference/items.json row 'Hunting Bow' is canonical identity; the reviewed equipment registry supplies its native long-range profile through ordinary encounter targeting and accepted-result authority.",
    "privacyImplications": "Encounter declarations and accepted results only; weapon-selector identities stay opaque per the existing P8-047 presentation contract.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -272,12 +271,13 @@
    ],
    "grantId": "equipment.hunting-bow.weapon",
    "canonicalItem": "Hunting Bow",
-   "weaponClass": "long-range"
+   "weaponClass": "long-range",
+   "closureEvidenceId": "p11-022.ranged-weapons"
   },
   {
    "id": "weapon-profile.super-lucky-throwing-stars",
    "kind": "weapon-profile",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-004",
@@ -295,7 +295,7 @@
     "server/domain/itemAutomation/equipmentGrants.ts",
     "server/domain/encounterPresentation/buildProjection.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Super Lucky Throwing Stars' is canonical identity ('short-range' class, source 09-gear-and-items.md); ranged class mechanics pend the reviewed generator extension (P11-004).",
+   "canonicalDataStatus": "data/reference/items.json row 'Super Lucky Throwing Stars' is canonical identity; the reviewed equipment registry supplies its native short-range profile through ordinary encounter targeting and accepted-result authority.",
    "privacyImplications": "Encounter declarations and accepted results only; weapon-selector identities stay opaque per the existing P8-047 presentation contract.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -304,12 +304,13 @@
    ],
    "grantId": "equipment.super-lucky-throwing-stars.weapon",
    "canonicalItem": "Super Lucky Throwing Stars",
-   "weaponClass": "short-range"
+   "weaponClass": "short-range",
+   "closureEvidenceId": "p11-022.ranged-weapons"
   },
   {
    "id": "weapon-profile.twin-needled-bow",
    "kind": "weapon-profile",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-004",
@@ -327,7 +328,7 @@
     "server/domain/itemAutomation/equipmentGrants.ts",
     "server/domain/encounterPresentation/buildProjection.ts"
    ],
-   "canonicalDataStatus": "data/reference/items.json row 'Twin-Needled Bow' is canonical identity ('long-range' class, source 09-gear-and-items.md); ranged class mechanics pend the reviewed generator extension (P11-004).",
+   "canonicalDataStatus": "data/reference/items.json row 'Twin-Needled Bow' is canonical identity; the reviewed equipment registry supplies its native long-range profile through ordinary encounter targeting and accepted-result authority.",
    "privacyImplications": "Encounter declarations and accepted results only; weapon-selector identities stay opaque per the existing P8-047 presentation contract.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -336,12 +337,13 @@
    ],
    "grantId": "equipment.twin-needled-bow.weapon",
    "canonicalItem": "Twin-Needled Bow",
-   "weaponClass": "long-range"
+   "weaponClass": "long-range",
+   "closureEvidenceId": "p11-022.ranged-weapons"
   },
   {
    "id": "weapon-move.bash",
    "kind": "weapon-move",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-005",
@@ -353,7 +355,7 @@
     "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
     "data/complete-play-loop/equipment-grants.v1.json"
    ],
-   "canonicalDataStatus": "Identity 'Bash!' is named by the canonical 'Throwing Hammers' row in data/reference/items.json; stats pend the reviewed weapon-move registry extension (P11-005). The frozen data/reference/moves.json catalog must not gain this row.",
+   "canonicalDataStatus": "Identity 'Bash!' is named by canonical item 'Throwing Hammers'; the reviewed source-bound supplemental registry and ordinary Move handler are native, while the frozen data/reference/moves.json Pokémon Move catalog remains unchanged.",
    "privacyImplications": "Ordinary Move declaration and accepted-result visibility; no contest identity, so Contest appeal legality fails closed.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -361,12 +363,13 @@
    ],
    "canonicalId": "Bash!",
    "canonicalItem": "Throwing Hammers",
-   "grantId": "equipment.throwing-hammers.bash"
+   "grantId": "equipment.throwing-hammers.bash",
+   "closureEvidenceId": "p11-030.weapon-moves"
   },
   {
    "id": "weapon-move.pierce",
    "kind": "weapon-move",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-005",
@@ -378,7 +381,7 @@
     "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
     "data/complete-play-loop/equipment-grants.v1.json"
    ],
-   "canonicalDataStatus": "Identity 'Pierce!' is named by the canonical 'Hunting Bow' row in data/reference/items.json; stats pend the reviewed weapon-move registry extension (P11-005). The frozen data/reference/moves.json catalog must not gain this row.",
+   "canonicalDataStatus": "Identity 'Pierce!' is named by canonical item 'Hunting Bow'; the reviewed source-bound supplemental registry and ordinary Move handler are native, while the frozen data/reference/moves.json Pokémon Move catalog remains unchanged.",
    "privacyImplications": "Ordinary Move declaration and accepted-result visibility; no contest identity, so Contest appeal legality fails closed.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -386,12 +389,13 @@
    ],
    "canonicalId": "Pierce!",
    "canonicalItem": "Hunting Bow",
-   "grantId": "equipment.hunting-bow.pierce"
+   "grantId": "equipment.hunting-bow.pierce",
+   "closureEvidenceId": "p11-030.weapon-moves"
   },
   {
    "id": "weapon-move.gouge",
    "kind": "weapon-move",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-005",
@@ -403,7 +407,7 @@
     "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
     "data/complete-play-loop/equipment-grants.v1.json"
    ],
-   "canonicalDataStatus": "Identity 'Gouge' is named by the canonical 'Honed Claws' row in data/reference/items.json; stats pend the reviewed weapon-move registry extension (P11-005). The frozen data/reference/moves.json catalog must not gain this row.",
+   "canonicalDataStatus": "Identity 'Gouge' is named by canonical item 'Honed Claws'; the reviewed source-bound supplemental registry and ordinary Move handler are native, while the frozen data/reference/moves.json Pokémon Move catalog remains unchanged.",
    "privacyImplications": "Ordinary Move declaration and accepted-result visibility; no contest identity, so Contest appeal legality fails closed.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -411,12 +415,13 @@
    ],
    "canonicalId": "Gouge",
    "canonicalItem": "Honed Claws",
-   "grantId": "equipment.honed-claws.gouge"
+   "grantId": "equipment.honed-claws.gouge",
+   "closureEvidenceId": "p11-030.weapon-moves"
   },
   {
    "id": "weapon-move.titanic-slam",
    "kind": "weapon-move",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-005",
@@ -428,7 +433,7 @@
     "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
     "data/complete-play-loop/equipment-grants.v1.json"
    ],
-   "canonicalDataStatus": "Identity 'Titanic Slam' is named by the canonical 'Meteor Masher' row in data/reference/items.json; stats pend the reviewed weapon-move registry extension (P11-005). The frozen data/reference/moves.json catalog must not gain this row.",
+   "canonicalDataStatus": "Identity 'Titanic Slam' is named by canonical item 'Meteor Masher'; the reviewed source-bound supplemental registry and ordinary Move handler are native, while the frozen data/reference/moves.json Pokémon Move catalog remains unchanged.",
    "privacyImplications": "Ordinary Move declaration and accepted-result visibility; no contest identity, so Contest appeal legality fails closed.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -436,12 +441,13 @@
    ],
    "canonicalId": "Titanic Slam",
    "canonicalItem": "Meteor Masher",
-   "grantId": "equipment.meteor-masher.titanic-slam"
+   "grantId": "equipment.meteor-masher.titanic-slam",
+   "closureEvidenceId": "p11-030.weapon-moves"
   },
   {
    "id": "weapon-move.bullseye",
    "kind": "weapon-move",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-005",
@@ -453,7 +459,7 @@
     "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
     "data/complete-play-loop/equipment-grants.v1.json"
    ],
-   "canonicalDataStatus": "Identity 'Bullseye' is named by the canonical 'Super Lucky Throwing Stars' row in data/reference/items.json; stats pend the reviewed weapon-move registry extension (P11-005). The frozen data/reference/moves.json catalog must not gain this row.",
+   "canonicalDataStatus": "Identity 'Bullseye' is named by canonical item 'Super Lucky Throwing Stars'; the reviewed source-bound supplemental registry and ordinary Move handler are native, while the frozen data/reference/moves.json Pokémon Move catalog remains unchanged.",
    "privacyImplications": "Ordinary Move declaration and accepted-result visibility; no contest identity, so Contest appeal legality fails closed.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -461,12 +467,13 @@
    ],
    "canonicalId": "Bullseye",
    "canonicalItem": "Super Lucky Throwing Stars",
-   "grantId": "equipment.super-lucky-throwing-stars.bullseye"
+   "grantId": "equipment.super-lucky-throwing-stars.bullseye",
+   "closureEvidenceId": "p11-030.weapon-moves"
   },
   {
    "id": "weapon-move.deadly-strike",
    "kind": "weapon-move",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-005",
@@ -478,7 +485,7 @@
     "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
     "data/complete-play-loop/equipment-grants.v1.json"
    ],
-   "canonicalDataStatus": "Identity 'Deadly Strike' is named by the canonical 'Super Lucky Throwing Stars' row in data/reference/items.json; stats pend the reviewed weapon-move registry extension (P11-005). The frozen data/reference/moves.json catalog must not gain this row.",
+   "canonicalDataStatus": "Identity 'Deadly Strike' is named by canonical item 'Super Lucky Throwing Stars'; the reviewed source-bound supplemental registry and ordinary Move handler are native, while the frozen data/reference/moves.json Pokémon Move catalog remains unchanged.",
    "privacyImplications": "Ordinary Move declaration and accepted-result visibility; no contest identity, so Contest appeal legality fails closed.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -486,12 +493,13 @@
    ],
    "canonicalId": "Deadly Strike",
    "canonicalItem": "Super Lucky Throwing Stars",
-   "grantId": "equipment.super-lucky-throwing-stars.deadly-strike"
+   "grantId": "equipment.super-lucky-throwing-stars.deadly-strike",
+   "closureEvidenceId": "p11-030.weapon-moves"
   },
   {
    "id": "weapon-move.triple-threat",
    "kind": "weapon-move",
-   "currentState": "definition-missing",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-005",
@@ -503,7 +511,7 @@
     "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
     "data/complete-play-loop/equipment-grants.v1.json"
    ],
-   "canonicalDataStatus": "Identity 'Triple Threat' is named by the canonical 'Twin-Needled Bow' row in data/reference/items.json; stats pend the reviewed weapon-move registry extension (P11-005). The frozen data/reference/moves.json catalog must not gain this row.",
+   "canonicalDataStatus": "Identity 'Triple Threat' is named by canonical item 'Twin-Needled Bow'; the reviewed source-bound supplemental registry and ordinary Move handler are native, while the frozen data/reference/moves.json Pokémon Move catalog remains unchanged.",
    "privacyImplications": "Ordinary Move declaration and accepted-result visibility; no contest identity, so Contest appeal legality fails closed.",
    "acceptanceEvidence": [
     "P11-009 seeded fixtures",
@@ -511,7 +519,8 @@
    ],
    "canonicalId": "Triple Threat",
    "canonicalItem": "Twin-Needled Bow",
-   "grantId": "equipment.twin-needled-bow.triple-threat"
+   "grantId": "equipment.twin-needled-bow.triple-threat",
+   "closureEvidenceId": "p11-030.weapon-moves"
   },
   {
    "id": "item-action.old-rod.fish",
@@ -879,7 +888,7 @@
   {
    "id": "contest-variant.trainer-participant",
    "kind": "contest-variant",
-   "currentState": "reference-only-deferral",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-006",
@@ -901,17 +910,18 @@
     "server/domain/contests/engine.ts",
     "shared/contests/ids.ts"
    ],
-   "canonicalDataStatus": "data/reference/contests.json variant row 'trainer-participant' is reference-only with safeReason 'Trainer appeals are deferred until the shared combat-and-contest blend is closed.'; structured semantics pend the successor migration (P11-006).",
+   "canonicalDataStatus": "data/reference/contests.json carries the native trainer-participant variant; its production document, projection, operation, settlement, fixture, and activation authorities are certified.",
    "privacyImplications": "Existing Contest role projections extend to paired performers; private planning must not leak between competitors.",
    "acceptanceEvidence": [
     "P11-063 deterministic variant matrix extension",
     "P11-064 certification"
-   ]
+   ],
+   "closureEvidenceId": "p11-080.contest-variants"
   },
   {
    "id": "contest-variant.battle",
    "kind": "contest-variant",
-   "currentState": "reference-only-deferral",
+   "currentState": "native",
    "targetState": "native",
    "owningTickets": [
     "P11-006",
@@ -936,12 +946,13 @@
     "data/reference/contests.json",
     "server/domain/contests/engine.ts"
    ],
-   "canonicalDataStatus": "data/reference/contests.json variant row 'battle' is reference-only with safeReason 'Battle Contests are deferred until the encounter and contest engines have a reviewed blend contract.'; canon defines two trainers, 3-6 Pokémon per side, round budget of twice the per-trainer count; structured semantics pend the successor migration (P11-006).",
+   "canonicalDataStatus": "data/reference/contests.json carries the native battle variant; its reviewed Encounter blend, two-team roster contract, scoring, recovery, settlement, fixtures, and activation are certified.",
    "privacyImplications": "Dual-engine projections must stay structurally distinct across GM, competing owners, and spectators; no private leak across the blend contract.",
    "acceptanceEvidence": [
     "P11-079 deterministic fixtures",
     "P11-080 certification incl. single-spend proofs"
-   ]
+   ],
+   "closureEvidenceId": "p11-080.contest-variants"
   },
   {
    "id": "runtime.generic-skill-check",
@@ -1015,12 +1026,13 @@
     "P11-050 all-three-rod generic check integration plus source-bound retained-bespoke-flow certification",
     "P11-051 SHA-bound keyboard, touch, screen-reader, reduced-motion, WCAG AA, 320px/table-distance reflow, bounded-performance, and desktop/mobile production liveplay certification",
     "P11-052 SHA-bound single/group restart, reconnect, duplicate, CAS concurrency, stale, rollback, campaign-attention, owner-safe terminal-history, realtime-invalidation, route, component, privacy, and reviewed-mockup certification"
-   ]
+   ],
+   "closureEvidenceId": "p11-052.skill-check"
   },
   {
    "id": "registry.equipment-grants-deferred-ticket-pointers",
    "kind": "hygiene",
-   "currentState": "stale-pointer",
+   "currentState": "re-homed",
    "targetState": "re-homed",
    "owningTickets": [
     "P11-002"
@@ -1029,16 +1041,17 @@
     "data/complete-play-loop/equipment-grants.v1.json",
     "scripts/generate_complete_play_loop_equipment_grants.py"
    ],
-   "canonicalDataStatus": "All eleven deferred action grants cite completed Plan 8 tickets (P8-050, P8-057, P8-059, P8-092) that did not implement them.",
+   "canonicalDataStatus": "All reviewed closure grants have final authority and null legacy ticket pointers.",
    "privacyImplications": "None; registry metadata only.",
    "acceptanceEvidence": [
     "P11-002 regenerated registry with Plan 11 pointers and drift checks"
-   ]
+   ],
+   "closureEvidenceId": "p11-002.hygiene"
   },
   {
    "id": "documentation.live-play-authority-trigger-registrations",
    "kind": "hygiene",
-   "currentState": "stale-deferred-language",
+   "currentState": "verified-or-retired",
    "targetState": "verified-or-retired",
    "owningTickets": [
     "P11-002"
@@ -1046,11 +1059,12 @@
    "owningPaths": [
     "docs/live-play-authority.md"
    ],
-   "canonicalDataStatus": "The line 'Concrete move/field trigger registrations remain deferred to their owning tickets.' predates Plan 8 closure and must be verified against runtime or retired.",
+   "canonicalDataStatus": "The liveplay authority guide describes current typed registrations and fail-closed behavior.",
    "privacyImplications": "None; documentation only.",
    "acceptanceEvidence": [
     "P11-002 documentation verification evidence"
-   ]
+   ],
+   "closureEvidenceId": "p11-002.hygiene"
   }
  ],
  "reviewedNonGaps": [
@@ -1094,5 +1108,64 @@
    "finding": "Supplement books, playtest packets, and setting packs are post-1.0 expansions per the recorded 1.0 release definition, not core deferrals.",
    "classification": "post-1.0-by-definition"
   }
- ]
+ ],
+ "finalizedBy": "P11-089",
+ "activationBaseline": {
+  "ticket": "P11-001",
+  "sha256": "1e5d623174060993ef02f3417c82888eb1e30b4a029980c0c283d55cf1eca3ac",
+  "preservation": "accepted-successor-chain"
+ },
+ "finalSurfaceBindings": [
+  {
+   "path": "data/complete-play-loop/equipment-grants.v1.json",
+   "sha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52",
+   "policy": "current bytes or a contiguous accepted successor"
+  },
+  {
+   "path": "data/complete-play-loop/equipment-contributions.v1.json",
+   "sha256": "14e6018e63750bed27c8a8299f3e33b13370d1c9b7e0403990acc9c990e50dcf",
+   "policy": "current bytes or a contiguous accepted successor"
+  },
+  {
+   "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+   "sha256": "219011073e478a59ff2bafb841bf07f3a11c0e905784e9add2b101f40141e3ee",
+   "policy": "current bytes or a contiguous accepted successor"
+  },
+  {
+   "path": "data/deferred-closure/item-action-matrix.v1.json",
+   "sha256": "1de4da8ae7fe2dd937b75975e6aa684339d8174c87ec088443acb37963518d83",
+   "policy": "current bytes or a contiguous accepted successor"
+  },
+  {
+   "path": "data/reference/contests.json",
+   "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497",
+   "policy": "current bytes or a contiguous accepted successor"
+  },
+  {
+   "path": "shared/capabilityAutomation/weaponMoves.ts",
+   "sha256": "4d7bf8aaf62c807a8eabfda4424298eefe03354049f6da9fbb1c324a1e6c9f5e",
+   "policy": "current bytes or a contiguous accepted successor"
+  },
+  {
+   "path": "shared/skillChecks/contract.ts",
+   "sha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4",
+   "policy": "current bytes or a contiguous accepted successor"
+  },
+  {
+   "path": "docs/live-play-authority.md",
+   "sha256": "35276a26ab40a4f6cc46b26043e3d1a963df68fe1fd93dc1848cbc9e0827b4b1",
+   "policy": "current bytes or a contiguous accepted successor"
+  }
+ ],
+ "finalAcceptance": {
+  "ticket": "P11-089",
+  "recordPath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
+  "requiredCommand": "python3 scripts/check_deferred_closure.py --require-complete --check-drift",
+  "knownCoreRows": 29,
+  "finalRows": 29,
+  "knownDeferredRows": 0,
+  "knownBlockedRows": 0,
+  "proseInferredRows": 0,
+  "silentlyAbsentRows": 0
+ }
 }

@@ -7,6 +7,7 @@ import { INVENTORY_ACTION_LIMITS } from '../../shared/itemAutomation/inventoryAc
 import { ENCOUNTER_PRESENTATION_LIMITS } from '../../shared/encounterPresentation/catalog'
 import { ENCOUNTER_SETTLEMENT_LIMITS } from '../../shared/encounterSettlement/document'
 import { CAMPAIGN_ATTENTION_PROJECTION_LIMIT } from '../../shared/campaignAttention/projection'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const root = resolve(import.meta.dirname, '../..')
 const sha256 = (value: Buffer): string => createHash('sha256').update(value).digest('hex')
@@ -62,7 +63,8 @@ describe('P8-095 performance and scale budget contract', () => {
       expect(paths.has(row.path), row.path).toBe(false)
       paths.add(row.path)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(resolve(root, row.path))), row.path).toBe(row.sha256)
+      expect(acceptedSuccessorHead(row.path, row.sha256), row.path)
+        .toBe(sha256(readFileSync(resolve(root, row.path))))
     }
     expect(paths).toEqual(new Set([
       'shared/itemAutomation/inventoryActions.ts',

@@ -1,0 +1,3269 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "trainer-participant-contest-variant-matrix-v1",
+  "participantVariantId": "trainer-participant",
+  "sources": [
+    {
+      "path": "data/reference/contests.json",
+      "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497"
+    },
+    {
+      "path": "data/reference/moves.json",
+      "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "trainer-participant-standard-simultaneous-3",
+      "variantId": "standard",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 3,
+      "seed": 3000,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-0",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-1",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-2",
+            "letter": "A",
+            "introductionTotal": 5
+          }
+        ],
+        "acceptedAppeals": 18,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-standard-simultaneous-3-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-3-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-3-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-2",
+            "placement": 1,
+            "appeal": 29,
+            "fumble": 13,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-0",
+            "placement": 2,
+            "appeal": 17,
+            "fumble": 4,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-1",
+            "placement": 3,
+            "appeal": 18,
+            "fumble": 16,
+            "finalScore": 2
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-2",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 24,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-0",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-3-1",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 11,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "db76417174735c4bc372e81ace421efd59a0b93299c9018c6ad846400335c270"
+      }
+    },
+    {
+      "id": "trainer-participant-standard-simultaneous-4",
+      "variantId": "standard",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 4,
+      "seed": 3001,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-0",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-1",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-2",
+            "letter": "A",
+            "introductionTotal": 5
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-3",
+            "letter": "B",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 32,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-standard-simultaneous-4-0": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-4-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-4-3": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-2",
+            "placement": 1,
+            "appeal": 32,
+            "fumble": 18,
+            "finalScore": 14
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-1",
+            "placement": 2,
+            "appeal": 24,
+            "fumble": 20,
+            "finalScore": 4
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-0",
+            "placement": 3,
+            "appeal": 12,
+            "fumble": 10,
+            "finalScore": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-3",
+            "placement": 4,
+            "appeal": 15,
+            "fumble": 13,
+            "finalScore": 2
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-2",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 24,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-1",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-0",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-4-3",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "20165cbfc47cd84460cdb68c57f2b38b1d7e8b512d0293983a16884b37cf6344"
+      }
+    },
+    {
+      "id": "trainer-participant-standard-simultaneous-5",
+      "variantId": "standard",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 5,
+      "seed": 3002,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-0",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-1",
+            "letter": "E",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-2",
+            "letter": "A",
+            "introductionTotal": 5
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-3",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-4",
+            "letter": "B",
+            "introductionTotal": 5
+          }
+        ],
+        "acceptedAppeals": 50,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-standard-simultaneous-5-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-5-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-5-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-5-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-simultaneous-5-4": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-4",
+            "placement": 1,
+            "appeal": 44,
+            "fumble": 23,
+            "finalScore": 21
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-0",
+            "placement": 2,
+            "appeal": 29,
+            "fumble": 13,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-1",
+            "placement": 3,
+            "appeal": 38,
+            "fumble": 25,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-2",
+            "placement": 4,
+            "appeal": 35,
+            "fumble": 22,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-3",
+            "placement": 5,
+            "appeal": 17,
+            "fumble": 15,
+            "finalScore": 2
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-4",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 42,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-0",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-1",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-2",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-simultaneous-5-3",
+            "placement": 5,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "10a3a7bfffc5b0d3dfaef5698fe3740d5ae2990c8e7c2ecd16cde67706a0e681"
+      }
+    },
+    {
+      "id": "trainer-participant-standard-alternating-3",
+      "variantId": "standard",
+      "participantMethodId": "alternating",
+      "contestantCount": 3,
+      "seed": 3010,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-0",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-1",
+            "letter": "B",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-2",
+            "letter": "A",
+            "introductionTotal": 5
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-standard-alternating-3-0": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-alternating-3-1": [
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-alternating-3-2": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-1",
+            "placement": 1,
+            "appeal": 14,
+            "fumble": 0,
+            "finalScore": 14
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-2",
+            "placement": 2,
+            "appeal": 12,
+            "fumble": 3,
+            "finalScore": 9
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-0",
+            "placement": 3,
+            "appeal": 10,
+            "fumble": 4,
+            "finalScore": 6
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-1",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-2",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-3-0",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "7a6becd1a1c7d582b65defc39243cee5f8148bcee617ee4e0e4e8eab9fa2d24d"
+      }
+    },
+    {
+      "id": "trainer-participant-standard-alternating-4",
+      "variantId": "standard",
+      "participantMethodId": "alternating",
+      "contestantCount": 4,
+      "seed": 3011,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-0",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-1",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-2",
+            "letter": "A",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-3",
+            "letter": "B",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-standard-alternating-4-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-alternating-4-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-alternating-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-alternating-4-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-0",
+            "placement": 1,
+            "appeal": 11,
+            "fumble": 8,
+            "finalScore": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-1",
+            "placement": 2,
+            "appeal": 12,
+            "fumble": 12,
+            "finalScore": 0
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-2",
+            "placement": 3,
+            "appeal": 12,
+            "fumble": 15,
+            "finalScore": -3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-3",
+            "placement": 4,
+            "appeal": 7,
+            "fumble": 10,
+            "finalScore": -3
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-0",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 20,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-1",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-2",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-4-3",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "6170579aeb6f103ecfe814297ef46129fea6c4b57c1aa21be929247e8de9dc8c"
+      }
+    },
+    {
+      "id": "trainer-participant-standard-alternating-5",
+      "variantId": "standard",
+      "participantMethodId": "alternating",
+      "contestantCount": 5,
+      "seed": 3012,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-0",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-1",
+            "letter": "E",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-2",
+            "letter": "B",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-3",
+            "letter": "A",
+            "introductionTotal": 5
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-4",
+            "letter": "C",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-standard-alternating-5-0": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-alternating-5-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-alternating-5-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-standard-alternating-5-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-standard-alternating-5-4": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-0",
+            "placement": 1,
+            "appeal": 22,
+            "fumble": 2,
+            "finalScore": 20
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-2",
+            "placement": 2,
+            "appeal": 20,
+            "fumble": 4,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-4",
+            "placement": 3,
+            "appeal": 22,
+            "fumble": 8,
+            "finalScore": 14
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-3",
+            "placement": 4,
+            "appeal": 11,
+            "fumble": 0,
+            "finalScore": 11
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-1",
+            "placement": 5,
+            "appeal": 18,
+            "fumble": 13,
+            "finalScore": 5
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-0",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 30,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-2",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-4",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 28,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-3",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-standard-alternating-5-1",
+            "placement": 5,
+            "pokemonAwards": 1,
+            "totalExperience": 11,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "68c902616a655d19a585ffaf9c3c5d57971fb714c23e470a55192d4bc4756b43"
+      }
+    },
+    {
+      "id": "trainer-participant-supercontest-simultaneous-3",
+      "variantId": "supercontest",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 3,
+      "seed": 3100,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-0",
+            "letter": "C",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-1",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-2",
+            "letter": "B",
+            "introductionTotal": 2
+          }
+        ],
+        "acceptedAppeals": 18,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [
+          "smart",
+          "tough",
+          "cute"
+        ],
+        "performerSequences": {
+          "contestant:trainer-participant-supercontest-simultaneous-3-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-3-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-3-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-0",
+            "placement": 1,
+            "appeal": 16,
+            "fumble": 5,
+            "finalScore": 11
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-2",
+            "placement": 2,
+            "appeal": 23,
+            "fumble": 12,
+            "finalScore": 11
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-1",
+            "placement": 3,
+            "appeal": 20,
+            "fumble": 11,
+            "finalScore": 9
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-0",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 20,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-2",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-3-1",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 11,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "66e68452ace541180ab2e55b5467d777cd84efcb619a1b0a275ae21f08b7a0cf"
+      }
+    },
+    {
+      "id": "trainer-participant-supercontest-simultaneous-4",
+      "variantId": "supercontest",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 4,
+      "seed": 3101,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-0",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-1",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-2",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-3",
+            "letter": "A",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 32,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [
+          "cool",
+          "beauty",
+          "cool",
+          "tough"
+        ],
+        "performerSequences": {
+          "contestant:trainer-participant-supercontest-simultaneous-4-0": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-4-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-4-3": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-3",
+            "placement": 1,
+            "appeal": 21,
+            "fumble": 7,
+            "finalScore": 14
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-1",
+            "placement": 2,
+            "appeal": 34,
+            "fumble": 22,
+            "finalScore": 12
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-2",
+            "placement": 3,
+            "appeal": 25,
+            "fumble": 18,
+            "finalScore": 7
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-0",
+            "placement": 4,
+            "appeal": 15,
+            "fumble": 11,
+            "finalScore": 4
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-3",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 26,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-1",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-2",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-4-0",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "c3da8df40b14eb9d793c84553f146237be8abebad6bbb99bfb58cf67c2b35f43"
+      }
+    },
+    {
+      "id": "trainer-participant-supercontest-simultaneous-5",
+      "variantId": "supercontest",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 5,
+      "seed": 3102,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-0",
+            "letter": "E",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-1",
+            "letter": "D",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-2",
+            "letter": "A",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-3",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-4",
+            "letter": "B",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 50,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [
+          "cool",
+          "cute",
+          "cool",
+          "cute",
+          "cute"
+        ],
+        "performerSequences": {
+          "contestant:trainer-participant-supercontest-simultaneous-5-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-5-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-5-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-5-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-simultaneous-5-4": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-4",
+            "placement": 1,
+            "appeal": 56,
+            "fumble": 23,
+            "finalScore": 33
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-2",
+            "placement": 2,
+            "appeal": 49,
+            "fumble": 19,
+            "finalScore": 30
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-1",
+            "placement": 3,
+            "appeal": 37,
+            "fumble": 21,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-0",
+            "placement": 4,
+            "appeal": 24,
+            "fumble": 22,
+            "finalScore": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-3",
+            "placement": 5,
+            "appeal": 16,
+            "fumble": 15,
+            "finalScore": 1
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-4",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 42,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-2",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-1",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-0",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-simultaneous-5-3",
+            "placement": 5,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "7465594394afae9633e228126c71dd9d90645c53edc634b2ce25af8fe365282b"
+      }
+    },
+    {
+      "id": "trainer-participant-supercontest-alternating-3",
+      "variantId": "supercontest",
+      "participantMethodId": "alternating",
+      "contestantCount": 3,
+      "seed": 3110,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-0",
+            "letter": "C",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-1",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-2",
+            "letter": "A",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [
+          "cool",
+          "cute",
+          "tough"
+        ],
+        "performerSequences": {
+          "contestant:trainer-participant-supercontest-alternating-3-0": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-3-1": [
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-3-2": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-1",
+            "placement": 1,
+            "appeal": 14,
+            "fumble": 1,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-0",
+            "placement": 2,
+            "appeal": 8,
+            "fumble": 5,
+            "finalScore": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-2",
+            "placement": 3,
+            "appeal": 4,
+            "fumble": 7,
+            "finalScore": -3
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-1",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-0",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-3-2",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "9b193f1128c3b03d204b379b3077cc31717c8aca674253e99e65d36e60e3404f"
+      }
+    },
+    {
+      "id": "trainer-participant-supercontest-alternating-4",
+      "variantId": "supercontest",
+      "participantMethodId": "alternating",
+      "contestantCount": 4,
+      "seed": 3111,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-0",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-1",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-2",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-3",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [
+          "cool",
+          "tough",
+          "cute",
+          "cool"
+        ],
+        "performerSequences": {
+          "contestant:trainer-participant-supercontest-alternating-4-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-4-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-4-3": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-1",
+            "placement": 1,
+            "appeal": 14,
+            "fumble": 8,
+            "finalScore": 6
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-0",
+            "placement": 2,
+            "appeal": 8,
+            "fumble": 3,
+            "finalScore": 5
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-2",
+            "placement": 3,
+            "appeal": 5,
+            "fumble": 5,
+            "finalScore": 0
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-3",
+            "placement": 4,
+            "appeal": 11,
+            "fumble": 14,
+            "finalScore": -3
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-1",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-0",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-2",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-4-3",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "9c0b9057a078df96f6de7951d52b87cc6e87d08e72efcabd0d8257826e66e731"
+      }
+    },
+    {
+      "id": "trainer-participant-supercontest-alternating-5",
+      "variantId": "supercontest",
+      "participantMethodId": "alternating",
+      "contestantCount": 5,
+      "seed": 3112,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-0",
+            "letter": "E",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-1",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-2",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-3",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-4",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [
+          "smart",
+          "cool",
+          "beauty",
+          "cute",
+          "smart"
+        ],
+        "performerSequences": {
+          "contestant:trainer-participant-supercontest-alternating-5-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-5-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-5-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-5-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-supercontest-alternating-5-4": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-4",
+            "placement": 1,
+            "appeal": 24,
+            "fumble": 16,
+            "finalScore": 8
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-1",
+            "placement": 2,
+            "appeal": 17,
+            "fumble": 9,
+            "finalScore": 8
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-3",
+            "placement": 3,
+            "appeal": 14,
+            "fumble": 8,
+            "finalScore": 6
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-2",
+            "placement": 4,
+            "appeal": 16,
+            "fumble": 13,
+            "finalScore": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-0",
+            "placement": 5,
+            "appeal": 6,
+            "fumble": 7,
+            "finalScore": -1
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-4",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 42,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-1",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-3",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 26,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-2",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-supercontest-alternating-5-0",
+            "placement": 5,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "dd033d3a4009ffc4a508f0ca493db17e120e1dadd2493d5724c47e1f3a7e1680"
+      }
+    },
+    {
+      "id": "trainer-participant-festival-simultaneous-3",
+      "variantId": "festival",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 3,
+      "seed": 3200,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-0",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-1",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-2",
+            "letter": "A",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 18,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-festival-simultaneous-3-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-3-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-3-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-2",
+            "placement": 1,
+            "appeal": 27,
+            "fumble": 11,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-0",
+            "placement": 2,
+            "appeal": 17,
+            "fumble": 3,
+            "finalScore": 14
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-1",
+            "placement": 3,
+            "appeal": 20,
+            "fumble": 15,
+            "finalScore": 5
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-2",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 24,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-0",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-3-1",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 11,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "dad45b3df98de6a550c2053cf28bb65d2dda9fdc5cab68834a1fb56c6337ef64"
+      }
+    },
+    {
+      "id": "trainer-participant-festival-simultaneous-4",
+      "variantId": "festival",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 4,
+      "seed": 3201,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-0",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-1",
+            "letter": "D",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-2",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-3",
+            "letter": "A",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 50,
+        "festivalHeat": 2,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-festival-simultaneous-4-0": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-4-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-4-3": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-0",
+            "placement": 1,
+            "appeal": 43,
+            "fumble": 14,
+            "finalScore": 29
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-1",
+            "placement": 2,
+            "appeal": 43,
+            "fumble": 18,
+            "finalScore": 25
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-3",
+            "placement": 3,
+            "appeal": 26,
+            "fumble": 10,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-2",
+            "placement": 4,
+            "appeal": 19,
+            "fumble": 21,
+            "finalScore": -2
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-0",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 20,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-1",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-3",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-4-2",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "774606cf05a03416962ce2d073f915774c498741646792885f2f81dc8ed68196"
+      }
+    },
+    {
+      "id": "trainer-participant-festival-simultaneous-5",
+      "variantId": "festival",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 5,
+      "seed": 3202,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-0",
+            "letter": "E",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-1",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-2",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-3",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-4",
+            "letter": "A",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 100,
+        "festivalHeat": 3,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-festival-simultaneous-5-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-5-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-5-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-5-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-simultaneous-5-4": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-2",
+            "placement": 1,
+            "appeal": 98,
+            "fumble": 12,
+            "finalScore": 86
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-1",
+            "placement": 2,
+            "appeal": 96,
+            "fumble": 19,
+            "finalScore": 77
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-0",
+            "placement": 3,
+            "appeal": 77,
+            "fumble": 4,
+            "finalScore": 73
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-4",
+            "placement": 4,
+            "appeal": 71,
+            "fumble": 21,
+            "finalScore": 50
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-3",
+            "placement": 5,
+            "appeal": 16,
+            "fumble": 11,
+            "finalScore": 5
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-2",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 36,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-1",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-0",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 20,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-4",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 14,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-simultaneous-5-3",
+            "placement": 5,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "167ad3f9218075407ae2c9513e4b4d06122c5b52cb6cfc3db4a955b688cd6784"
+      }
+    },
+    {
+      "id": "trainer-participant-festival-alternating-3",
+      "variantId": "festival",
+      "participantMethodId": "alternating",
+      "contestantCount": 3,
+      "seed": 3210,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-0",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-1",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-2",
+            "letter": "B",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-festival-alternating-3-0": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-alternating-3-1": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-alternating-3-2": [
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-1",
+            "placement": 1,
+            "appeal": 13,
+            "fumble": 3,
+            "finalScore": 10
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-0",
+            "placement": 2,
+            "appeal": 8,
+            "fumble": 0,
+            "finalScore": 8
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-2",
+            "placement": 3,
+            "appeal": 11,
+            "fumble": 5,
+            "finalScore": 6
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-1",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-0",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-3-2",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 12,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "c3c794331c3fb42bfd4f769c03bfde5aaac689b43714730fc35880d1a94a37c0"
+      }
+    },
+    {
+      "id": "trainer-participant-festival-alternating-4",
+      "variantId": "festival",
+      "participantMethodId": "alternating",
+      "contestantCount": 4,
+      "seed": 3211,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-0",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-1",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-2",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-3",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 2,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-festival-alternating-4-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-alternating-4-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-alternating-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-alternating-4-3": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-1",
+            "placement": 1,
+            "appeal": 27,
+            "fumble": 4,
+            "finalScore": 23
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-2",
+            "placement": 2,
+            "appeal": 19,
+            "fumble": 2,
+            "finalScore": 17
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-0",
+            "placement": 3,
+            "appeal": 14,
+            "fumble": 2,
+            "finalScore": 12
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-3",
+            "placement": 4,
+            "appeal": 9,
+            "fumble": 18,
+            "finalScore": -9
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-1",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-2",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-0",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-4-3",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "8e36c8c00330cab155390d2d0714c8b55357b220acbe6ed1f5920f70e5d8a8ed"
+      }
+    },
+    {
+      "id": "trainer-participant-festival-alternating-5",
+      "variantId": "festival",
+      "participantMethodId": "alternating",
+      "contestantCount": 5,
+      "seed": 3212,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-0",
+            "letter": "E",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-1",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-2",
+            "letter": "C",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-3",
+            "letter": "B",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-4",
+            "letter": "A",
+            "introductionTotal": 5
+          }
+        ],
+        "acceptedAppeals": 50,
+        "festivalHeat": 3,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-festival-alternating-5-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-alternating-5-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-festival-alternating-5-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-alternating-5-3": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-festival-alternating-5-4": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-4",
+            "placement": 1,
+            "appeal": 61,
+            "fumble": 7,
+            "finalScore": 54
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-1",
+            "placement": 2,
+            "appeal": 50,
+            "fumble": 4,
+            "finalScore": 46
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-2",
+            "placement": 3,
+            "appeal": 41,
+            "fumble": 0,
+            "finalScore": 41
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-0",
+            "placement": 4,
+            "appeal": 16,
+            "fumble": 3,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-3",
+            "placement": 5,
+            "appeal": 8,
+            "fumble": 12,
+            "finalScore": -4
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-4",
+            "placement": 1,
+            "pokemonAwards": 1,
+            "totalExperience": 42,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-1",
+            "placement": 2,
+            "pokemonAwards": 1,
+            "totalExperience": 22,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-2",
+            "placement": 3,
+            "pokemonAwards": 1,
+            "totalExperience": 24,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-0",
+            "placement": 4,
+            "pokemonAwards": 1,
+            "totalExperience": 10,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-festival-alternating-5-3",
+            "placement": 5,
+            "pokemonAwards": 1,
+            "totalExperience": 13,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "589bc159b52a228e6174157170de8d9ddd78e2e8dcfde4ccca1ce204c9d50807"
+      }
+    },
+    {
+      "id": "trainer-participant-rotation-simultaneous-3",
+      "variantId": "rotation",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 3,
+      "seed": 3300,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-0",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-1",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-2",
+            "letter": "B",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 18,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-rotation-simultaneous-3-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-3-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-3-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-0",
+            "placement": 1,
+            "appeal": 26,
+            "fumble": 6,
+            "finalScore": 20
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-1",
+            "placement": 2,
+            "appeal": 19,
+            "fumble": 3,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-2",
+            "placement": 3,
+            "appeal": 11,
+            "fumble": 7,
+            "finalScore": 4
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-0",
+            "placement": 1,
+            "pokemonAwards": 3,
+            "totalExperience": 120,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-1",
+            "placement": 2,
+            "pokemonAwards": 3,
+            "totalExperience": 66,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-3-2",
+            "placement": 3,
+            "pokemonAwards": 3,
+            "totalExperience": 36,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "1082d3929a3823ca660013fede4517378665cf99b36c867bf62c5bf1e31000ca"
+      }
+    },
+    {
+      "id": "trainer-participant-rotation-simultaneous-4",
+      "variantId": "rotation",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 4,
+      "seed": 3301,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-0",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-1",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-2",
+            "letter": "C",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-3",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 32,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-rotation-simultaneous-4-0": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-4-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-4-3": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-0",
+            "placement": 1,
+            "appeal": 29,
+            "fumble": 5,
+            "finalScore": 24
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-2",
+            "placement": 2,
+            "appeal": 26,
+            "fumble": 9,
+            "finalScore": 17
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-1",
+            "placement": 3,
+            "appeal": 34,
+            "fumble": 21,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-3",
+            "placement": 4,
+            "appeal": 13,
+            "fumble": 10,
+            "finalScore": 3
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-0",
+            "placement": 1,
+            "pokemonAwards": 4,
+            "totalExperience": 280,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-2",
+            "placement": 2,
+            "pokemonAwards": 4,
+            "totalExperience": 240,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-1",
+            "placement": 3,
+            "pokemonAwards": 4,
+            "totalExperience": 132,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-4-3",
+            "placement": 4,
+            "pokemonAwards": 4,
+            "totalExperience": 52,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "64c9d22eb0305f9c84de6ac5e5c7efb704b773acc5ad7319758b7e8d170958dc"
+      }
+    },
+    {
+      "id": "trainer-participant-rotation-simultaneous-5",
+      "variantId": "rotation",
+      "participantMethodId": "simultaneous",
+      "contestantCount": 5,
+      "seed": 3302,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-0",
+            "letter": "E",
+            "introductionTotal": 0
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-1",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-2",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-3",
+            "letter": "B",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-4",
+            "letter": "C",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 50,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-rotation-simultaneous-5-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-5-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-5-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-5-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-simultaneous-5-4": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-0",
+            "placement": 1,
+            "appeal": 40,
+            "fumble": 3,
+            "finalScore": 37
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-4",
+            "placement": 2,
+            "appeal": 46,
+            "fumble": 20,
+            "finalScore": 26
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-2",
+            "placement": 3,
+            "appeal": 34,
+            "fumble": 20,
+            "finalScore": 14
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-1",
+            "placement": 4,
+            "appeal": 26,
+            "fumble": 16,
+            "finalScore": 10
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-3",
+            "placement": 5,
+            "appeal": 18,
+            "fumble": 11,
+            "finalScore": 7
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-0",
+            "placement": 1,
+            "pokemonAwards": 5,
+            "totalExperience": 550,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-4",
+            "placement": 2,
+            "pokemonAwards": 5,
+            "totalExperience": 560,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-2",
+            "placement": 3,
+            "pokemonAwards": 5,
+            "totalExperience": 360,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-1",
+            "placement": 4,
+            "pokemonAwards": 5,
+            "totalExperience": 165,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-simultaneous-5-3",
+            "placement": 5,
+            "pokemonAwards": 5,
+            "totalExperience": 65,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "3ca0e6fadf709b877d13b78cf1690be325b553cc3d9bb768bec26069a3b2300a"
+      }
+    },
+    {
+      "id": "trainer-participant-rotation-alternating-3",
+      "variantId": "rotation",
+      "participantMethodId": "alternating",
+      "contestantCount": 3,
+      "seed": 3310,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-0",
+            "letter": "B",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-1",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-2",
+            "letter": "A",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 9,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-rotation-alternating-3-0": [
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-alternating-3-1": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-alternating-3-2": [
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-0",
+            "placement": 1,
+            "appeal": 16,
+            "fumble": 0,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-2",
+            "placement": 2,
+            "appeal": 15,
+            "fumble": 2,
+            "finalScore": 13
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-1",
+            "placement": 3,
+            "appeal": 7,
+            "fumble": 4,
+            "finalScore": 3
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-0",
+            "placement": 1,
+            "pokemonAwards": 3,
+            "totalExperience": 120,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-2",
+            "placement": 2,
+            "pokemonAwards": 3,
+            "totalExperience": 72,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-3-1",
+            "placement": 3,
+            "pokemonAwards": 3,
+            "totalExperience": 33,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "aeba3812993b98c8b830ebe0642eb9a0bf7f92ca3066ef20fe0a233e25c56520"
+      }
+    },
+    {
+      "id": "trainer-participant-rotation-alternating-4",
+      "variantId": "rotation",
+      "participantMethodId": "alternating",
+      "contestantCount": 4,
+      "seed": 3311,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-0",
+            "letter": "D",
+            "introductionTotal": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-1",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-2",
+            "letter": "A",
+            "introductionTotal": 4
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-3",
+            "letter": "B",
+            "introductionTotal": 4
+          }
+        ],
+        "acceptedAppeals": 16,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-rotation-alternating-4-0": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-alternating-4-1": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-alternating-4-2": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-alternating-4-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-0",
+            "placement": 1,
+            "appeal": 13,
+            "fumble": 9,
+            "finalScore": 4
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-1",
+            "placement": 2,
+            "appeal": 16,
+            "fumble": 15,
+            "finalScore": 1
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-3",
+            "placement": 3,
+            "appeal": 1,
+            "fumble": 7,
+            "finalScore": -6
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-2",
+            "placement": 4,
+            "appeal": 6,
+            "fumble": 15,
+            "finalScore": -9
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-0",
+            "placement": 1,
+            "pokemonAwards": 4,
+            "totalExperience": 280,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-1",
+            "placement": 2,
+            "pokemonAwards": 4,
+            "totalExperience": 220,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-3",
+            "placement": 3,
+            "pokemonAwards": 4,
+            "totalExperience": 156,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-4-2",
+            "placement": 4,
+            "pokemonAwards": 4,
+            "totalExperience": 48,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "f00e7f2814978a9b4984bdf825febe9f0b7bc84d0c3555e95afd450cb9305dfc"
+      }
+    },
+    {
+      "id": "trainer-participant-rotation-alternating-5",
+      "variantId": "rotation",
+      "participantMethodId": "alternating",
+      "contestantCount": 5,
+      "seed": 3312,
+      "expected": {
+        "letters": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-0",
+            "letter": "D",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-1",
+            "letter": "A",
+            "introductionTotal": 3
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-2",
+            "letter": "E",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-3",
+            "letter": "C",
+            "introductionTotal": 2
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-4",
+            "letter": "B",
+            "introductionTotal": 3
+          }
+        ],
+        "acceptedAppeals": 25,
+        "festivalHeat": 1,
+        "supercontestTypeByRound": [],
+        "performerSequences": {
+          "contestant:trainer-participant-rotation-alternating-5-0": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ],
+          "contestant:trainer-participant-rotation-alternating-5-1": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-alternating-5-2": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-alternating-5-3": [
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon"
+          ],
+          "contestant:trainer-participant-rotation-alternating-5-4": [
+            "trainer",
+            "pokemon",
+            "trainer",
+            "pokemon",
+            "trainer"
+          ]
+        },
+        "placements": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-1",
+            "placement": 1,
+            "appeal": 16,
+            "fumble": 0,
+            "finalScore": 16
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-0",
+            "placement": 2,
+            "appeal": 22,
+            "fumble": 12,
+            "finalScore": 10
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-4",
+            "placement": 3,
+            "appeal": 14,
+            "fumble": 5,
+            "finalScore": 9
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-3",
+            "placement": 4,
+            "appeal": 10,
+            "fumble": 5,
+            "finalScore": 5
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-2",
+            "placement": 5,
+            "appeal": 15,
+            "fumble": 15,
+            "finalScore": 0
+          }
+        ],
+        "settlement": [
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-1",
+            "placement": 1,
+            "pokemonAwards": 5,
+            "totalExperience": 605,
+            "ribbon": true
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-0",
+            "placement": 2,
+            "pokemonAwards": 5,
+            "totalExperience": 400,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-4",
+            "placement": 3,
+            "pokemonAwards": 5,
+            "totalExperience": 420,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-3",
+            "placement": 4,
+            "pokemonAwards": 5,
+            "totalExperience": 195,
+            "ribbon": false
+          },
+          {
+            "contestantId": "contestant:trainer-participant-rotation-alternating-5-2",
+            "placement": 5,
+            "pokemonAwards": 5,
+            "totalExperience": 60,
+            "ribbon": false
+          }
+        ],
+        "evidenceSha256": "1873373bcd005626d997bc2d80e9e0b0a3532392061dfeb900b278d7a0a50e3a"
+      }
+    }
+  ]
+}

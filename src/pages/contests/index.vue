@@ -5,7 +5,7 @@ import AppNavigation from '~/components/AppNavigation.vue'
 import { allocateContestId, useContests } from '~/composables/useContests'
 import { contestPath } from '#shared/contests/routes'
 import { contestCatalog } from '#shared/contests/catalog'
-import type { ContestStatId, ContestVariantId } from '#shared/contests/ids'
+import { CONTEST_RUNTIME_VARIANT_IDS, type ContestStatId, type ContestVariantId } from '#shared/contests/ids'
 import { items as referenceItems } from '~~/data/ptuReference'
 
 const { isGm, isPlayer } = useAuth()
@@ -15,7 +15,7 @@ const runtime = useContests(profileId)
 const router = useRouter()
 const workshopOpenedAt = Date.now()
 const form = reactive({ name: '', hallName: '', description: '', variantId: 'standard' as ContestVariantId, contestTypeId: 'cute' as ContestStatId, significanceMultiplier: 1, awardRibbon: true, prizeDeclared: true, rotationOrderPolicy: 'predeclared' as 'predeclared'|'choose-each-round', supercontestFestival: false, gmNotes: '', money: 0, prizeItemId: '', prizeItemQuantity: 1, prizeItems: [] as Array<{ itemId: string, quantity: number }> })
-const nativeVariants = contestCatalog.variants.filter(row => row.completionState === 'native')
+const workshopVariants = contestCatalog.variants.filter(row => CONTEST_RUNTIME_VARIANT_IDS.includes(row.id as ContestVariantId) && row.completionState === 'native')
 const needsFixedType = computed(() => form.variantId !== 'supercontest')
 
 const addPrizeItem = (): void => {
@@ -53,7 +53,7 @@ useHead({ title: 'Contests · Rotom Table' })
 </script>
 
 <template>
-  <main class="contests-workshop rt-design-system" data-rt-context="workshop">
+  <main class="contests-workshop rt-design-system" data-rt-design-system="1" data-rt-context="workshop">
     <AppNavigation />
     <header class="workshop-hero">
       <div>
@@ -76,8 +76,9 @@ useHead({ title: 'Contests · Rotom Table' })
       <form class="creation-grid" @submit.prevent="createContest">
         <label><span>Contest name</span><input v-model.trim="form.name" required maxlength="120" placeholder="Spring Ribbon Showcase" /></label>
         <label><span>Hall name</span><input v-model.trim="form.hallName" required maxlength="120" placeholder="Jubilife Contest Hall" /></label>
-        <label><span>Variant</span><select v-model="form.variantId"><option v-for="variant in nativeVariants" :key="String(variant.id)" :value="variant.id">{{ variant.label }}</option></select></label>
+        <label><span>Variant</span><select v-model="form.variantId"><option v-for="variant in workshopVariants" :key="String(variant.id)" :value="variant.id">{{ variant.label }}</option></select></label>
         <label><span>Contest type</span><select v-model="form.contestTypeId" :disabled="!needsFixedType"><option v-for="stat in contestCatalog.contestStats" :key="stat.id" :value="stat.id">{{ stat.label }}</option></select><small v-if="!needsFixedType">Rolled authoritatively each round.</small></label>
+        <div v-if="form.variantId === 'battle'" class="battle-workshop-note wide" role="note"><strong>Two-team Battle Contest</strong><span>Enroll exactly two Trainers with equal teams of 3–6 Pokémon. The round budget is derived as twice the first accepted team size.</span></div>
         <label><span>Significance multiplier</span><input v-model.number="form.significanceMultiplier" type="number" min="1" max="5" step="0.5" /></label>
         <label><span>Declared prize money</span><input v-model.number="form.money" type="number" min="0" step="1" /></label>
         <label v-if="form.variantId === 'rotation'"><span>Performer order</span><select v-model="form.rotationOrderPolicy"><option value="predeclared">Predeclare the full order</option><option value="choose-each-round">Choose privately each round</option></select></label>
@@ -126,6 +127,7 @@ h1,h2,p { margin-top:0; } h1 { margin-bottom:.35rem; color:var(--rt-text-strong,
 .creation-card { border-left:4px solid var(--rt-focus,var(--info)); }
 .section-heading { display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; } .section-heading > svg { color:var(--rt-focus,var(--info)); } .section-heading h2 { margin:0; color:var(--rt-text-strong,var(--ink-bright)); font:700 1.65rem/1 var(--font-book); }
 .creation-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1rem; } label { display:grid; align-content:start; gap:.4rem; color:var(--rt-text-muted,var(--ink-muted)); font-size:.78rem; font-weight:800; letter-spacing:.04em; } input,select,textarea { width:100%; min-height:46px; border:1px solid var(--rt-rule,var(--rule-soft)); background:var(--rt-bg-canvas,var(--paper-inset)); color:var(--rt-text-strong,var(--ink-bright)); padding:.7rem .8rem; } textarea { resize:vertical; } small { color:var(--rt-text-muted,var(--ink-muted)); font-size:.76rem; } .wide { grid-column:1/-1; }
+.battle-workshop-note { display:grid; gap:.25rem; border:1px solid var(--rt-pending,var(--warn)); border-left:4px solid var(--rt-pending,var(--warn)); background:var(--rt-bg-canvas,var(--paper-inset)); padding:.8rem 1rem; }.battle-workshop-note strong { color:var(--rt-text-strong,var(--ink-bright)); }.battle-workshop-note span { color:var(--rt-text-muted,var(--ink-muted)); line-height:1.45; }
 .prize-builder { display:grid; grid-template-columns:minmax(0,2fr) minmax(7rem,.5fr) auto; align-items:end; gap:.65rem; border-top:1px solid var(--rt-rule,var(--rule-soft)); padding-top:.8rem; }.prize-builder ul { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:.4rem; list-style:none; margin:0; padding:0; }.prize-builder li { display:flex; align-items:center; gap:.35rem; border:1px solid var(--rt-rule,var(--rule-soft)); padding:.3rem .45rem; }.prize-builder li button { min-height:44px; border:0; background:transparent; color:var(--rt-danger,var(--bad)); cursor:pointer; }
 .festival-option { display:flex; align-items:center; min-height:46px; color:var(--rt-text,var(--ink)); } .festival-option input { width:1.2rem; min-height:1.2rem; accent-color:var(--rt-focus,var(--info)); }
 .toggles { display:flex; flex-wrap:wrap; gap:1rem 2rem; } .toggles label { display:flex; align-items:center; min-height:44px; font-size:.9rem; color:var(--rt-text,var(--ink)); } .toggles input { width:1.2rem; min-height:1.2rem; accent-color:var(--rt-focus,var(--info)); }

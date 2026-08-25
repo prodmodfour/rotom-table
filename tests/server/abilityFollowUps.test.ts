@@ -230,6 +230,33 @@ describe('durable post-Move follow-ups after Ability retirement', () => {
     expect(documents.pokemonSheets.get('actor')?.revision).toBe(2)
   })
 
+  it('does not misindex an accepted Ability follow-up as a primary Move result', () => {
+    const { map, documents, pending } = materializedFollowUps()
+    const window = pending.outstandingWindows[0]!
+    const durableMap: TabletopMap = {
+      ...map,
+      revision: 5,
+      encounterState: {
+        ...createEmptyEncounterState(),
+        pendingResolutionSummaries: [pending.publicSummary],
+      },
+    }
+
+    const plan = planAbilityFollowUpResponse({
+      pendingResolution: pending,
+      responseOpId: 'op_abilityapply01',
+      responseWindowId: window.windowId,
+      responseOptionId: SPITE_FOLLOW_UP_RESPONSE_SPEC.optionId,
+      chosenBy: { kind: 'gm', id: null },
+      map: durableMap,
+      ...documents,
+      plannedAt: 2_000,
+    })
+
+    expect(plan.nextMap.encounterState?.history.moveCompletions ?? []).toEqual([])
+    expect(plan.nextMap.encounterState?.history.moveUses ?? []).toEqual([])
+  })
+
   it('records pass without applying an effect and closes the final durable window', () => {
     const { map, documents, pending } = materializedFollowUps()
     const finalWindow = pending.outstandingWindows.at(-1)!

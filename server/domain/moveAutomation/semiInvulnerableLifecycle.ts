@@ -90,7 +90,7 @@ export const createMoveSemiInvulnerableCleanupEvents = (input: {
 })
 
 const sourceLeavingPlacementId = (event: EncounterEvent): string | null => {
-  if (event.kind === 'move-ko') return event.targetPlacementId
+  if (event.kind === 'move-ko' || event.kind === 'lifecycle-ko') return event.targetPlacementId
   if (event.kind === 'recall') return event.placementId
   if (event.kind === 'switch') return event.recalledPlacementId
   return null

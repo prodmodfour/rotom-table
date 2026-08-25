@@ -1,9 +1,13 @@
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
 const evidenceRoot = resolve('.pi/artifacts/ui-validation/campaign-continuation-dashboard')
+const preserveAcceptedScreenshot = async (page: Page, path: string): Promise<void> => {
+  if (existsSync(path) && process.env.ROTOM_REFRESH_UI_EVIDENCE !== '1') return
+  await page.screenshot({ path, fullPage: true, animations: 'disabled', caret: 'hide' })
+}
 
 const authenticateGm = async (page: Page): Promise<void> => {
   await page.context().addCookies([{
@@ -148,10 +152,7 @@ test('Campaign continuation prioritizes safe authoritative work and replaces com
   await expect(page.getByRole('region', { name: 'Guided item adjudication' })).toContainText('No guided item decisions are waiting.')
 
   mkdirSync(evidenceRoot, { recursive: true })
-  await page.screenshot({
-    path: resolve(evidenceRoot, `${testInfo.project.name}-open.png`),
-    fullPage: true, animations: 'disabled', caret: 'hide',
-  })
+  await preserveAcceptedScreenshot(page, resolve(evidenceRoot, `${testInfo.project.name}-open.png`))
 
   const axe = await new AxeBuilder({ page })
     .include('.continuation')
@@ -160,7 +161,7 @@ test('Campaign continuation prioritizes safe authoritative work and replaces com
   expect(axe.violations.filter(value => ['serious', 'critical'].includes(value.impact ?? ''))).toEqual([])
 
   resolvedTeam = true
-  await dashboard.getByRole('button', { name: 'Refresh' }).click()
+  await dashboard.locator('.continuation__refresh').click()
   await expect(dashboard).toContainText('2 open items are waiting before play continues.')
   await expect(dashboard.locator('.recommendation')).toContainText('Medical attention')
   await expect(dashboard.locator('.attention-summary')).toContainText('Blocking0')
@@ -169,10 +170,7 @@ test('Campaign continuation prioritizes safe authoritative work and replaces com
   if (testInfo.project.name.includes('mobile')) {
     await page.setViewportSize({ width: 320, height: 900 })
     await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
-    await page.screenshot({
-      path: resolve(evidenceRoot, `${testInfo.project.name}-320-resolved.png`),
-      fullPage: true, animations: 'disabled', caret: 'hide',
-    })
+    await preserveAcceptedScreenshot(page, resolve(evidenceRoot, `${testInfo.project.name}-320-resolved.png`))
   }
 })
 

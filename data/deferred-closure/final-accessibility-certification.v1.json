@@ -1,0 +1,433 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-final-accessibility-v1",
+  "ticket": "P11-084",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/backup-restore-certification.v1.json",
+    "sha256": "27eedc31147620db67ff5e047849304621c9685876cad4124c2718720eaa02bc"
+  },
+  "auditPolicy": {
+    "standard": "WCAG 2 A/AA and WCAG 2.1 AA serious/critical Axe gate plus product touch and reflow criteria",
+    "imageGeneration": "skipped-verification-only-no-open-visual-decision",
+    "acceptedEvidenceOnly": true
+  },
+  "cohorts": [
+    {
+      "cohortId": "ranged-and-weapon-actions",
+      "mechanicRowIds": [
+        "weapon-profile.weighted-rope",
+        "weapon-profile.slingshot",
+        "weapon-profile.throwing-hammers",
+        "weapon-profile.hunting-bow",
+        "weapon-profile.super-lucky-throwing-stars",
+        "weapon-profile.twin-needled-bow",
+        "weapon-move.bash",
+        "weapon-move.pierce",
+        "weapon-move.gouge",
+        "weapon-move.titanic-slam",
+        "weapon-move.bullseye",
+        "weapon-move.deadly-strike",
+        "weapon-move.triple-threat"
+      ],
+      "surfacePaths": [
+        "src/components/encounter/workspace/EncounterActionDock.vue",
+        "src/components/encounter/workspace/EncounterOfferCard.vue",
+        "src/components/encounter/workspace/EncounterDecisionLayer.vue",
+        "src/pages/play/[encounterId].vue"
+      ],
+      "executableEvidence": [
+        "tests/components/encounterWorkspaceActions.test.ts",
+        "tests/components/equipmentEncounterActionSummary.test.ts",
+        "tests/e2e/encounter-workspace-shell.spec.ts"
+      ],
+      "modalities": {
+        "axe": "passed",
+        "keyboard": "passed",
+        "screenReader": "passed",
+        "zoom": "passed",
+        "reflow": "passed",
+        "reducedMotion": "passed"
+      },
+      "hardFailures": 0
+    },
+    {
+      "cohortId": "item-actions",
+      "mechanicRowIds": [
+        "item-action.old-rod.fish",
+        "item-action.good-rod.fish",
+        "item-action.super-rod.fish",
+        "item-action.glue-cannon.attack",
+        "item-action.hand-net.attack",
+        "item-action.weighted-nets.throw",
+        "item-action.weighted-nets.pull",
+        "item-action.light-shield.ready",
+        "item-action.heavy-shield.ready",
+        "item-action.snag-machine.convert",
+        "item-action.shock-collar.activate"
+      ],
+      "surfacePaths": [
+        "src/components/encounter/workspace/EncounterActionDock.vue",
+        "src/components/encounter/workspace/EncounterDecisionLayer.vue",
+        "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+        "src/components/sheets/TrainerInventoryRowItemActions.vue",
+        "src/pages/play/[encounterId].vue"
+      ],
+      "executableEvidence": [
+        "tests/components/trainerSheetItemActions.test.ts",
+        "tests/components/campaignGuidedItemAdjudication.test.ts",
+        "tests/e2e/guided-item-adjudication.spec.ts",
+        "tests/e2e/encounter-workspace-shell.spec.ts"
+      ],
+      "modalities": {
+        "axe": "passed",
+        "keyboard": "passed",
+        "screenReader": "passed",
+        "zoom": "passed",
+        "reflow": "passed",
+        "reducedMotion": "passed"
+      },
+      "hardFailures": 0
+    },
+    {
+      "cohortId": "generic-skill-checks",
+      "mechanicRowIds": [
+        "runtime.generic-skill-check"
+      ],
+      "surfacePaths": [
+        "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+        "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+        "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+        "src/pages/play/[encounterId].vue"
+      ],
+      "executableEvidence": [
+        "tests/components/encounterGmSkillChecks.test.ts",
+        "tests/components/encounterSubjectSkillChecks.test.ts",
+        "tests/components/encounterSkillCheckPublicFeed.test.ts",
+        "tests/e2e/skill-check-liveplay.spec.ts"
+      ],
+      "modalities": {
+        "axe": "passed",
+        "keyboard": "passed",
+        "screenReader": "passed",
+        "zoom": "passed",
+        "reflow": "passed",
+        "reducedMotion": "passed"
+      },
+      "hardFailures": 0
+    },
+    {
+      "cohortId": "trainer-participant-contests",
+      "mechanicRowIds": [
+        "contest-variant.trainer-participant"
+      ],
+      "surfacePaths": [
+        "src/pages/contests/[contestId].vue"
+      ],
+      "executableEvidence": [
+        "tests/components/contestTrainerParticipantCockpit.test.ts",
+        "tests/e2e/contests-acceptance.spec.ts"
+      ],
+      "modalities": {
+        "axe": "passed",
+        "keyboard": "passed",
+        "screenReader": "passed",
+        "zoom": "passed",
+        "reflow": "passed",
+        "reducedMotion": "passed"
+      },
+      "hardFailures": 0
+    },
+    {
+      "cohortId": "battle-contests",
+      "mechanicRowIds": [
+        "contest-variant.battle"
+      ],
+      "surfacePaths": [
+        "src/components/encounter/workspace/EncounterBattleContestPanel.vue",
+        "src/components/encounter/workspace/EncounterBattleContestDecision.vue",
+        "src/composables/useBattleContestLiveplay.ts",
+        "src/pages/contests/[contestId].vue",
+        "src/pages/play/[encounterId].vue"
+      ],
+      "executableEvidence": [
+        "tests/components/contestBattleSetupWorkshop.test.ts",
+        "tests/components/contestBattleIntroductionsWorkshop.test.ts",
+        "tests/components/contestBattleEncounterLinkWorkshop.test.ts",
+        "tests/components/contestBattleJoinedLiveplay.test.ts",
+        "tests/composables/useBattleContestLiveplay.test.ts",
+        "tests/e2e/contest-battle-encounter-link.spec.ts"
+      ],
+      "modalities": {
+        "axe": "passed",
+        "keyboard": "passed",
+        "screenReader": "passed",
+        "zoom": "passed",
+        "reflow": "passed",
+        "reducedMotion": "passed"
+      },
+      "hardFailures": 0
+    }
+  ],
+  "nonInteractiveInventoryRows": [
+    "registry.equipment-grants-deferred-ticket-pointers",
+    "documentation.live-play-authority-trigger-registrations"
+  ],
+  "browserAcceptance": {
+    "mode": "production-liveplay",
+    "projects": [
+      "chromium",
+      "mobile-chromium"
+    ],
+    "currentSourceDesktopJourneys": 6,
+    "currentSourceMobileJourneys": 4,
+    "axeTags": [
+      "wcag2a",
+      "wcag2aa",
+      "wcag21aa"
+    ],
+    "seriousOrCriticalAxeViolations": 0,
+    "keyboardOnlyCriticalPaths": true,
+    "semanticAssistiveTechnologyTrees": true,
+    "minimumPrimaryControlPx": 44,
+    "zoomPercent": 200,
+    "narrowViewportWidthsCssPx": [
+      320,
+      390
+    ],
+    "horizontalPageOverflows": 0,
+    "reducedMotion": true,
+    "privateAuthorityLeaks": 0,
+    "hardFailures": 0
+  },
+  "remediation": {
+    "findingsOpened": 1,
+    "findingsResolved": 1,
+    "finalOpenFindings": 0,
+    "issue": "ordinary-encounter-optional-battle-context-alert",
+    "falseAlertsBefore": 1,
+    "falseAlertsAfter": 0,
+    "failClosedLinkedAuthorityErrorsPreserved": true
+  },
+  "visualEvidence": [
+    {
+      "role": "gm-pending-desktop",
+      "path": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-pending-wide.png",
+      "sha256": "18089afc85b692d16b067f29e54e2b36395409b3f2e596b4866a00b5eff2a1e1",
+      "reviewStatus": "accepted",
+      "hardFailures": 0
+    },
+    {
+      "role": "acting-owner-pending-desktop",
+      "path": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-pending-wide.png",
+      "sha256": "713a7c13dffe07089e0d8698d2b0818ccd905133f52904c6e56be9ea273d16a6",
+      "reviewStatus": "accepted",
+      "hardFailures": 0
+    },
+    {
+      "role": "public-pending-desktop",
+      "path": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-public-pending-wide.png",
+      "sha256": "18c286e5b32eee041bf79c66c39c33fb6b1a0ac8888781931b9520c2d988c2e9",
+      "reviewStatus": "accepted",
+      "hardFailures": 0
+    },
+    {
+      "role": "public-pending-320",
+      "path": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-public-pending-320.png",
+      "sha256": "9acb29677c2619d359d2f0dd63b43dc7a81b9a2bd253fb21db851ccb15f195d9",
+      "reviewStatus": "accepted",
+      "hardFailures": 0
+    },
+    {
+      "role": "gm-accepted-desktop",
+      "path": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-gm-accepted-wide.png",
+      "sha256": "0f62f234b5ce9d3cdad7a20289e5d2c84c260cc828d053834369d43fcfded765",
+      "reviewStatus": "accepted",
+      "hardFailures": 0
+    },
+    {
+      "role": "acting-owner-accepted-390",
+      "path": ".pi/artifacts/ui-validation/battle-contest-joined-liveplay/chromium-owner-accepted-390.png",
+      "sha256": "90125ab1c9a5c2576acc8fa0d75fbbbee7606ebbd561a0e1edad7c2c65cb30dd",
+      "reviewStatus": "accepted",
+      "hardFailures": 0
+    }
+  ],
+  "authorities": [
+    {
+      "path": "data/complete-play-loop/ux-success-criteria.v1.json",
+      "sha256": "0b5018240847ed6515b8db8cabdca03432391fd2f77fb1b23eaeaf2d0cbb5a8d"
+    },
+    {
+      "path": "data/encounter-workspace/design-tokens.v1.json",
+      "sha256": "f49735f1a3127aaa26120eb2909bc399159156d4a0fffdc0b9707f89ff1bc9d8"
+    },
+    {
+      "path": "src/components/campaign/CampaignGuidedItemAdjudication.vue",
+      "sha256": "ad017d545a529ba541ef20d0bd0ae7e49c44e2c9fdb571c9c74d8eed238ce806"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterActionDock.vue",
+      "sha256": "5d865fedf5b40ec66f562c023fb3e34893f97c42219929d8c1fe7f09cf3023d5"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterBattleContestDecision.vue",
+      "sha256": "a5bbb1babbf30b53c61f625585b6e65867defe4375ec7a3a996a4deedd19c261"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterBattleContestPanel.vue",
+      "sha256": "22bd3be571cc5df58a3eca7951c9f68dda970e6ef56c8ca58fce9c4d1a9d50d3"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterDecisionLayer.vue",
+      "sha256": "98047f67bf17a0c13f216238d53ab7d84f766ec20608940f0e5e040a3b66d435"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+      "sha256": "e1423a5e79655fa706cbb4c2f23527c289d182eafda2bf9df287adcb1127a67d"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterOfferCard.vue",
+      "sha256": "d52e4a93fa58d35627d800b968db19041a3c9d6b453643adc7be61e2c2baf1d5"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+      "sha256": "3a4f9124bf51aed960a119b68752765035d7135f31f0f625ab41e57e7d8ba856"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "sha256": "0f5c3e8c4fef35920dadfb1e99a875fb2800c9ee929ad5556e68aeafa69b165d"
+    },
+    {
+      "path": "src/components/sheets/TrainerInventoryRowItemActions.vue",
+      "sha256": "b95287af3046e979fcb77dde528cb1ec1814e97711dc67443b995441dd298d2b"
+    },
+    {
+      "path": "src/composables/useBattleContestLiveplay.ts",
+      "sha256": "9f8567a69a65d3d3bb54bc61bb6d981583c8a84d3f65ddf8a740ccddc9177202"
+    },
+    {
+      "path": "src/pages/contests/[contestId].vue",
+      "sha256": "249d448d2fcb00d42cca761d763865d95df65a6fa674d73af5096e6a795fa120"
+    },
+    {
+      "path": "src/pages/play/[encounterId].vue",
+      "sha256": "f858f23e58d0453e75eb7ed378f8833ddabc1b1ed7303f46e1c22ce6618ab504"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "data/deferred-closure/skill-check-accessibility-certification.v1.json",
+      "sha256": "79548c37e25b5444d8241ab6f1b7a1c87b5dcfc8cd3c52e47ef4c22b64b0cc37"
+    },
+    {
+      "path": "data/deferred-closure/trainer-participant-cockpit-certification.v1.json",
+      "sha256": "a8e3412013c64d8286c5192196d6098e7b4d79ef6056e6cb3c79790205a46697"
+    },
+    {
+      "path": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
+      "sha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b"
+    },
+    {
+      "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
+      "sha256": "5547dc4edea72fc28a4b0d6aa552f99568c398a23858814984641652d688d687"
+    },
+    {
+      "path": "tests/components/contestBattleEncounterLinkWorkshop.test.ts",
+      "sha256": "75ca07e0b95dee8eda2b1d4d51ece7bcdc69f52577a5ccdd3fcf9e8ef9271588"
+    },
+    {
+      "path": "tests/components/contestBattleIntroductionsWorkshop.test.ts",
+      "sha256": "36e0fc961c64176b46ee4a670c018365006c7f4dca8e50756a6de3c6b9c0a9ed"
+    },
+    {
+      "path": "tests/components/contestBattleJoinedLiveplay.test.ts",
+      "sha256": "82ab68a5f305671e87a3997c60352fc8f34c83a6f6f4b3cbbd4593d4d9bb0e52"
+    },
+    {
+      "path": "tests/components/contestBattleSetupWorkshop.test.ts",
+      "sha256": "73f00c6cf09d1a314d062594254b82ad64b5d6f80ae01920457e19a36b652429"
+    },
+    {
+      "path": "tests/components/contestTrainerParticipantCockpit.test.ts",
+      "sha256": "17139464b4460b00d98f74aaa334215fdd2cdfd9d1c7a3f9204dedf01a81c7a3"
+    },
+    {
+      "path": "tests/components/encounterGmSkillChecks.test.ts",
+      "sha256": "f64434c04dd94cfd71b5e88cfef4bdfdfbefac6749d40f7d070d0ac5abf7e3d0"
+    },
+    {
+      "path": "tests/components/encounterSkillCheckPublicFeed.test.ts",
+      "sha256": "a28176053ba4469a67ad9eda985c238bf7217880f1e4bbd4b3b585c769f682a1"
+    },
+    {
+      "path": "tests/components/encounterSubjectSkillChecks.test.ts",
+      "sha256": "14f9e79b3c3ecf5d10761c649c8e6948f16066bb99e8544f544c880305fec3cb"
+    },
+    {
+      "path": "tests/components/encounterWorkspaceActions.test.ts",
+      "sha256": "bea309afd740246dcf9e67df260b81ee01650ae0e6f4d1686224eccd4e2c97fb"
+    },
+    {
+      "path": "tests/components/equipmentEncounterActionSummary.test.ts",
+      "sha256": "ac61ffa248017bd6468e706a30b6b02a8c5cd902cebc60f5565b857ad33cd727"
+    },
+    {
+      "path": "tests/components/trainerSheetItemActions.test.ts",
+      "sha256": "f0b02fcb1e28d0bb5811d1fedd852e4ba09409b8c8cef81848a6c442b3d68892"
+    },
+    {
+      "path": "tests/composables/useBattleContestLiveplay.test.ts",
+      "sha256": "8203ac48bfba930b1b00db147e3d133c4770dbc72d1ac2a987ef6b7613924ca1"
+    },
+    {
+      "path": "tests/e2e/contest-battle-encounter-link.spec.ts",
+      "sha256": "45e78682555971c1fa16e02c74d29edc0192aefb69e3693ae554f57ae9657dcf"
+    },
+    {
+      "path": "tests/e2e/contests-acceptance.spec.ts",
+      "sha256": "6f33bddd6679e3069574702921fba72cd017b97750586ba3402ab457a107d497"
+    },
+    {
+      "path": "tests/e2e/encounter-workspace-shell.spec.ts",
+      "sha256": "6b0f5a05359f7b82f498f304d431bbc4aad9012b3bed622c6cb049aabe197464"
+    },
+    {
+      "path": "tests/e2e/guided-item-adjudication.spec.ts",
+      "sha256": "d8a18c08aceea8b8094bf444a8b7a3e3dceea4b8fd61e541fccdde720b5a20d5"
+    },
+    {
+      "path": "tests/e2e/skill-check-liveplay.spec.ts",
+      "sha256": "22b92ae903417cd16586d27a7e930d2885de2c549af67df6052e56c91f0d21b2"
+    },
+    {
+      "path": "tests/components/encounterWorkspaceAccessibility.test.ts",
+      "sha256": "f9697385b40d0fecf313f0f5b81561ba001995615ca2b888f689f1f12c33c0b6"
+    },
+    {
+      "path": "tests/data/deferredClosureAccessibilityCertification.test.ts",
+      "sha256": "1576cb83cda43c2ca5a47425d38ab658dabb1118a99b6d4818b95d5a87778e6e"
+    },
+    {
+      "path": "package.json",
+      "sha256": "f0663a08d8f8b06f25cabdf3f081a63239f4b5715c4f7036289ed629cf50904c"
+    }
+  ],
+  "validation": {
+    "focusedGate": "passed",
+    "encounterDesignGate": "passed",
+    "productionBuild": "passed",
+    "desktopProductionLiveplay": "passed",
+    "mobileProductionLiveplay": "passed",
+    "trainerParticipantSpecificAxe": "passed",
+    "optionalContextRegression": "passed"
+  },
+  "acceptance": {
+    "auditedMechanicRows": 27,
+    "auditedCohorts": 5,
+    "seriousOrCriticalAxeViolations": 0,
+    "hardFailures": 0,
+    "nextTicket": "P11-085"
+  }
+}

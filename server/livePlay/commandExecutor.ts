@@ -268,6 +268,8 @@ export interface AuthoritativeLivePlayCommandExecutorOptions {
   readonly opStore?: LivePlayOpStore
   readonly queue?: MapWriteQueue
   readonly readMapInteractionMode?: (mapSlug: string) => MaybePromise<MapInteractionMode>
+  /** Optional server-owned cross-workflow interruption gate, evaluated after exact replay lookup. */
+  readonly readMapCommandInterruption?: (command: LivePlayCommandEnvelope) => MaybePromise<string | null>
   readonly recordRealtimeEvents?: LivePlayRealtimeEventRecorder
   readonly recordAcceptedRealtimeEvent?: AcceptedLivePlayRealtimeRecorder
   readonly publishPersistedRealtimeEvent?: PersistedLivePlayRealtimeEventPublisher
@@ -456,6 +458,7 @@ export class AuthoritativeLivePlayCommandExecutor {
   private readonly opStore: LivePlayOpStore
   private readonly queue: MapWriteQueue
   private readonly readMapInteractionMode?: (mapSlug: string) => MaybePromise<MapInteractionMode>
+  private readonly readMapCommandInterruption?: (command: LivePlayCommandEnvelope) => MaybePromise<string | null>
   private readonly recordRealtimeEventInputs?: LivePlayRealtimeEventRecorder
   private readonly recordAcceptedRealtimeEvent?: AcceptedLivePlayRealtimeRecorder
   private readonly publishPersistedRealtimeEvent?: PersistedLivePlayRealtimeEventPublisher
@@ -465,6 +468,7 @@ export class AuthoritativeLivePlayCommandExecutor {
     this.opStore = options.opStore ?? livePlayOpStore
     this.queue = options.queue ?? livePlayMapWriteQueue
     this.readMapInteractionMode = options.readMapInteractionMode
+    this.readMapCommandInterruption = options.readMapCommandInterruption
     this.recordRealtimeEventInputs = options.recordRealtimeEvents
     this.recordAcceptedRealtimeEvent = options.recordAcceptedRealtimeEvent
     this.publishPersistedRealtimeEvent = options.publishPersistedRealtimeEvent ?? options.publishAcceptedRealtimeEvent
@@ -510,6 +514,8 @@ export class AuthoritativeLivePlayCommandExecutor {
 
     const modeRejection = await this.livePlayModeRejection(command)
     if (modeRejection) return modeRejection
+    const interruptionRejection = await this.mapCommandInterruptionRejection(command)
+    if (interruptionRejection) return interruptionRejection
 
     return this.queue.withMapWriteQueue(command.mapSlug, () => this.executeQueued({
       command,
@@ -572,6 +578,20 @@ export class AuthoritativeLivePlayCommandExecutor {
     })
   }
 
+  private async mapCommandInterruptionRejection(
+    command: LivePlayCommandEnvelope,
+  ): Promise<LivePlayCommandRejected | null> {
+    if (!this.readMapCommandInterruption) return null
+    const message = await this.readMapCommandInterruption(command)
+    if (message === null) return null
+    return createLivePlayRejectedResult({
+      opId: command.opId,
+      mapSlug: command.mapSlug,
+      reason: 'conflict',
+      message,
+    })
+  }
+
   private async executeQueued<
     TCommand extends LivePlayCommandEnvelope,
     TMap,
@@ -595,6 +615,8 @@ export class AuthoritativeLivePlayCommandExecutor {
 
     const modeRejection = await this.livePlayModeRejection(command)
     if (modeRejection) return modeRejection
+    const interruptionRejection = await this.mapCommandInterruptionRejection(command)
+    if (interruptionRejection) return interruptionRejection
 
     try {
       const actor = options.normalizeActor

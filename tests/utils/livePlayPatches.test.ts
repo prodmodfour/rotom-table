@@ -608,8 +608,12 @@ describe('live-play patch application', () => {
     expect(map.hazards).toEqual([{ kind: 'fire', x: 2, y: 0, z: 2 }])
   })
 
-  it('applies sent-out Pokémon placement patches', () => {
+  it('applies sent-out Pokémon placement and bounded Encounter-history patches together', () => {
     const map = baseMap()
+    const currentEncounterState = {
+      ...createEmptyEncounterState(),
+      history: { ...createEmptyEncounterState().history, currentRound: 2 },
+    }
 
     const result = applyLivePlayPatchesToMap({
       map,
@@ -630,6 +634,7 @@ describe('live-play patch application', () => {
           facing: 'south-east',
           turned: false,
         },
+        currentEncounterState,
       })],
     })
 
@@ -641,6 +646,7 @@ describe('live-play patch application', () => {
       position: { x: 3, y: 0, z: 2 },
       sideId: 'rivals',
     })
+    expect(map.encounterState?.history.currentRound).toBe(2)
   })
 
   it('replaces metadata patches so removed authoritative keys do not survive shallow merges', () => {

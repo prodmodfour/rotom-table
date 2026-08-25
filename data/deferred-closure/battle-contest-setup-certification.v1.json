@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-setup-v1",
+  "ticket": "P11-066",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-blend-certification.v1.json",
+    "sha256": "dfbf196699dcabec9156ee2a51cf6483632ce31e0354c9f78154720e5638fcc1"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "7f09db8c157af6bdc96e0f5931c0b8396e104e10dba4a51593bee2de5ce673d4",
+    "rowId": "battle",
+    "completionState": "structured",
+    "structuredSemanticsVersion": 1,
+    "contestTypePolicy": "fixed-selected-at-setup",
+    "trainerCount": 2,
+    "pokemonPerTrainer": [3, 6],
+    "roundBudget": [6, 12]
+  },
+  "authorities": [
+    {
+      "id": "battle-setup-catalog-gate",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "b5f6bb75e72a3617ecd86581cac60ad98ca064bf1c814ce94ea3e6bb17ed2a4e",
+      "guarantees": ["structured-battle-setup-selectable", "fixed-contest-type", "native-base-variants-remain-distinct", "p11-080-native-activation-reserved"]
+    },
+    {
+      "id": "battle-setup-document-contract",
+      "path": "shared/contests/document.ts",
+      "sha256": "b6d02cadaae560baf2c29e362c4d2677746f97eb6a1288fb94f42177b0826124",
+      "guarantees": ["battle-only-setup-state", "equal-three-through-six-rosters", "twice-roster-round-budget", "two-team-start-gate", "strict-no-participant-layer", "removed-setup-history-preserved"]
+    },
+    {
+      "id": "battle-setup-command-contract",
+      "path": "shared/contests/operations.ts",
+      "sha256": "e2ceb9e70d005fd19cd9a3380cb1dff8467da1119bc5315d480705d66f0dee22",
+      "guarantees": ["battle-create-identity", "six-pokemon-bounded-payload", "canonical-command-hash-input"]
+    },
+    {
+      "id": "battle-setup-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "0881e2264c0fcc279bd66f3f047d398a8fbe9dac41f9b8d029f5c0efaa6b580f",
+      "guarantees": ["first-team-derived-budget", "equal-second-team", "exact-two-team-cap", "remove-reset-or-preserve", "lock-without-roll-or-spend", "ordinary-introduction-path-fail-closed"]
+    },
+    {
+      "id": "battle-setup-sheet-and-consent-authority",
+      "path": "server/useCases/contests.ts",
+      "sha256": "d1856bf0a44a27164782b60bf20b375345142b04adde27e9b3f732c2fe6a658f",
+      "guarantees": ["ordinary-trainer-and-pokemon-snapshots", "profile-controls-trainer-and-entire-roster", "gm-controller-authority", "independent-pokemon-eligibility", "duplicate-and-order-rejection", "transactional-exact-retry"]
+    },
+    {
+      "id": "battle-setup-role-projections",
+      "path": "shared/contests/projections.ts",
+      "sha256": "7b5dca15abe3afcabe7dd2584da9f18210d9181ca108462bab1ccb5bed4f10ea",
+      "guarantees": ["public-derived-count-and-budget", "sanitized-team-performer-summary", "owner-own-exact-snapshot", "gm-exact-setup-authority", "no-public-or-owner-operation-ids"]
+    },
+    {
+      "id": "battle-workshop-create-surface",
+      "path": "src/pages/contests/index.vue",
+      "sha256": "3458440a51a10fefc73f0a33424c67e1477c62b3fa0454e7bd86995d6350b156",
+      "guarantees": ["battle-setup-offer", "fixed-type-choice", "equal-roster-and-derived-budget-preview", "versioned-workshop-context"]
+    },
+    {
+      "id": "battle-workshop-roster-surface",
+      "path": "src/pages/contests/[contestId].vue",
+      "sha256": "371fa64242080fbb2fbcec9634ecf3c6fb3da355303ef6d8493140d9710627f2",
+      "guarantees": ["one-of-two-and-two-of-two-hierarchy", "exact-multi-roster-selection", "read-only-round-budget", "controller-authority-copy", "accepted-team-non-color-state", "keyboard-focus", "narrow-reflow"]
+    },
+    {
+      "id": "battle-setup-operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "b79ea78afeabf6cf74402664dc7b8a17e40930707882ad23b7215c29319953cf",
+      "guarantees": ["setup-scale-and-removal-policy", "eligibility-and-consent-boundary", "projection-privacy", "structured-not-native-status"]
+    }
+  ],
+  "designEvidence": {
+    "workflow": "ui-design-workflow-storyboard",
+    "flow": {
+      "path": ".pi/artifacts/ui-storyboards/battle-contest-setup/flow.md",
+      "sha256": "8119f345f1df379eec8d8f73a3682eeafcdb9febd01bbd35d6e6ad301b023e3f"
+    },
+    "frames": [
+      {
+        "id": "f01-gm-first-team",
+        "path": ".pi/artifacts/ui-storyboards/battle-contest-setup/f01-gm-first-team/v002.png",
+        "sha256": "457c777b357d34c39400e356e3bf43cbaa5bb1628f0cc26af0eaafe58925cbc2",
+        "score": 10,
+        "hardFailures": 0
+      },
+      {
+        "id": "f02-gm-ready",
+        "path": ".pi/artifacts/ui-storyboards/battle-contest-setup/f02-gm-ready/v002.png",
+        "sha256": "91f0c46830c7904350c9683b7c0945c64959f7b841048c1ab95741cf199985eb",
+        "score": 9,
+        "hardFailures": 0
+      }
+    ],
+    "continuityReview": {
+      "path": ".pi/artifacts/ui-storyboards/battle-contest-setup/continuity-review.md",
+      "sha256": "da39a806b289fe3d200123508883042607c514afbfeaf9622105bbe3fb22507d",
+      "status": "accepted",
+      "hardFailures": 0
+    }
+  },
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleSetupRuntime.test.ts",
+      "sha256": "918e51ede7fd075a33baf115dc333906248161fe8d92b9f2eddcbb2b09b1035b",
+      "scenarioIds": ["minimum-and-maximum-derived-budget", "equal-roster-atomic-gate", "roster-eligibility-and-uniqueness", "profile-controller-consent", "privacy-safe-role-projections", "remove-reset-and-preserve", "strict-create-boundary", "exact-retry"]
+    },
+    {
+      "path": "tests/components/contestBattleSetupWorkshop.test.ts",
+      "sha256": "4d49c1b019a32919cbf7ef21504348416120f95aa6d5aac84c11913e4350199a",
+      "scenarioIds": ["workshop-battle-offer", "derived-read-only-budget", "controller-and-roster-selection", "accessible-accepted-teams", "visible-privacy-boundary"]
+    },
+    {
+      "path": "tests/data/deferredClosureBattleContestSetup.test.ts",
+      "sha256": "41a9e5c15b8ab89dee55966c2273b7f1416661deb815acab6982a2b93af560c7",
+      "scenarioIds": ["contiguous-predecessor-and-authority-hashes", "structured-selective-setup-activation", "accepted-storyboard-continuity", "no-client-mechanic-or-private-authority"]
+    }
+  ],
+  "acceptance": {
+    "trainerTeams": 2,
+    "pokemonPerTrainerMinimum": 3,
+    "pokemonPerTrainerMaximum": 6,
+    "roundBudgetMinimum": 6,
+    "roundBudgetMaximum": 12,
+    "clientAuthoredRoundBudget": false,
+    "clientAuthoredConsent": false,
+    "publicRawAuthorityFields": 0,
+    "targetStateScores": [10, 9],
+    "hardVisualFailures": 0,
+    "focusedTests": 16,
+    "typecheck": "passed",
+    "variantCompletionState": "structured",
+    "setupCompletionState": "native",
+    "nextTicket": "P11-067"
+  }
+}

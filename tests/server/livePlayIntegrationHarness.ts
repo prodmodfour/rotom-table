@@ -10,6 +10,7 @@ import {
   type ClearHazardsPayload,
   type EditTerrainVoxelsLivePlayCommand,
   type EditTerrainVoxelsPayload,
+  type DeleteTokenLivePlayCommand,
   type DismissEncounterEffectLivePlayCommand,
   type EndEncounterLivePlayCommand,
   type LivePlayCommandAccepted,
@@ -21,6 +22,7 @@ import {
   type NextInitiativeLivePlayCommand,
   type PreviousInitiativeLivePlayCommand,
   type ResolveMoveLivePlayCommand,
+  type SendOutPokemonLivePlayCommand,
   type SetSceneLivePlayCommand,
   type UseMoveLivePlayCommand,
 } from '#shared/livePlayCommands'
@@ -319,6 +321,26 @@ export class LivePlayIntegrationHarness {
       playerProfile: actor.playerProfile,
       command,
       expectedType: LIVE_PLAY_COMMAND_TYPES.MOVE_TOKEN,
+    }, this.commandDependencies())
+  }
+
+  async deleteToken({ actor, command }: LivePlayCommandDispatchOptions<DeleteTokenLivePlayCommand>) {
+    return await executeMapTokenLivePlayCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      playerProfile: actor.playerProfile,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN,
+    }, this.commandDependencies())
+  }
+
+  async sendOutPokemon({ actor, command }: LivePlayCommandDispatchOptions<SendOutPokemonLivePlayCommand>) {
+    return await executeMapTokenLivePlayCommandUseCase({
+      role: actor.role,
+      clientId: actor.clientId,
+      playerProfile: actor.playerProfile,
+      command,
+      expectedType: LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON,
     }, this.commandDependencies())
   }
 

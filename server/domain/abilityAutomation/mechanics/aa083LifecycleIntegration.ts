@@ -80,7 +80,7 @@ const cleanupPlacementId = (
   event: EncounterLifecycleTriggerContext['event'],
 ): string | null => event.kind === 'recall'
   ? event.placementId
-  : event.kind === 'move-ko'
+  : event.kind === 'move-ko' || event.kind === 'lifecycle-ko'
     ? event.targetPlacementId
     : null
 

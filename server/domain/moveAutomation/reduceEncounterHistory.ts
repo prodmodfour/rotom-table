@@ -10,14 +10,18 @@ import {
   type EncounterEventMoveLink,
   type EncounterHistory,
   type EncounterKnockoutHistory,
+  type EncounterKnockoutReplacementHistory,
+  type EncounterLifecycleKnockoutHistory,
   type EncounterMoveAncestryHistory,
   type EncounterMoveUseHistory,
+  type EncounterRoundBoundaryHistory,
   type EncounterSwitchHistory,
 } from '#shared/moveAutomation/encounterHistory'
 import { moveHistoryIdentitiesEqual } from '#shared/moveAutomation/moveHistoryMetadata'
 import type {
   EncounterEvent,
   EncounterMoveIdentity,
+  EncounterRoundEvent,
   EncounterTurnEvent,
 } from '#shared/moveAutomation/events'
 import {
@@ -654,7 +658,37 @@ const recordKnockout = (
   return resetConsecutiveMoves(withKnockout, [event.targetPlacementId])
 }
 
+const recordLifecycleKnockout = (
+  history: EncounterHistory,
+  event: Extract<EncounterEvent, { readonly kind: 'lifecycle-ko' }>,
+): EncounterHistory => {
+  if (history.lifecycleKnockouts.some(entry => entry.eventId === event.eventId)) return history
+  const entry: EncounterLifecycleKnockoutHistory = {
+    eventId: event.eventId,
+    sourceOperationId: event.sourceOperationId,
+    sourceEffectOperationId: event.sourceEffectOperationId,
+    round: event.round,
+    targetPlacementId: event.targetPlacementId,
+    cause: event.cause,
+  }
+  const withKnockout: EncounterHistory = {
+    ...history,
+    faintedPlacementIds: appendUniquePlacement(
+      history.faintedPlacementIds,
+      event.targetPlacementId,
+      'Scene fainted-placement index',
+    ),
+    lifecycleKnockouts: appendRecent(
+      history.lifecycleKnockouts,
+      entry,
+      ENCOUNTER_HISTORY_LIMITS.lifecycleKnockoutsPerScene,
+    ),
+  }
+  return resetConsecutiveMoves(withKnockout, [event.targetPlacementId])
+}
+
 const switchRecord = (
+  history: EncounterHistory,
   event: Extract<EncounterEvent, {
     readonly kind: 'switch' | 'recall' | 'send-out'
   }>,
@@ -666,6 +700,9 @@ const switchRecord = (
       kind: event.kind,
       recalledPlacementId: event.recalledPlacementId,
       sentOutPlacementId: event.sentOutPlacementId,
+      sideId: event.sideId,
+      round: history.currentRound,
+      causalProviderId: event.causalProviderId,
     }
   }
   return {
@@ -674,6 +711,41 @@ const switchRecord = (
     kind: event.kind,
     recalledPlacementId: event.kind === 'recall' ? event.placementId : null,
     sentOutPlacementId: event.kind === 'send-out' ? event.placementId : null,
+    sideId: event.sideId,
+    round: history.currentRound,
+    causalProviderId: event.causalProviderId,
+  }
+}
+
+const knockoutReplacementFor = (
+  history: EncounterHistory,
+  entry: EncounterSwitchHistory,
+): EncounterKnockoutReplacementHistory | null => {
+  if (entry.sentOutPlacementId === null || entry.sideId === null) return null
+  const usedKnockouts = new Set(history.knockoutReplacements.map(replacement => replacement.knockoutEventId))
+  const knockedOutPlacementId = entry.kind === 'switch'
+    ? entry.recalledPlacementId
+    : [...history.switches].reverse().find(candidate => candidate.kind === 'recall'
+        && candidate.sideId === entry.sideId
+        && candidate.recalledPlacementId !== null
+        && !history.knockoutReplacements.some(replacement => replacement.knockedOutPlacementId === candidate.recalledPlacementId))?.recalledPlacementId ?? null
+  if (knockedOutPlacementId === null || !history.faintedPlacementIds.includes(knockedOutPlacementId)) return null
+  const knockoutMatches = [...history.knockouts, ...history.lifecycleKnockouts].filter(candidate => (
+    candidate.targetPlacementId === knockedOutPlacementId && !usedKnockouts.has(candidate.eventId)
+  ))
+  if (knockoutMatches.length !== 1) return null
+  const knockout = knockoutMatches[0]!
+  return {
+    replacementEventId: entry.eventId,
+    sourceOperationId: entry.sourceOperationId,
+    knockoutEventId: knockout.eventId,
+    knockedOutPlacementId,
+    replacementPlacementId: entry.sentOutPlacementId,
+    sideId: entry.sideId,
+    sentOutRound: entry.round,
+    firstTurnEventId: null,
+    firstActingRound: null,
+    firstActingTurn: null,
   }
 }
 
@@ -684,7 +756,7 @@ const recordSwitch = (
   }>,
 ): EncounterHistory => {
   if (history.switches.some(entry => entry.eventId === event.eventId)) return history
-  const entry = switchRecord(event)
+  const entry = switchRecord(history, event)
   const placementIds = [entry.recalledPlacementId, entry.sentOutPlacementId]
     .filter((placementId): placementId is string => placementId !== null)
   let switchedPlacementIds = history.switchedPlacementIds
@@ -695,6 +767,7 @@ const recordSwitch = (
       'Scene switched-placement index',
     )
   }
+  const replacement = knockoutReplacementFor(history, entry)
   return resetConsecutiveMoves({
     ...history,
     switchedPlacementIds,
@@ -703,16 +776,44 @@ const recordSwitch = (
       entry,
       ENCOUNTER_HISTORY_LIMITS.switchesPerScene,
     ),
+    knockoutReplacements: replacement
+      ? appendRecent(history.knockoutReplacements, replacement, ENCOUNTER_HISTORY_LIMITS.replacementsPerScene)
+      : history.knockoutReplacements,
   }, placementIds)
+}
+
+const recordRoundEnd = (
+  history: EncounterHistory,
+  event: EncounterRoundEvent,
+): EncounterHistory => {
+  if (history.roundBoundaries.some(entry => entry.eventId === event.eventId)) return history
+  const entry: EncounterRoundBoundaryHistory = {
+    eventId: event.eventId,
+    sourceOperationId: event.sourceOperationId,
+    completedRound: event.round,
+    nextRound: null,
+    nextRoundEventId: null,
+  }
+  return {
+    ...history,
+    roundBoundaries: appendRecent(history.roundBoundaries, entry, ENCOUNTER_HISTORY_LIMITS.roundBoundariesPerScene),
+  }
 }
 
 const openRoundWindow = (
   history: EncounterHistory,
   round: number,
+  event?: EncounterRoundEvent,
 ): EncounterHistory => ({
   ...history,
   currentRound: round,
   currentTurn: null,
+  roundBoundaries: event
+    ? history.roundBoundaries.map(entry => entry.sourceOperationId === event.sourceOperationId
+        && entry.completedRound + 1 === round && entry.nextRound === null
+      ? { ...entry, nextRound: round, nextRoundEventId: event.eventId }
+      : entry)
+    : history.roundBoundaries,
   damageBySourceThisTurn: [],
   damageBySourceThisRound: [],
   actedThisTurnPlacementIds: [],
@@ -726,6 +827,16 @@ const openTurnWindow = (
   const inRound = history.currentRound === event.round
     ? history
     : openRoundWindow(history, event.round)
+  const knockoutReplacements = inRound.knockoutReplacements.map(replacement => (
+    replacement.replacementPlacementId === event.placementId && replacement.firstTurnEventId === null
+      ? {
+          ...replacement,
+          firstTurnEventId: event.eventId,
+          firstActingRound: event.round,
+          firstActingTurn: event.turn,
+        }
+      : replacement
+  ))
   return {
     ...inRound,
     currentTurn: {
@@ -733,6 +844,7 @@ const openTurnWindow = (
       turn: event.turn,
       placementId: event.placementId,
     },
+    knockoutReplacements,
     damageBySourceThisTurn: [],
     actedThisTurnPlacementIds: [],
   }
@@ -757,7 +869,8 @@ export const reduceEncounterHistoryEvent = (
   if (event.kind === 'scene-end' || event.kind === 'encounter-end') {
     return deepFreeze(createEmptyEncounterHistory())
   }
-  if (event.kind === 'round-start') return deepFreeze(openRoundWindow(history, event.round))
+  if (event.kind === 'round-end') return deepFreeze(parseEncounterHistory(recordRoundEnd(history, event)))
+  if (event.kind === 'round-start') return deepFreeze(parseEncounterHistory(openRoundWindow(history, event.round, event)))
   if (event.kind === 'turn-start') return deepFreeze(openTurnWindow(history, event))
 
   if (
@@ -776,6 +889,10 @@ export const reduceEncounterHistoryEvent = (
     else if (event.kind === 'move-ko') history = recordKnockout(history, event)
     else if (event.kind === 'move-completed') history = recordCompletedMove(history, event)
     return deepFreeze(parseEncounterHistory(history))
+  }
+
+  if (event.kind === 'lifecycle-ko') {
+    return deepFreeze(parseEncounterHistory(recordLifecycleKnockout(history, event)))
   }
 
   if (event.kind === 'switch' || event.kind === 'recall' || event.kind === 'send-out') {

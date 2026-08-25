@@ -1,6 +1,6 @@
 # ADR 019: Authoritative Pokémon Contest runtime
 
-- Status: Accepted
+- Status: Accepted; amended by Deferred Mechanics Closure
 - Date: 2026-08-20
 
 ## Context
@@ -11,7 +11,9 @@ Pokémon Contest facts previously existed only as free-form sheet text and docum
 
 Use reviewed app-owned `contests.json` and structured per-Move Contest identity as the only runtime facts. A running Contest is one schema-versioned SQLite `ContestDocument`; ordinary Trainer/Pokémon sheets remain preparation and reward authority. Every mutation is a bounded revision-checked idempotent command. Production dice are server-generated and journaled. Public, owner, GM, and diagnostic payloads are separately constructed projections. Realtime events are durable role-targeted refresh signals. Settlement writes Contest completion, sheet experience, ribbons, Trainer history, money, items, and sheet realtime events in one transaction.
 
-Standard, Supercontest, Festival, and Rotation are native. Trainer Participant and Battle Contest remain unavailable until a later reviewed combat/Contest blend. Created Moves require explicit operation-owned Contest identity binding. Documentary text is never parsed at runtime.
+Standard, Supercontest, Festival, Rotation, Trainer Participant, and Battle are native. Trainer Participant extends compatible base variants through the same Contest document and command authority. Battle joins one Contest document to one real Encounter through typed immutable handoffs, engine-owned local plans, and coordinated transactions; it does not introduce another combat, scoring, dice, realtime, or settlement engine. Created Moves require explicit operation-owned Contest identity binding. Documentary text is never parsed at runtime.
+
+The original P10 decision admitted only Standard, Supercontest, Festival, and Rotation. Plan 11's reviewed source-bound successor chain activated Trainer Participant and Battle after their setup, runtime, projection, recovery, settlement, accessibility, performance, privacy, fixture, and liveplay certificates passed; the frozen P10 acceptance record remains historical evidence.
 
 ## Consequences
 

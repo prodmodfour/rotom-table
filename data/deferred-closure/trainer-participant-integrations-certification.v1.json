@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-integrations-v1",
+  "ticket": "P11-059",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-voltage-certification.v1.json",
+    "sha256": "2fe9953dce97b36e2633c41def8a1bb3db5a0cb156a801ea94d2bd0555663783"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "14f86a563d788980e6ac4f27f36b1bf6a159a2311a0605a936f41f91911316a7",
+    "rowId": "trainer-participant"
+  },
+  "authorities": [
+    {
+      "id": "normal-integration-inventory",
+      "path": "data/contests/integration-coverage.v1.json",
+      "sha256": "3494f4fddda5bf99377c711019ceb538301599f2d9016e92a658cdb26f2ea33c",
+      "guarantees": ["all-44-ordinary-rows-covered", "no-paired-registry", "no-blocked-provider"]
+    },
+    {
+      "id": "provider-and-intervention-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "ceeb0dcfc827ab0cfe062f9678e7d0e21d8d5cff532ab06e5cce411cba725794",
+      "guarantees": ["exact-pre-and-post-appeal-performer-target", "trainer-feature-selected-performer-scope", "pokemon-ability-item-exact-provider-scope", "performer-scoped-beautiful-and-contest-fashion", "simultaneous-gamble-reroll-voltage-reconciliation"]
+    },
+    {
+      "id": "ordinary-resource-transaction-authority",
+      "path": "server/useCases/contests.ts",
+      "sha256": "18b2192f8e5ad23e732225d4b0b2aa09a5fecc8f04d0b05aa1969883b54913b2",
+      "guarantees": ["exact-pokemon-fashion-designer-daily-ledger", "ordinary-trainer-feature-ap-and-frequency", "exact-retry-no-double-charge", "contest-and-sheet-write-rollback"]
+    },
+    {
+      "id": "strict-target-command-contract",
+      "path": "shared/contests/operations.ts",
+      "sha256": "be5d4bd780c82b9014a8b3af20d9b3d98e548b6750b6627228a9d48fc72f27a9",
+      "guarantees": ["bounded-target-performer-id", "canonical-command-hash-inclusion", "ordinary-null-target-compatibility"]
+    },
+    {
+      "id": "integration-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "bfae2a14ac649974656cc7f36abeecd8015313397c596309d926e1bc24008da8",
+      "guarantees": ["provider-scope-documented", "resource-and-retry-policy-documented", "no-runtime-prose-semantics"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestTrainerParticipantIntegrationsRuntime.test.ts",
+      "sha256": "b341b035ae2486cd4a4b77546be3debb27c741befe89d91f7df38156c34e4214",
+      "scenarioIds": ["beautiful-performer-scope", "fashion-designer-daily-ledger", "coordinator-pokemon-appeal-reroll", "style-flourish-ap-and-retry", "reliable-performance-trainer-target", "wrong-member-refusal", "sheet-write-rollback"]
+    }
+  ],
+  "acceptance": {
+    "normalIntegrationRows": 44,
+    "blockedRows": 0,
+    "trainerFeatureTargets": ["trainer", "pokemon"],
+    "pokemonProviderBorrowingByTrainer": false,
+    "ordinaryResourceLedgersReused": true,
+    "duplicateChargesOnExactRetry": 0,
+    "partialWritesOnFailure": 0,
+    "nextTicket": "P11-060"
+  }
+}

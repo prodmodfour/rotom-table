@@ -16,7 +16,7 @@ describe('P11-053 Trainer Participant document certification', () => {
       status: 'certified',
       runtimeProseParsing: false,
     })
-    expect(sha256(certification.canonicalVariantAuthority.path)).toBe(certification.canonicalVariantAuthority.sha256)
+    expect(acceptedSuccessorHead(certification.canonicalVariantAuthority.path, certification.canonicalVariantAuthority.sha256)).toBe(sha256(certification.canonicalVariantAuthority.path))
     for (const authority of certification.authorities) {
       expect(acceptedSuccessorHead(authority.path, authority.sha256), authority.id).toBe(sha256(authority.path))
       expect(authority.guarantees.length, authority.id).toBeGreaterThan(0)
@@ -30,10 +30,10 @@ describe('P11-053 Trainer Participant document certification', () => {
     expect(acceptedSuccessorHead(certification.generatedRegression.fixturePath, certification.generatedRegression.fixtureSha256)).toBe(sha256(certification.generatedRegression.fixturePath))
   })
 
-  it('certifies one typed Trainer, existing authority reuse, and the deliberate later-mechanics gate', () => {
+  it('preserves the historical enrollment certificate under the accepted native activation successor', () => {
     const row = contests.variants.find(variant => variant.id === 'trainer-participant')
     expect(row).toMatchObject({
-      completionState: 'structured',
+      completionState: 'native',
       structuredSemanticsVersion: 1,
       compatibleBaseVariantIds: ['standard', 'supercontest', 'festival', 'rotation'],
       performerPolicy: {

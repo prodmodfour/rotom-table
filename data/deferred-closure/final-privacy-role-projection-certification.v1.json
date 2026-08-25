@@ -1,0 +1,396 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-final-privacy-role-projections-v1",
+  "ticket": "P11-086",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "clientRedactionAuthorities": 0,
+  "predecessor": {
+    "path": "data/deferred-closure/final-performance-certification.v1.json",
+    "sha256": "436f477a0fad31af584538d64be0d52bd7bc0a61b1fd326a2cdf8c5d05a7d2ab"
+  },
+  "auditPolicy": {
+    "serverProjectionOnly": true,
+    "strictRoleStructures": true,
+    "unknownFieldRejection": true,
+    "publicProjectionBuiltFromPublicFacts": true,
+    "ownerIsolationRequired": true,
+    "diagnosticProjectionRequiresExplicitGmAuthority": true,
+    "realtimeCarriesInvalidationNotDocuments": true
+  },
+  "cohorts": [
+    {
+      "cohortId": "ranged-and-weapon-actions",
+      "mechanicRowIds": [
+        "weapon-profile.weighted-rope",
+        "weapon-profile.slingshot",
+        "weapon-profile.throwing-hammers",
+        "weapon-profile.hunting-bow",
+        "weapon-profile.super-lucky-throwing-stars",
+        "weapon-profile.twin-needled-bow",
+        "weapon-move.bash",
+        "weapon-move.pierce",
+        "weapon-move.gouge",
+        "weapon-move.titanic-slam",
+        "weapon-move.bullseye",
+        "weapon-move.deadly-strike",
+        "weapon-move.triple-threat"
+      ],
+      "projectionFamilyIds": [
+        "encounter-action-offers",
+        "realtime-invalidation-events"
+      ]
+    },
+    {
+      "cohortId": "item-actions",
+      "mechanicRowIds": [
+        "item-action.old-rod.fish",
+        "item-action.good-rod.fish",
+        "item-action.super-rod.fish",
+        "item-action.glue-cannon.attack",
+        "item-action.hand-net.attack",
+        "item-action.weighted-nets.throw",
+        "item-action.weighted-nets.pull",
+        "item-action.light-shield.ready",
+        "item-action.heavy-shield.ready",
+        "item-action.snag-machine.convert",
+        "item-action.shock-collar.activate"
+      ],
+      "projectionFamilyIds": [
+        "encounter-action-offers",
+        "equipment-action-lifecycle",
+        "realtime-invalidation-events"
+      ]
+    },
+    {
+      "cohortId": "generic-skill-checks",
+      "mechanicRowIds": [
+        "runtime.generic-skill-check"
+      ],
+      "projectionFamilyIds": [
+        "generic-skill-checks",
+        "realtime-invalidation-events"
+      ]
+    },
+    {
+      "cohortId": "trainer-participant-contests",
+      "mechanicRowIds": [
+        "contest-variant.trainer-participant"
+      ],
+      "projectionFamilyIds": [
+        "trainer-participant-contests",
+        "realtime-invalidation-events"
+      ]
+    },
+    {
+      "cohortId": "battle-contests",
+      "mechanicRowIds": [
+        "contest-variant.battle"
+      ],
+      "projectionFamilyIds": [
+        "trainer-participant-contests",
+        "battle-contest-joined-liveplay",
+        "realtime-invalidation-events"
+      ]
+    }
+  ],
+  "projectionFamilies": [
+    {
+      "familyId": "encounter-action-offers",
+      "audiences": [
+        "gm",
+        "actor-owner",
+        "responder-owner"
+      ],
+      "strictServerProjection": true,
+      "roleDistinctness": "GM receives controlled table authority; players receive offers only for placements controlled through their resolved profile and pending-response authority.",
+      "forbiddenOutsideAuthority": [
+        "uncontrolled-actor-offers",
+        "serialized-equipment-instance-identity",
+        "source-configuration",
+        "provenance-hashes",
+        "private-suppression-evidence"
+      ],
+      "executableEvidence": [
+        "tests/server/encounterPresentationProjection.test.ts",
+        "tests/server/equipmentGrantProjection.test.ts"
+      ],
+      "privateAuthorityLeaks": 0
+    },
+    {
+      "familyId": "equipment-action-lifecycle",
+      "audiences": [
+        "role-safe-encounter-envelope"
+      ],
+      "strictServerProjection": true,
+      "roleDistinctness": "Pending and accepted item lifecycle views are public-safe facts embedded only in the already role-specific Encounter envelope; private declarations and GM terminal evidence never enter the view.",
+      "forbiddenOutsideAuthority": [
+        "declaration-principal-key",
+        "declaration-command",
+        "exact-equipment-instance",
+        "exact-custody-revision",
+        "skill-check-integration-id",
+        "terminal-principal-key",
+        "gm-note",
+        "evidence"
+      ],
+      "executableEvidence": [
+        "tests/server/equipmentActionPresentation.test.ts"
+      ],
+      "privateAuthorityLeaks": 0
+    },
+    {
+      "familyId": "generic-skill-checks",
+      "audiences": [
+        "gm",
+        "subject",
+        "spectator"
+      ],
+      "strictServerProjection": true,
+      "roleDistinctness": "GM receives complete check and modifier authority, each subject receives only controlled-subject decisions and history, and spectators receive pending counts plus public aggregates or explicit withholding.",
+      "forbiddenOutsideAuthority": [
+        "gm-notes",
+        "private-prompt",
+        "situational-modifier",
+        "controller-profile-id",
+        "sheet-slug-and-revision",
+        "dice-journal",
+        "operation-id",
+        "private-correction",
+        "other-subject-response"
+      ],
+      "executableEvidence": [
+        "tests/server/skillCheckProjections.test.ts",
+        "tests/server/skillCheckProjectionRoute.test.ts",
+        "tests/data/deferredClosureSkillCheckProjections.test.ts"
+      ],
+      "privateAuthorityLeaks": 0
+    },
+    {
+      "familyId": "trainer-participant-contests",
+      "audiences": [
+        "public",
+        "owner",
+        "gm",
+        "diagnostic"
+      ],
+      "strictServerProjection": true,
+      "roleDistinctness": "Public receives paired display and scoring facts, an owner receives only its full entry and owner history, GM receives current legal authority, and source journals/contributors/receipts remain explicit diagnostic-only GM authority.",
+      "forbiddenOutsideAuthority": [
+        "opponent-contestant-snapshot",
+        "sheet-slug-and-revision",
+        "provider-ids",
+        "dice-pools",
+        "controller-profile-id",
+        "gm-notes",
+        "corrections",
+        "dice-journal",
+        "contributor-index",
+        "handoff-receipts"
+      ],
+      "executableEvidence": [
+        "tests/server/contestTrainerParticipantRuntime.test.ts",
+        "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+        "tests/server/contestTrainerParticipantAppealsRuntime.test.ts"
+      ],
+      "privateAuthorityLeaks": 0
+    },
+    {
+      "familyId": "battle-contest-joined-liveplay",
+      "audiences": [
+        "gm",
+        "acting-owner",
+        "opposing-owner",
+        "public"
+      ],
+      "strictServerProjection": true,
+      "roleDistinctness": "GM sees both value-only team pools, each owner sees only its own pool, and opponents and public spectators receive no pool or resolving authority while sharing public scores, Voltage, and wait state.",
+      "forbiddenOutsideAuthority": [
+        "opponent-team-pool",
+        "sheet-slug",
+        "provider-id",
+        "placement-id",
+        "source-operation-or-resolution-id",
+        "handoff-receipt",
+        "source-hash",
+        "combined-settlement-authority",
+        "private-plan"
+      ],
+      "executableEvidence": [
+        "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+        "tests/components/contestBattleJoinedLiveplay.test.ts",
+        "tests/data/deferredClosureBattleContestLiveplay.test.ts"
+      ],
+      "privateAuthorityLeaks": 0
+    },
+    {
+      "familyId": "realtime-invalidation-events",
+      "audiences": [
+        "public",
+        "owner",
+        "gm"
+      ],
+      "strictServerProjection": true,
+      "roleDistinctness": "Access-scoped channels carry bounded invalidation metadata only; clients reload the matching server projection instead of receiving documents, pools, sheets, diagnostics, or receipts in events.",
+      "forbiddenOutsideAuthority": [
+        "contest-document",
+        "contestants",
+        "gm-notes",
+        "dice-journal",
+        "battle-handoff-receipts",
+        "combined-settlement-authority"
+      ],
+      "executableEvidence": [
+        "tests/server/contestRealtimePrivacy.test.ts"
+      ],
+      "privateAuthorityLeaks": 0
+    }
+  ],
+  "fieldAudit": {
+    "nonGmGmNotes": 0,
+    "nonGmDiagnostics": 0,
+    "publicSheetSlugs": 0,
+    "publicProfileIds": 0,
+    "publicProviderLists": 0,
+    "publicDicePoolsOrJournals": 0,
+    "publicOperationIdsOrSourceHashes": 0,
+    "publicPlacementsOrHandoffReceipts": 0,
+    "publicCombinedSettlementAuthority": 0,
+    "ownerOpponentSnapshots": 0,
+    "ownerOpponentPools": 0,
+    "realtimePrivatePayloadFields": 0
+  },
+  "authorities": [
+    {
+      "path": "server/domain/encounterPresentation/buildProjection.ts",
+      "sha256": "ca122b94403666a563edc9d98ce3f5adb27cb43c0b44c6ea0ff29e7642e4d83a"
+    },
+    {
+      "path": "server/domain/itemAutomation/equipmentActionPresentation.ts",
+      "sha256": "78318eeb8f22ae4185d0c5072161bf696d74437c159dee8d6de8ae0fcc94fd14"
+    },
+    {
+      "path": "shared/skillChecks/projections.ts",
+      "sha256": "1281ed6c2cf9d7d88d7d8e2ef603c3f738004fb7a15bbed5599a026b7daaaa91"
+    },
+    {
+      "path": "server/useCases/loadSkillCheckProjections.ts",
+      "sha256": "c48108688d9f9f83177737d5038f45e663bbf5037a3e0a5b55fcc41c8d809378"
+    },
+    {
+      "path": "server/api/skill-checks/projections.get.ts",
+      "sha256": "f4714eee765ea7173ea7b34da9b035b8bc6fcde40f34ba685730681f17ccee43"
+    },
+    {
+      "path": "shared/contests/projections.ts",
+      "sha256": "feccb64bfc44816f7ce94eb08b867491323f3105f3d4a7c97eb187bf9a84203c"
+    },
+    {
+      "path": "shared/contests/battleLiveplay.ts",
+      "sha256": "b4d4a3c46202ef3d17d6e620c8c3e29775b07a4e7adb42d123adcd83921f6546"
+    },
+    {
+      "path": "server/useCases/battleContestLiveplay.ts",
+      "sha256": "ced838b0c2adb016d354c774c65d46844f963de4b0ab28a62e9ae0e95397886f"
+    },
+    {
+      "path": "server/realtime/contestRealtime.ts",
+      "sha256": "4d9c91a56019c7fee321e26b685850b5cf17d221b0db776d7b439a7041716b83"
+    },
+    {
+      "path": "data/deferred-closure/skill-check-projection-certification.v1.json",
+      "sha256": "464d702976dbe28eced0db7d34295cd49afa6571f0631fdc87f988a03b599bd0"
+    },
+    {
+      "path": "data/deferred-closure/trainer-participant-projection-certification.v1.json",
+      "sha256": "8324bce443dd1a8499696595e7fe816f5f14af7d1dcc6f31a4d2b3d0e43ee085"
+    },
+    {
+      "path": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
+      "sha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/encounterPresentationProjection.test.ts",
+      "sha256": "227ebe9585f9ca7bf5848c7e9fdfded28fbe7e48f46c433ef78e73ba6036f9e2"
+    },
+    {
+      "path": "tests/server/equipmentGrantProjection.test.ts",
+      "sha256": "0ee488fb3341afc2e3591a4583eab3a058a64501e47b1c6d15f5defb612b5467"
+    },
+    {
+      "path": "tests/server/equipmentActionPresentation.test.ts",
+      "sha256": "c2d22b21f564acb47ca57355a47a18de1ee9758c5716f46f2e35f6d50e68885d"
+    },
+    {
+      "path": "tests/server/skillCheckProjections.test.ts",
+      "sha256": "4c96f669e297071dbc7d71ff56dea65484ba9f7438a70d833f5b2482573ca986"
+    },
+    {
+      "path": "tests/server/skillCheckProjectionRoute.test.ts",
+      "sha256": "e00f8156b17773794a1a03bf5dee1a08eb0c096008bd66461cbcd9d1ca47c2ad"
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantRuntime.test.ts",
+      "sha256": "3d96c0b069097924c1e4935f07582858d6c67ad2825024d2ea86c88888aa8815"
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+      "sha256": "fa0c330f606438c10cac7df8e126ba824d32b732c6305107d81251edc0cbc14b"
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantAppealsRuntime.test.ts",
+      "sha256": "8f733d8e5055fc7785dd81f11ffbcb9ce71eb2247fe7fc9e28c1c3031e7df1ca"
+    },
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "27c871074298175b3c49f1e11f2622dc543dfc430294f635f802ed84aedd259a"
+    },
+    {
+      "path": "tests/server/contestRealtimePrivacy.test.ts",
+      "sha256": "6201bad61569a53beed212f1dbe98d3fe04ef10c9386430efea6187646367ed1"
+    },
+    {
+      "path": "tests/components/contestBattleJoinedLiveplay.test.ts",
+      "sha256": "82ab68a5f305671e87a3997c60352fc8f34c83a6f6f4b3cbbd4593d4d9bb0e52"
+    },
+    {
+      "path": "tests/data/deferredClosureSkillCheckProjections.test.ts",
+      "sha256": "433d0db229dbca0f859ad4f9f55bb2c7d623ffbfce666c235ea667fd3cb19f24"
+    },
+    {
+      "path": "tests/data/deferredClosureTrainerParticipantCompletion.test.ts",
+      "sha256": "15bc7fe093ee5ee29fc52bbd2f69caf8223919d72a1e55e85124cd792dba580e"
+    },
+    {
+      "path": "tests/data/deferredClosureBattleContestLiveplay.test.ts",
+      "sha256": "1a37b69433955f97eb8e4b980afb7c624f32ba9e6609ea6250c1a70d79e74f97"
+    },
+    {
+      "path": "tests/data/deferredClosurePrivacyCertification.test.ts",
+      "sha256": "9717fb39659ffcf24e28af04dbfcc266495b2bf7eb082e10b131f84fe2d0f2b5"
+    },
+    {
+      "path": "package.json",
+      "sha256": "0f5c3553801a6a7c992ff67438baec0f23d3739b6619f9486260ea215f7cf777"
+    }
+  ],
+  "validation": {
+    "focusedGate": "passed",
+    "crossRoleForgeryChecks": "passed",
+    "ownerIsolationChecks": "passed",
+    "publicSentinelAbsenceChecks": "passed",
+    "realtimeLaneChecks": "passed"
+  },
+  "acceptance": {
+    "auditedMechanicRows": 27,
+    "auditedCohorts": 5,
+    "projectionFamilies": 6,
+    "privacyLeaks": 0,
+    "crossRoleParserForgeriesAccepted": 0,
+    "clientRedactionAuthorities": 0,
+    "hardFailures": 0,
+    "nextTicket": "P11-087"
+  }
+}

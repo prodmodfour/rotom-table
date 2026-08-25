@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-final-documentation-v1",
+  "ticket": "P11-087",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/final-privacy-role-projection-certification.v1.json",
+    "sha256": "75e5c34a045dfa9beb4215e410424e2aed4e8a815b501a043a788afbea9632c6"
+  },
+  "audiences": {
+    "contributor": {
+      "path": "docs/complete-play-loop-contributor-guide.md",
+      "status": "current"
+    },
+    "operator": {
+      "path": "docs/complete-play-loop-operator-guide.md",
+      "status": "current"
+    },
+    "gm": {
+      "path": "docs/complete-play-loop-gm-guide.md",
+      "status": "current"
+    },
+    "player": {
+      "path": "docs/complete-play-loop-player-guide.md",
+      "status": "current"
+    }
+  },
+  "surfaceCoverage": {
+    "rangedWeaponProfiles": 6,
+    "supplementalWeaponMoves": 12,
+    "itemActions": 11,
+    "genericSkillCheckSurfaces": 1,
+    "trainerParticipantVariants": 1,
+    "battleContestVariants": 1,
+    "userFacingMechanicRows": 27
+  },
+  "claims": {
+    "currentStorageSchema": 50,
+    "liveplayOnly": true,
+    "appOwnedRuntimeReferencesOnly": true,
+    "runtimeProseParsing": false,
+    "browserOwnedRollsOrResults": false,
+    "directStorageRepair": false,
+    "exactRetryRequired": true,
+    "postCommitRealtime": true,
+    "linkedBattleIndependentFinishEncounter": false,
+    "roleSafeServerProjections": true,
+    "frozenHistoryUsesAcceptedSuccessors": true
+  },
+  "staleLanguageAudit": {
+    "scannedScope": "current-non-archived-documentation",
+    "stalePlan11DeferralClaims": 0,
+    "stalePlan8TicketPointers": 0,
+    "staleContestUnavailabilityClaims": 0,
+    "staleSchema44CurrentClaims": 0,
+    "technicalDeferredTransactionTermsAllowed": true
+  },
+  "linkAndCommandAudit": {
+    "scopedBrokenLocalLinks": 0,
+    "undocumentedClaimedNpmScripts": 0,
+    "documentationGateRegistered": true
+  },
+  "authorities": [
+    {
+      "path": "docs/deferred-mechanics-closure.md",
+      "sha256": "47128d530435ce9ba262ddf74285b476e49a4010eac3234c2092c8b6b112d895"
+    },
+    {
+      "path": "docs/complete-play-loop-contributor-guide.md",
+      "sha256": "63fa3b5773c12f454d692b74c6531d6d99374d985c58f2aaba4bcc003a05eeaa"
+    },
+    {
+      "path": "docs/complete-play-loop-operator-guide.md",
+      "sha256": "4a9a36b912bdee9b2698f60c437f86a74e464952c87e6a822789a38d054d10be"
+    },
+    {
+      "path": "docs/complete-play-loop-gm-guide.md",
+      "sha256": "9958e3da7ff24268d3bbc0dcb965522603c7602ec47e3a01aaad06a7e21347a3"
+    },
+    {
+      "path": "docs/complete-play-loop-player-guide.md",
+      "sha256": "9c5b0f7f689fe20965737b9fac61d71e8731b9875bb326cc696e46e1b091f8b2"
+    },
+    {
+      "path": "docs/skill-check-recovery-and-campaign-history.md",
+      "sha256": "baa05f0f78b4c9ec95c0634e2e3f40f09ee8a79607c48b198f12568492c879c9"
+    },
+    {
+      "path": "docs/contests/README.md",
+      "sha256": "54aabacedf21d230cc3bd1082d6130f8b99cfb8b03d950b3fe6ae31e9e708fbe"
+    },
+    {
+      "path": "docs/contests/player-and-gm-guide.md",
+      "sha256": "936dfa458a64b79cbfc7558238fa20359ed5bfd895d56a06bd7540dd6968b152"
+    },
+    {
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "5b67d932e0c73e33f359aa12e3c90d02a5bb61d9829c2c3c8194e417cac57130"
+    },
+    {
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "a77bb995481a4f0b245cf97dbf2e8967505a8af6e1f55e4650e5a3f5e30888dd"
+    },
+    {
+      "path": "docs/adrs/019-authoritative-pokemon-contest-runtime.md",
+      "sha256": "a20953f848078dd33a6bd14e695eddad9ee04e85743c9e15bfef8decf3ea289c"
+    },
+    {
+      "path": "docs/deferred-mechanics-golden-journeys.md",
+      "sha256": "6752e9bcd40a616d2c4e385ac4cd6075ed5e214ba61a699c9b93860839a3762a"
+    },
+    {
+      "path": "docs/deferred-mechanics-storage-upgrades.md",
+      "sha256": "62819577d1c98dad027d88086edac6f9ab6dbdbafa616fdc8572512e993915d0"
+    },
+    {
+      "path": "docs/private-vps-backups.md",
+      "sha256": "87a435cb90750eb6c147845ec02f1a128f1f032203e3cbd84766da69bc72f14f"
+    },
+    {
+      "path": "docs/README.md",
+      "sha256": "849dc1fa66db1a25343316555aaecf8909795fd37c589e50b54172a74d33bd8a"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/docs/deferredMechanicsDocumentationClosure.test.ts",
+      "sha256": "e98ae5c12d10dd273b51f511bfe5d479c4ac5651580cecebfaf9f93150d9c026"
+    },
+    {
+      "path": "tests/data/deferredClosureDocumentationCertification.test.ts",
+      "sha256": "33789749dcefe21c4a2ef293456015841e7fe68795595b74cd868a486c1f7823"
+    },
+    {
+      "path": "tests/data/completePlayLoopDocumentationClosure.test.ts",
+      "sha256": "fa6ca1e54730ff6b412af668bd14554069329347bf75b9ffc8d9fd42a7aacb07"
+    },
+    {
+      "path": "tests/data/contestDocumentationClosure.test.ts",
+      "sha256": "301e1ff19815af9119a53fcb111ddd6b3ddea6d3d8b5c10321fbbb309e6fac8d"
+    },
+    {
+      "path": "tests/docs/privateVpsBackupRunbook.test.ts",
+      "sha256": "cdcdbf8ef14661a409756b7d891979da15bba5179301eb947447d9780977ca08"
+    },
+    {
+      "path": "tests/docs/sqliteMigrationDocs.test.ts",
+      "sha256": "1339aec6d123b03b1482c7a61517aabead845e1b97817905cd863a415e599a49"
+    },
+    {
+      "path": "tests/docs/livePlayFinalCleanup.test.ts",
+      "sha256": "27ee4b6c32fbe6ce36996d3c8f4cca4ea22aa9321e4a002db50ae7fa5d291308"
+    },
+    {
+      "path": "tests/data/completePlayLoopAlphaAcceptance.test.ts",
+      "sha256": "a4b3b23186ee15f8e4d5a6d81ade9a6aa76d6f656e246b0da19d67f473791c24"
+    },
+    {
+      "path": "package.json",
+      "sha256": "26e528cdec9a2df9bb8bfec732a9ef1b890abbe406039d773bd260c91689b6b8"
+    }
+  ],
+  "validation": {
+    "focusedGate": "passed",
+    "localLinks": "passed",
+    "npmCommandClaims": "passed",
+    "historicalSuccessorResolution": "passed",
+    "staleLanguageScan": "passed"
+  },
+  "acceptance": {
+    "documentedMechanicRows": 27,
+    "documentedAudiences": 4,
+    "brokenLocalLinks": 0,
+    "staleDeferralClaims": 0,
+    "staleTicketPointers": 0,
+    "unregisteredCommandClaims": 0,
+    "hardFailures": 0,
+    "nextTicket": "P11-088"
+  }
+}

@@ -1,10 +1,10 @@
 import type { PlayerProfileId } from '../playerProfiles'
-import { emptyContestStatRecord, isContestParticipantMethodId, isContestStatId, parseContestAppealId, parseContestId, parseContestOperationId, parseContestantId, type ContestIntroductionSkillId, type ContestParticipantMethodId, type ContestStatId } from './ids'
+import { emptyContestStatRecord, isContestParticipantMethodId, isContestStatId, isContestVariantId, parseContestAppealId, parseContestId, parseContestOperationId, parseContestantId, type ContestIntroductionSkillId, type ContestParticipantMethodId, type ContestStatId } from './ids'
 import { normalizeContestPrize, type ContestControllerV1, type ContestCorrectionReceiptV1, type CreateContestDocumentInput } from './document'
 
 export const CONTEST_COMMAND_KINDS = Object.freeze([
   'create-contest', 'update-settings', 'set-participant-method', 'enroll-contestant', 'remove-contestant',
-  'start-introduction', 'declare-introduction', 'restart-introduction', 'start-performance', 'select-rotation-performer',
+  'start-introduction', 'declare-introduction', 'restart-introduction', 'create-battle-encounter', 'score-battle-accepted-move', 'apply-battle-voltage-lifecycle', 'end-battle-contest', 'start-performance', 'select-rotation-performer',
   'declare-appeal', 'use-intervention', 'pass-intervention', 'set-paused', 'apply-correction', 'declare-prize', 'prepare-settlement',
   'commit-settlement', 'cancel-contest',
 ] as const)
@@ -65,6 +65,27 @@ export interface DeclareIntroductionCommandV1 extends ContestCommandBaseV1 {
   }
 }
 export interface RestartIntroductionCommandV1 extends ContestCommandBaseV1 { readonly commandKind: 'restart-introduction' }
+/** Server derives map, Encounter, Scene, deployment, and initiative; clients provide no parallel setup material. */
+export interface CreateBattleEncounterCommandV1 extends ContestCommandBaseV1 { readonly commandKind: 'create-battle-encounter' }
+/** Server-internal command material created only after deriving one persisted accepted Encounter Move fact. */
+export interface ScoreBattleAcceptedMoveCommandV1 extends ContestCommandBaseV1 {
+  readonly commandKind: 'score-battle-accepted-move'
+  readonly sourceOperationId: string
+  readonly sourceResolutionId: string
+  readonly spentDice: Readonly<Record<ContestStatId, number>>
+}
+/** Server-internal command identifying one accepted typed KO/switch history result. */
+export interface ApplyBattleVoltageLifecycleCommandV1 extends ContestCommandBaseV1 {
+  readonly commandKind: 'apply-battle-voltage-lifecycle'
+  readonly sourceOperationId: string
+  readonly sourceResultId: string
+}
+/** Server-internal command identifying one accepted round-boundary or final-KO result. */
+export interface EndBattleContestCommandV1 extends ContestCommandBaseV1 {
+  readonly commandKind: 'end-battle-contest'
+  readonly sourceOperationId: string
+  readonly sourceResultId: string
+}
 export interface StartPerformanceCommandV1 extends ContestCommandBaseV1 { readonly commandKind: 'start-performance' }
 export interface SelectRotationPerformerCommandV1 extends ContestCommandBaseV1 { readonly commandKind: 'select-rotation-performer', readonly contestantId: string, readonly performerId: string }
 export interface DeclareAppealCommandV1 extends ContestCommandBaseV1 {
@@ -96,6 +117,8 @@ export interface ApplyContestCorrectionCommandV1 extends ContestCommandBaseV1 {
   readonly commandKind: 'apply-correction'
   readonly correctionKind: ContestCorrectionReceiptV1['kind']
   readonly contestantId: string | null
+  /** Required only when correcting one Battle Pokémon's performer-scoped Voltage. */
+  readonly performerId?: string | null
   readonly statId: ContestStatId | null
   readonly numericDelta: number | null
   readonly replacementProfileId: PlayerProfileId | null
@@ -109,7 +132,7 @@ export interface CancelContestCommandV1 extends ContestCommandBaseV1 { readonly 
 export type ContestCommandV1 =
   | CreateContestCommandV1 | UpdateContestSettingsCommandV1 | SetContestParticipantMethodCommandV1 | EnrollContestantCommandV1
   | RemoveContestantCommandV1 | StartIntroductionCommandV1 | DeclareIntroductionCommandV1
-  | RestartIntroductionCommandV1 | StartPerformanceCommandV1 | SelectRotationPerformerCommandV1 | DeclareAppealCommandV1
+  | RestartIntroductionCommandV1 | CreateBattleEncounterCommandV1 | ScoreBattleAcceptedMoveCommandV1 | ApplyBattleVoltageLifecycleCommandV1 | EndBattleContestCommandV1 | StartPerformanceCommandV1 | SelectRotationPerformerCommandV1 | DeclareAppealCommandV1
   | UseContestInterventionCommandV1 | PassContestInterventionCommandV1 | SetContestPausedCommandV1 | ApplyContestCorrectionCommandV1
   | DeclareContestPrizeCommandV1 | PrepareContestSettlementCommandV1 | CommitContestSettlementCommandV1 | CancelContestCommandV1
 
@@ -148,13 +171,17 @@ const FIELDS: Readonly<Record<ContestCommandKind, readonly string[]>> = Object.f
   'start-introduction': COMMON,
   'declare-introduction': [...COMMON, 'contestantId', 'skillId', 'generatedStatId', 'bonusStatIds'],
   'restart-introduction': COMMON,
+  'create-battle-encounter': COMMON,
+  'score-battle-accepted-move': [...COMMON, 'sourceOperationId', 'sourceResolutionId', 'spentDice'],
+  'apply-battle-voltage-lifecycle': [...COMMON, 'sourceOperationId', 'sourceResultId'],
+  'end-battle-contest': [...COMMON, 'sourceOperationId', 'sourceResultId'],
   'start-performance': COMMON,
   'select-rotation-performer': [...COMMON, 'contestantId', 'performerId'],
   'declare-appeal': [...COMMON, 'contestantId', 'performerId', 'moveOptionId', 'partnerEffectTargetPerformerId', 'spentDice'],
   'use-intervention': [...COMMON, 'contestantId', 'interventionId', 'targetPerformerId', 'targetContestantId', 'appealId', 'choices'],
   'pass-intervention': [...COMMON, 'contestantId', 'appealId'],
   'set-paused': [...COMMON, 'paused'],
-  'apply-correction': [...COMMON, 'correctionKind', 'contestantId', 'statId', 'numericDelta', 'replacementProfileId', 'reason'],
+  'apply-correction': [...COMMON, 'correctionKind', 'contestantId', 'performerId', 'statId', 'numericDelta', 'replacementProfileId', 'reason'],
   'declare-prize': COMMON,
   'prepare-settlement': COMMON,
   'commit-settlement': COMMON,
@@ -186,7 +213,7 @@ export const parseContestCommand = (value: unknown): ContestCommandV1 => {
     if (settings.awardRibbon !== undefined && typeof settings.awardRibbon !== 'boolean') fail(`${prefix}.awardRibbon`, 'must be boolean')
     if (settings.prize !== undefined) try { normalizeContestPrize(settings.prize as never) } catch (error) { fail(`${prefix}.prize`, error instanceof Error ? error.message : 'is invalid') }
     if (commandKind === 'create-contest') {
-      if (!['standard','supercontest','festival','rotation'].includes(String(settings.variantId))) fail(`${prefix}.variantId`, 'is unsupported')
+      if (!isContestVariantId(settings.variantId)) fail(`${prefix}.variantId`, 'is unsupported')
       if (settings.participantVariantId !== undefined && settings.participantVariantId !== null && settings.participantVariantId !== 'trainer-participant') fail(`${prefix}.participantVariantId`, 'is unsupported')
       if (settings.participantVariantId === 'trainer-participant' && !isContestParticipantMethodId(settings.participantMethodId)) fail(`${prefix}.participantMethodId`, 'is required and must be canonical for Trainer Participant Contests')
       if (settings.participantVariantId !== 'trainer-participant' && settings.participantMethodId !== undefined && settings.participantMethodId !== null) fail(`${prefix}.participantMethodId`, 'is available only to Trainer Participant Contests')
@@ -197,15 +224,24 @@ export const parseContestCommand = (value: unknown): ContestCommandV1 => {
   }
   if (commandKind === 'set-participant-method' && !isContestParticipantMethodId(row.participantMethodId)) fail('command.participantMethodId', 'must be canonical')
   if (commandKind === 'select-rotation-performer') text(row.performerId, 'command.performerId', 160)
-  if (commandKind === 'declare-appeal') {
-    text(row.performerId, 'command.performerId', 160); text(row.moveOptionId, 'command.moveOptionId', 240); if (row.partnerEffectTargetPerformerId !== undefined && row.partnerEffectTargetPerformerId !== null) text(row.partnerEffectTargetPerformerId, 'command.partnerEffectTargetPerformerId', 160)
+  if (commandKind === 'declare-appeal' || commandKind === 'score-battle-accepted-move') {
+    if (commandKind === 'declare-appeal') {
+      text(row.performerId, 'command.performerId', 160); text(row.moveOptionId, 'command.moveOptionId', 240); if (row.partnerEffectTargetPerformerId !== undefined && row.partnerEffectTargetPerformerId !== null) text(row.partnerEffectTargetPerformerId, 'command.partnerEffectTargetPerformerId', 160)
+    } else {
+      text(row.sourceOperationId, 'command.sourceOperationId', 200)
+      text(row.sourceResolutionId, 'command.sourceResolutionId', 200)
+    }
     const spent = object(row.spentDice, 'command.spentDice')
     exact(spent, ['beauty','cool','cute','smart','tough'], 'command.spentDice')
     for (const statId of Object.keys(emptyContestStatRecord(() => 0)) as ContestStatId[]) integer(spent[statId], `command.spentDice.${statId}`, 0, 3)
   }
+  if (commandKind === 'apply-battle-voltage-lifecycle' || commandKind === 'end-battle-contest') {
+    text(row.sourceOperationId, 'command.sourceOperationId', 200)
+    text(row.sourceResultId, 'command.sourceResultId', 200)
+  }
   if (commandKind === 'enroll-contestant') {
     text(row.trainerSheetSlug, 'command.trainerSheetSlug', 160)
-    if (!Array.isArray(row.pokemonSheetSlugs) || row.pokemonSheetSlugs.length < 1 || row.pokemonSheetSlugs.length > 5) fail('command.pokemonSheetSlugs', 'must contain one through five sheet slugs')
+    if (!Array.isArray(row.pokemonSheetSlugs) || row.pokemonSheetSlugs.length < 1 || row.pokemonSheetSlugs.length > 6) fail('command.pokemonSheetSlugs', 'must contain one through six sheet slugs')
     ;(row.pokemonSheetSlugs as unknown[]).forEach((slug, index) => text(slug, `command.pokemonSheetSlugs[${index}]`, 160))
     if (!Array.isArray(row.rotationOrder) || row.rotationOrder.length > 5) fail('command.rotationOrder', 'must be bounded')
     ;(row.rotationOrder as unknown[]).forEach((index, position) => integer(index, `command.rotationOrder[${position}]`, 0, 4))
@@ -240,19 +276,21 @@ export const parseContestCommand = (value: unknown): ContestCommandV1 => {
   if (commandKind === 'set-paused' && typeof row.paused !== 'boolean') fail('command.paused', 'must be boolean')
   if (commandKind === 'cancel-contest' || commandKind === 'apply-correction') text(row.reason, 'command.reason', 500)
   if (commandKind === 'apply-correction') {
+    if (row.performerId !== undefined && row.performerId !== null) text(row.performerId, 'command.performerId', 160)
     if (!['appeal-delta','fumble-delta','voltage-delta','dice-pool-delta','controller-reassignment','cancel-contest'].includes(String(row.correctionKind))) fail('command.correctionKind', 'is invalid')
     if (row.statId !== null && !isContestStatId(row.statId)) fail('command.statId', 'is invalid')
     if (row.numericDelta !== null && (!Number.isSafeInteger(row.numericDelta) || Math.abs(Number(row.numericDelta)) > 99)) fail('command.numericDelta', 'must be null or a bounded integer')
     if (row.replacementProfileId !== null && (typeof row.replacementProfileId !== 'string' || !/^profile_[A-Za-z0-9_-]{8,64}$/u.test(row.replacementProfileId))) fail('command.replacementProfileId', 'is invalid')
     if (row.correctionKind === 'cancel-contest') {
-      if (row.contestantId !== null || row.statId !== null || row.numericDelta !== null || row.replacementProfileId !== null) fail('command.correctionKind', 'cancel-contest accepts only a reason')
+      if (row.contestantId !== null || row.performerId != null || row.statId !== null || row.numericDelta !== null || row.replacementProfileId !== null) fail('command.correctionKind', 'cancel-contest accepts only a reason')
     } else {
       if (row.contestantId === null) fail('command.contestantId', 'is required for this correction')
       if (row.correctionKind === 'controller-reassignment') {
-        if (row.statId !== null || row.numericDelta !== null) fail('command.correctionKind', 'controller-reassignment accepts only a replacement profile')
+        if (row.performerId != null || row.statId !== null || row.numericDelta !== null) fail('command.correctionKind', 'controller-reassignment accepts only a replacement profile')
       } else {
         if (row.numericDelta === null || row.replacementProfileId !== null) fail('command.correctionKind', 'numeric corrections require exactly one bounded delta')
         if ((row.correctionKind === 'dice-pool-delta') !== (row.statId !== null)) fail('command.statId', 'is required only for a dice-pool correction')
+        if (row.correctionKind !== 'voltage-delta' && row.performerId != null) fail('command.performerId', 'is available only for a Voltage correction')
       }
     }
   }

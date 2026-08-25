@@ -185,6 +185,11 @@ const validateCommandReferences = (input: {
 }): void => {
   const participantIds = new Set(input.map.placements.map(placement => placement.id))
   const { command } = input
+  if (command.type === 'set-story' && input.document.battleContest && command.payload.lifecycle !== input.document.lifecycle) {
+    const reviewedTerminalAdvance = input.document.lifecycle === 'paused' && command.payload.lifecycle === 'completed'
+      || input.document.lifecycle === 'completed' && command.payload.lifecycle === 'archived'
+    if (!reviewedTerminalAdvance) httpFail(409, 'Linked Battle Contest lifecycle changes must use the cross-engine recovery coordinator.')
+  }
   if (command.type === 'set-participant-visibility' && !participantIds.has(command.payload.participantId)) {
     httpFail(409, 'Participant is no longer present on the linked battlefield.')
   }

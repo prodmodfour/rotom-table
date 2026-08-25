@@ -4,6 +4,7 @@ import type {
 } from '#shared/moveAutomation/random'
 import type { EncounterConditionEffect } from '#shared/moveAutomation/encounterEffects'
 import type { MoveSpecCostDeclaration } from '#shared/moveAutomation/spec'
+import type { MoveHistoryMoveListSource, MoveHistoryOrigin } from '#shared/moveAutomation/moveHistoryMetadata'
 import type {
   MoveResolutionAuditTrace,
   MoveResolutionTraceAncestryEntry,
@@ -298,6 +299,8 @@ export interface AuthoritativeMoveResourceMovement {
 interface AuthoritativeMoveSwitchTransitionBase {
   readonly operationId: string
   readonly recalledPlacementId: string
+  /** Server-resolved Feature provider for a Juggler-style switch, never client display prose. */
+  readonly causalProviderId?: string | null
 }
 
 /** Server-only, roster-validated recall/send-out transition selected durably. */
@@ -337,6 +340,9 @@ export interface AuthoritativeMoveResolution {
   readonly rollLedger: readonly MoveAutomationRollLedgerEntry[]
   /** Complete server-only trace; accepted results receive its bounded sanitized projection. */
   readonly auditTrace: MoveResolutionAuditTrace
+  /** Server-only accepted-history provenance retained through state planning. */
+  readonly moveHistoryOrigin?: MoveHistoryOrigin
+  readonly moveHistoryMoveListSource?: MoveHistoryMoveListSource
   readonly script: MoveAutomationScript
   readonly transaction: MoveAutomationTransaction
   readonly feedback?: MoveAutomationFeedbackState
@@ -599,12 +605,24 @@ const finalizeResolution = (
   })
   const { conditionOutcomes: privateConditionOutcomes, ...durableResolution } = resolution
   void privateConditionOutcomes
+  const resolvedSource = context.queries.resolveActorMoveEntry(resolution.canonicalMoveName)
+  const moveHistoryMoveListSource = resolvedSource.ok
+    ? resolvedSource.entry.moveListSource
+    : { kind: 'placement' as const, placementId: resolution.actorPlacementId }
+  const ancestry = context.ancestry.at(-1)
+  const moveHistoryOrigin: MoveHistoryOrigin = moveHistoryMoveListSource.kind === 'history'
+    ? { kind: 'copied', sourceResolutionId: moveHistoryMoveListSource.resolutionId }
+    : moveHistoryMoveListSource.kind === 'reviewed-pool' && ancestry
+      ? { kind: 'random', sourceResolutionId: ancestry.resolutionId }
+      : { kind: 'direct' }
   return attachResolutionDamageEffects(context, {
     ...durableResolution,
     ...(context.intent.attackSourceId ? { attackSourceId: context.intent.attackSourceId } : {}),
     sheetReads: context.reads.snapshot(),
     rollLedger,
     auditTrace,
+    moveHistoryOrigin,
+    moveHistoryMoveListSource,
     ...(terrainConditionProtectionEffects.length > 0
       ? { terrainConditionProtectionEffects }
       : {}),

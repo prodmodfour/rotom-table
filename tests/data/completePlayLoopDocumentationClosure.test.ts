@@ -1,11 +1,10 @@
-import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import closure from '../../data/complete-play-loop/documentation-closure.v1.json'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 const root = resolve(import.meta.dirname, '../..')
-const sha256 = (value: Buffer): string => createHash('sha256').update(value).digest('hex')
 const read = (path: string): string => readFileSync(resolve(root, path), 'utf8')
 
 const documentationPaths = (): string[] => [
@@ -103,7 +102,8 @@ describe('P8-099 Complete Play Loop documentation closure', () => {
       expect(paths.has(row.path), row.path).toBe(false)
       paths.add(row.path)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(resolve(root, row.path))), row.path).toBe(row.sha256)
+      expect(acceptedSuccessorHead(row.path, row.sha256), row.path)
+        .toBe(repositoryFileSha256(row.path))
     }
     for (const path of new Set([
       ...documentationPaths(),

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "deferred-closure:battle-contest-settlement:v1",
+  "ticket": "P11-077",
+  "status": "reviewed",
+  "reviewedAt": "2026-08-24",
+  "target": {
+    "path": "data/reference/contests.json",
+    "beforeSha256": "eba1cce2536912c7b9fd6cc8662949a950671505c7282364b6c776b6fe73d65c",
+    "afterSha256": "d58fa7cf9ffda19f73af37a805faf4ff0ed79023bb411ecdb9bf295e89016972",
+    "afterBytes": 31801,
+    "afterGitBlob": "a00b4733309c84c02ab8cc468adf9888fc859132"
+  },
+  "sources": [
+    {
+      "path": "books/markdown/core/08-pokemon-contests.md",
+      "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+      "subjects": [
+        "standard Contest Experience formula and round-up exception",
+        "Battle Contest declared three-through-six Pokemon teams",
+        "team Appeal placement and winner authority",
+        "explicitly possible unused declared Pokemon"
+      ]
+    }
+  ],
+  "settlementPolicy": {
+    "experienceRecipients": "all-declared-team-pokemon",
+    "experienceUnits": "standard-team-placement-formula",
+    "experienceLevelBasis": "each-recipient-own-level",
+    "ribbonRecipients": "all-declared-winning-team-pokemon",
+    "prizeRecipient": "winning-trainer-unless-explicit-enrolled-target",
+    "encounterReconciliation": "exact-preview-one-combined-transaction",
+    "duplicateSourcePolicy": "exact-retry-or-reject"
+  },
+  "review": {
+    "runtimeProseParsing": false,
+    "declaredRosterIsSettlementRoster": true,
+    "unusedDeclaredPokemonRemainRecipients": true,
+    "placementScore": "appeal-points",
+    "encounterConsequencesOwnedByEncounterSettlement": true,
+    "contestRewardsOwnedByContestSettlement": true,
+    "partialCrossEngineCommitAllowed": false
+  }
+}

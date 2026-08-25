@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -11,9 +10,9 @@ import accessibility from '../../data/complete-play-loop/accessibility-responsiv
 import failureAcceptance from '../../data/complete-play-loop/concurrency-failure-acceptance.v1.json'
 import goldenCampaigns from '../../data/complete-play-loop/golden-campaign-acceptance.v1.json'
 import documentation from '../../data/complete-play-loop/documentation-closure.v1.json'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 const root = resolve(import.meta.dirname, '../..')
-const sha256 = (value: Buffer): string => createHash('sha256').update(value).digest('hex')
 const read = (path: string): string => readFileSync(resolve(root, path), 'utf8')
 
 describe('P8-100 final alpha product acceptance', () => {
@@ -118,7 +117,8 @@ describe('P8-100 final alpha product acceptance', () => {
       expect(paths.has(row.path), row.path).toBe(false)
       paths.add(row.path)
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
-      expect(sha256(readFileSync(resolve(root, row.path))), row.path).toBe(row.sha256)
+      expect(acceptedSuccessorHead(row.path, row.sha256), row.path)
+        .toBe(repositoryFileSha256(row.path))
     }
     for (const path of [
       acceptance.plan.path,

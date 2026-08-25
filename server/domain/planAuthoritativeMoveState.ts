@@ -77,6 +77,7 @@ import {
   type MoveStateChangePlan,
 } from './moveAutomation/plan'
 import {
+  actionTypeFromMoveRange,
   moveResourceCostsInPhaseWindow,
   planEncounterMoveResourceCosts,
   planMoveResourceObservation,
@@ -96,6 +97,7 @@ import { consumeHelpingHandBonus } from './moveAutomation/helpingHand'
 import { consumeSideDamageResistance } from './moveAutomation/sideDamageResistance'
 import { MoveMapOperationReductionError } from './moveAutomation/reducers/mapOperations'
 import { resetFuryCutterChainForDifferentMove } from './moveAutomation/furyCutter'
+import { recordAcceptedMoveHistory } from './moveAutomation/recordAcceptedMoveHistory'
 import {
   deduplicateAuthoritativeMoveGroupInventoryReads,
   type AuthoritativeMoveGroupInventoryRead,
@@ -928,14 +930,15 @@ export const observeMovePlanResources = (input: {
   const existingEncounterChange = input.stateChanges.changes.find(
     change => change.kind === 'encounter-state',
   )
+  const acceptedHistoryOnly = existingEncounterChange?.reasonCode === 'accepted-move.history-recorded'
   const stateChanges = createMoveStateChangePlan([
     ...existingInputs,
     {
       kind: 'encounter-state',
       scope: { kind: 'encounter', mapSlug: input.planningInput.map.slug },
       expectedRevision: input.previousRevision,
-      sourceOperationId: existingEncounterChange ? null : sourceOperationId,
-      reasonCode: existingEncounterChange
+      sourceOperationId: existingEncounterChange && !acceptedHistoryOnly ? null : sourceOperationId,
+      reasonCode: existingEncounterChange && !acceptedHistoryOnly
         ? 'move-and-resource-state'
         : 'move-resource-spend',
       previous: existingEncounterChange
@@ -1522,6 +1525,30 @@ export const planAuthoritativeMoveStateExecution = (
     workingMap,
     resolution.terrainConditionProtectionEffects,
   )
+  if (input.operationId) {
+    const encounter = parseEncounterState(workingMap.encounterState ?? createEmptyEncounterState())
+    workingMap.encounterState = parseEncounterState({
+      ...encounter,
+      history: recordAcceptedMoveHistory({
+        history: encounter.history,
+        round: Number.isSafeInteger(workingMap.initiative?.round) ? Number(workingMap.initiative!.round) : encounter.history.currentRound,
+        operationId: input.operationId,
+        resolutionId: input.pendingResolutionId ?? null,
+        actorPlacementId: resolution.actorPlacementId,
+        canonicalMoveId: resolution.canonicalMoveName,
+        specVersion: resolution.auditTrace.program.runtimeVersion,
+        actionType: actionTypeFromMoveRange(resolution.script.range ?? ''),
+        origin: resolution.moveHistoryOrigin ?? { kind: 'direct' },
+        moveListSource: resolution.moveHistoryMoveListSource ?? { kind: 'placement', placementId: resolution.actorPlacementId },
+        attackedTargetIds: resolution.transaction.attackedTargetIds,
+        hitTargetIds: resolution.transaction.hitTargetIds,
+        knockoutTargetIds: knockedOutPlacementIds,
+        branchSelections: resolution.targetBranchId
+          ? [{ selectionId: 'legacy.target-branch', recipientId: null, branchId: resolution.targetBranchId }]
+          : [],
+      }),
+    })
+  }
   workingMap.metadata = appendMoveAutomationLogEntry(workingMap.metadata, resolution.transaction, {
     now: () => plannedAt,
     maxLogEntries: input.maxMoveLogEntries,

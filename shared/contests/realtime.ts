@@ -3,7 +3,7 @@ import type { ContestStage } from './ids'
 
 export const CONTEST_REALTIME_EVENT_TYPES = Object.freeze([
   'contest.created', 'contest.setup.changed', 'contest.introduction.accepted',
-  'contest.performance.started', 'contest.rotation.performer-selected', 'contest.appeal.accepted', 'contest.intervention.accepted', 'contest.intervention.passed', 'contest.round.advanced', 'contest.performance.completed',
+  'contest.performance.started', 'contest.rotation.performer-selected', 'contest.appeal.accepted', 'contest.voltage.changed', 'contest.intervention.accepted', 'contest.intervention.passed', 'contest.round.advanced', 'contest.performance.completed',
   'contest.corrected', 'contest.prize.declared', 'contest.settlement.prepared', 'contest.completed', 'contest.cancelled',
 ] as const)
 export type ContestRealtimeEventType = typeof CONTEST_REALTIME_EVENT_TYPES[number]
@@ -61,6 +61,7 @@ export const CONTEST_EVENT_AUDIENCES: Readonly<Record<ContestRealtimeEventType, 
   'contest.performance.started': ALL_CONTEST_AUDIENCES,
   'contest.rotation.performer-selected': ALL_CONTEST_AUDIENCES,
   'contest.appeal.accepted': ALL_CONTEST_AUDIENCES,
+  'contest.voltage.changed': ALL_CONTEST_AUDIENCES,
   'contest.intervention.accepted': ALL_CONTEST_AUDIENCES,
   'contest.intervention.passed': ALL_CONTEST_AUDIENCES,
   'contest.round.advanced': ALL_CONTEST_AUDIENCES,

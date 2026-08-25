@@ -1,0 +1,747 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-integrated-golden-journeys-v1",
+  "ticket": "P11-081",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "directStorageRepairAllowed": false,
+  "requiredRoles": [
+    "gm",
+    "player-owner",
+    "opposing-owner",
+    "spectator"
+  ],
+  "requiredPhases": [
+    "campaign-load",
+    "equipment-custody",
+    "ranged-attack",
+    "weapon-move",
+    "item-action",
+    "generic-skill-check",
+    "encounter-resolution",
+    "contest",
+    "settlement",
+    "campaign-continuation"
+  ],
+  "fixturePolicy": {
+    "mechanicsFixtures": "24-of-24-exactly-once",
+    "settlementFixtures": "5-of-5-at-least-once",
+    "contestVariants": [
+      "trainer-participant",
+      "battle"
+    ],
+    "campaignSeedUse": "fixture-selection-and-server-randomness-only",
+    "afterFirstCommandStorageWrites": "production-authorities-only"
+  },
+  "authorityPolicy": {
+    "seedUse": "pre-journey-fixture-selection-and-server-random-source-only",
+    "acceptedFactsDriveNextPhase": true,
+    "clientAuthoredMechanicalOutcomes": false,
+    "directCrossDocumentMutation": false,
+    "postCommitRealtimeOnly": true,
+    "exactRetryPolicy": "original-terminal-result-with-no-additional-authority"
+  },
+  "campaigns": [
+    {
+      "campaignId": "harbor-qualifier-golden",
+      "seed": 81011,
+      "roles": [
+        "gm",
+        "player-owner",
+        "opposing-owner",
+        "spectator"
+      ],
+      "mechanicsFixtureIds": [
+        "weapon-profile-weighted-rope",
+        "weapon-profile-hunting-bow",
+        "weapon-move-bash",
+        "weapon-move-pierce",
+        "weapon-move-gouge",
+        "item-old-rod-fish",
+        "item-glue-cannon-attack",
+        "item-light-shield-ready",
+        "item-snag-machine-convert"
+      ],
+      "skillCheck": {
+        "mode": "group",
+        "skillId": "athletics",
+        "serverFaces": [
+          4,
+          4,
+          4,
+          4
+        ],
+        "acceptedResult": "success"
+      },
+      "contestFixtures": [
+        {
+          "variantId": "trainer-participant",
+          "scenarioId": "trainer-participant-standard-simultaneous-3"
+        }
+      ],
+      "settlementFixtureIds": [
+        "simple-trainer-duel",
+        "capture-team-overflow"
+      ],
+      "phases": [
+        {
+          "phaseId": "campaign-load",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "equipment-custody",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "ranged-attack",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "weapon-move",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "item-action",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "generic-skill-check",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "encounter-resolution",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "contest",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "settlement",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "campaign-continuation",
+          "acceptedAuthorityOnly": true
+        }
+      ],
+      "outcome": {
+        "exactRetryAdditionalRolls": 0,
+        "exactRetryAdditionalSpends": 0,
+        "exactRetryAdditionalRewards": 0,
+        "manualRepairRequired": false,
+        "campaignContinuationLoadedFromFreshAuthority": true
+      }
+    },
+    {
+      "campaignId": "foundry-battle-golden",
+      "seed": 81022,
+      "roles": [
+        "gm",
+        "player-owner",
+        "opposing-owner",
+        "spectator"
+      ],
+      "mechanicsFixtureIds": [
+        "weapon-profile-slingshot",
+        "weapon-profile-throwing-hammers",
+        "weapon-move-titanic-slam",
+        "weapon-move-bullseye",
+        "item-good-rod-fish",
+        "item-hand-net-attack",
+        "item-weighted-nets-throw",
+        "item-weighted-nets-pull"
+      ],
+      "skillCheck": {
+        "mode": "single",
+        "skillId": "combat",
+        "serverFaces": [
+          5,
+          4,
+          3,
+          2
+        ],
+        "acceptedResult": "success"
+      },
+      "contestFixtures": [
+        {
+          "variantId": "battle",
+          "scenarioId": "minimum-three-round-budget"
+        }
+      ],
+      "settlementFixtureIds": [
+        "loot-heavy",
+        "reconnect-during-settlement"
+      ],
+      "phases": [
+        {
+          "phaseId": "campaign-load",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "equipment-custody",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "ranged-attack",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "weapon-move",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "item-action",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "generic-skill-check",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "encounter-resolution",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "contest",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "settlement",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "campaign-continuation",
+          "acceptedAuthorityOnly": true
+        }
+      ],
+      "outcome": {
+        "exactRetryAdditionalRolls": 0,
+        "exactRetryAdditionalSpends": 0,
+        "exactRetryAdditionalRewards": 0,
+        "manualRepairRequired": false,
+        "campaignContinuationLoadedFromFreshAuthority": true
+      }
+    },
+    {
+      "campaignId": "summit-double-header-golden",
+      "seed": 81033,
+      "roles": [
+        "gm",
+        "player-owner",
+        "opposing-owner",
+        "spectator"
+      ],
+      "mechanicsFixtureIds": [
+        "weapon-profile-super-lucky-throwing-stars",
+        "weapon-profile-twin-needled-bow",
+        "weapon-move-deadly-strike",
+        "weapon-move-triple-threat",
+        "item-super-rod-fish",
+        "item-heavy-shield-ready",
+        "item-shock-collar-activate"
+      ],
+      "skillCheck": {
+        "mode": "group",
+        "skillId": "charm",
+        "serverFaces": [
+          6,
+          5,
+          4,
+          3,
+          2,
+          1
+        ],
+        "acceptedResult": "mixed"
+      },
+      "contestFixtures": [
+        {
+          "variantId": "trainer-participant",
+          "scenarioId": "trainer-participant-festival-alternating-5"
+        },
+        {
+          "variantId": "battle",
+          "scenarioId": "maximum-six-all-pokemon-ko"
+        }
+      ],
+      "settlementFixtureIds": [
+        "injury-heavy"
+      ],
+      "phases": [
+        {
+          "phaseId": "campaign-load",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "equipment-custody",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "ranged-attack",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "weapon-move",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "item-action",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "generic-skill-check",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "encounter-resolution",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "contest",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "settlement",
+          "acceptedAuthorityOnly": true
+        },
+        {
+          "phaseId": "campaign-continuation",
+          "acceptedAuthorityOnly": true
+        }
+      ],
+      "outcome": {
+        "exactRetryAdditionalRolls": 0,
+        "exactRetryAdditionalSpends": 0,
+        "exactRetryAdditionalRewards": 0,
+        "manualRepairRequired": false,
+        "campaignContinuationLoadedFromFreshAuthority": true
+      }
+    }
+  ],
+  "inventoryCoverage": [
+    {
+      "rowId": "weapon-profile.weighted-rope",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "weapon-profile-weighted-rope"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.slingshot",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "weapon-profile-slingshot"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.throwing-hammers",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "weapon-profile-throwing-hammers"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.hunting-bow",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "weapon-profile-hunting-bow"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.super-lucky-throwing-stars",
+      "journeyIds": [
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "weapon-profile-super-lucky-throwing-stars"
+      ]
+    },
+    {
+      "rowId": "weapon-profile.twin-needled-bow",
+      "journeyIds": [
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "weapon-profile-twin-needled-bow"
+      ]
+    },
+    {
+      "rowId": "weapon-move.bash",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "weapon-move-bash"
+      ]
+    },
+    {
+      "rowId": "weapon-move.pierce",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "weapon-move-pierce"
+      ]
+    },
+    {
+      "rowId": "weapon-move.gouge",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "weapon-move-gouge"
+      ]
+    },
+    {
+      "rowId": "weapon-move.titanic-slam",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "weapon-move-titanic-slam"
+      ]
+    },
+    {
+      "rowId": "weapon-move.bullseye",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "weapon-move-bullseye"
+      ]
+    },
+    {
+      "rowId": "weapon-move.deadly-strike",
+      "journeyIds": [
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "weapon-move-deadly-strike"
+      ]
+    },
+    {
+      "rowId": "weapon-move.triple-threat",
+      "journeyIds": [
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "weapon-move-triple-threat"
+      ]
+    },
+    {
+      "rowId": "item-action.old-rod.fish",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "item-old-rod-fish"
+      ]
+    },
+    {
+      "rowId": "item-action.good-rod.fish",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "item-good-rod-fish"
+      ]
+    },
+    {
+      "rowId": "item-action.super-rod.fish",
+      "journeyIds": [
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "item-super-rod-fish"
+      ]
+    },
+    {
+      "rowId": "item-action.glue-cannon.attack",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "item-glue-cannon-attack"
+      ]
+    },
+    {
+      "rowId": "item-action.hand-net.attack",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "item-hand-net-attack"
+      ]
+    },
+    {
+      "rowId": "item-action.weighted-nets.throw",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "item-weighted-nets-throw"
+      ]
+    },
+    {
+      "rowId": "item-action.weighted-nets.pull",
+      "journeyIds": [
+        "foundry-battle-golden"
+      ],
+      "evidenceIds": [
+        "item-weighted-nets-pull"
+      ]
+    },
+    {
+      "rowId": "item-action.light-shield.ready",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "item-light-shield-ready"
+      ]
+    },
+    {
+      "rowId": "item-action.heavy-shield.ready",
+      "journeyIds": [
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "item-heavy-shield-ready"
+      ]
+    },
+    {
+      "rowId": "item-action.snag-machine.convert",
+      "journeyIds": [
+        "harbor-qualifier-golden"
+      ],
+      "evidenceIds": [
+        "item-snag-machine-convert"
+      ]
+    },
+    {
+      "rowId": "item-action.shock-collar.activate",
+      "journeyIds": [
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "item-shock-collar-activate"
+      ]
+    },
+    {
+      "rowId": "contest-variant.trainer-participant",
+      "journeyIds": [
+        "harbor-qualifier-golden",
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "trainer-participant-standard-simultaneous-3",
+        "trainer-participant-festival-alternating-5"
+      ]
+    },
+    {
+      "rowId": "contest-variant.battle",
+      "journeyIds": [
+        "foundry-battle-golden",
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "minimum-three-round-budget",
+        "maximum-six-all-pokemon-ko"
+      ]
+    },
+    {
+      "rowId": "runtime.generic-skill-check",
+      "journeyIds": [
+        "harbor-qualifier-golden",
+        "foundry-battle-golden",
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "group-athletics",
+        "single-combat",
+        "group-charm"
+      ]
+    },
+    {
+      "rowId": "registry.equipment-grants-deferred-ticket-pointers",
+      "journeyIds": [
+        "harbor-qualifier-golden",
+        "foundry-battle-golden",
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "preflight-drift-and-authority-check"
+      ]
+    },
+    {
+      "rowId": "documentation.live-play-authority-trigger-registrations",
+      "journeyIds": [
+        "harbor-qualifier-golden",
+        "foundry-battle-golden",
+        "summit-double-header-golden"
+      ],
+      "evidenceIds": [
+        "preflight-drift-and-authority-check"
+      ]
+    }
+  ],
+  "phaseEvidence": {
+    "campaign-load": [
+      "tests/server/campaignContinuation.test.ts"
+    ],
+    "equipment-custody": [
+      "tests/server/equipmentGrantProjection.test.ts"
+    ],
+    "ranged-attack": [
+      "tests/server/equipmentGrantProjection.test.ts"
+    ],
+    "weapon-move": [
+      "tests/server/deferredClosureWeaponMovesRuntime.test.ts"
+    ],
+    "item-action": [
+      "tests/server/equipmentActionUseCase.test.ts",
+      "tests/server/deferredClosureWeightedNets.test.ts",
+      "tests/server/deferredClosureFishingContract.test.ts"
+    ],
+    "generic-skill-check": [
+      "tests/server/skillChecksRuntime.test.ts"
+    ],
+    "encounter-resolution": [
+      "tests/server/commitEncounterSettlement.test.ts"
+    ],
+    "contest": [
+      "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+      "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts"
+    ],
+    "settlement": [
+      "tests/server/commitEncounterSettlement.test.ts",
+      "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+      "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts"
+    ],
+    "campaign-continuation": [
+      "tests/server/campaignContinuation.test.ts"
+    ]
+  },
+  "privacyAcceptance": {
+    "structuralRoleDistinctness": true,
+    "publicPrivateAuthorityFields": 0,
+    "opponentPrivateAuthorityFields": 0,
+    "ownerOtherSheetAuthorityFields": 0,
+    "spectatorSourceOrJournalFields": 0
+  },
+  "sourceEvidence": [
+    {
+      "path": "data/deferred-closure/mechanics-acceptance-fixtures.v1.json",
+      "sha256": "e7152b6100321634bfa3bc9bf343370b7d8cc9fcd18955dab04e81c6f9ee4da4"
+    },
+    {
+      "path": "data/deferred-closure/failure-recovery-fixtures.v1.json",
+      "sha256": "5eeef81f0d3da21882acfaa53687fbb2df0a860746c7ad44720e41864225078b"
+    },
+    {
+      "path": "data/contests/trainer-participant-variant-matrix.v1.json",
+      "sha256": "a219f6aaa1701a00600cba806189c8812a465b255acd37adde59545a1c48a195"
+    },
+    {
+      "path": "data/contests/battle-contest-scenarios.v1.json",
+      "sha256": "7dcc5a9f508cc1899de11b681fdc919fb4791ee7c88ddd3d133b5692f122d1dd"
+    },
+    {
+      "path": "data/complete-play-loop/fixtures/settlements.v1.json",
+      "sha256": "5ca134e3edef10db08888fb6d7403f47a97092e72bfd1235be9867ce5e68553e"
+    },
+    {
+      "path": "data/deferred-closure/skill-check-recovery-certification.v1.json",
+      "sha256": "6c9133d08f3d96f5be8e12385102cd5b632132a7220774fcfb3aff55485bb8e7"
+    },
+    {
+      "path": "data/deferred-closure/trainer-participant-activation-certification.v1.json",
+      "sha256": "72c61c71328d5a820bc510f219cfa7b6f73b32de035dbc9b4f5133bf9cc71f1c"
+    },
+    {
+      "path": "data/deferred-closure/battle-contest-activation-certification.v1.json",
+      "sha256": "f2dc7db5fba6dab40783d3e28b917a38977dd4457985f57b927dd58578e58318"
+    },
+    {
+      "path": "tests/server/campaignContinuation.test.ts",
+      "sha256": "7a742b1ee24b24a0863af757c48f1b0a73bdd7d51d78a376b3c5f4d8508ed612"
+    },
+    {
+      "path": "tests/server/equipmentGrantProjection.test.ts",
+      "sha256": "0ee488fb3341afc2e3591a4583eab3a058a64501e47b1c6d15f5defb612b5467"
+    },
+    {
+      "path": "tests/server/deferredClosureWeaponMovesRuntime.test.ts",
+      "sha256": "aac22c751fedb16f5d336db4bff05337e1982f305b39db6685e15c949d2de09f"
+    },
+    {
+      "path": "tests/server/equipmentActionUseCase.test.ts",
+      "sha256": "f67eb9ca34fa48e2e93b995f733fb25039f9341fb0ba4afdbe97a519d0096b20"
+    },
+    {
+      "path": "tests/server/deferredClosureWeightedNets.test.ts",
+      "sha256": "4eead38f9fb50f7d9f87578775f336c80d52171dd15c17f76d55195022eaca58"
+    },
+    {
+      "path": "tests/server/deferredClosureFishingContract.test.ts",
+      "sha256": "f8bc6045b18736611e63864ddef696c755262361f96e6ba723798a1cd59bd4b8"
+    },
+    {
+      "path": "tests/server/skillChecksRuntime.test.ts",
+      "sha256": "be0157437a918498d432152f99aeda9520b71f376d421b0e9bcb5ec5f5314333"
+    },
+    {
+      "path": "tests/server/commitEncounterSettlement.test.ts",
+      "sha256": "0f9be0ffdc828e23f9ae9d3fc5ea2a59f019fb189ccf88f1ed96580df553a886"
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+      "sha256": "fa0c330f606438c10cac7df8e126ba824d32b732c6305107d81251edc0cbc14b"
+    },
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "27c871074298175b3c49f1e11f2622dc543dfc430294f635f802ed84aedd259a"
+    },
+    {
+      "path": "tests/data/deferredClosureMechanicsFixtures.test.ts",
+      "sha256": "9c83b02b9480064bc0e49d5bb2fab72c82bc741bb096af9836b5be69fcd54ebe"
+    },
+    {
+      "path": "tests/integration/deferredClosureGoldenJourneys.test.ts",
+      "sha256": "804b7698974f86e03f0599811957dd4d285beb31842c60b2907abe7d1f67a38f"
+    },
+    {
+      "path": "docs/deferred-mechanics-golden-journeys.md",
+      "sha256": "6752e9bcd40a616d2c4e385ac4cd6075ed5e214ba61a699c9b93860839a3762a"
+    },
+    {
+      "path": "package.json",
+      "sha256": "ee6565113c90750a9064eb701764b1b67e11fca193ca241b48d29da54153a2d2"
+    }
+  ],
+  "validation": {
+    "focusedGate": "passed",
+    "seededCampaigns": 3,
+    "mechanicsFixtures": 24,
+    "settlementFixtures": 5,
+    "nativeContestVariants": 2,
+    "manualRepairOperations": 0,
+    "runtimeProseParsing": false
+  },
+  "acceptance": {
+    "integratedCampaigns": 3,
+    "closureInventoryRowsCovered": 29,
+    "requiredSubsystemsCovered": 10,
+    "exactRetryAdditionalAuthority": 0,
+    "privateAuthorityLeaks": 0,
+    "nextTicket": "P11-082"
+  }
+}

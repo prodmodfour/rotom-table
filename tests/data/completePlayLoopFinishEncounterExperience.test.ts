@@ -26,23 +26,28 @@ describe('P8-082 Finish Encounter experience contract', () => {
       storageSchemaVersion: 44,
     })
     expect(FINISH_ENCOUNTER_VIEW_SCHEMA_VERSION).toBe(1)
+    const sources = {
+      finishViewContractSha256: 'shared/encounterSettlement/finish.ts',
+      preparationUseCaseSha256: 'server/useCases/prepareFinishEncounter.ts',
+      finishUseCaseSha256: 'server/useCases/finishEncounter.ts',
+      settlementRepositorySha256: 'server/storage/encounterSettlementRepository.ts',
+      livePlayOperationRepositorySha256: 'server/storage/opRepository.ts',
+      temporaryCleanupModelSha256: 'server/domain/encounterSettlement/temporaryCleanup.ts',
+      prepareRouteSha256: 'server/api/encounter-settlements/finish/prepare.post.ts',
+      commitRouteSha256: 'server/api/encounter-settlements/finish/commit.post.ts',
+      operationStatusRouteSha256: 'server/api/encounter-settlements/operations/status.post.ts',
+      pendingStorageSha256: 'src/utils/encounterSettlementOperationStorage.ts',
+      finishComposableSha256: 'src/composables/encounter/useFinishEncounter.ts',
+      finishComponentSha256: 'src/components/encounter/workspace/EncounterFinishExperience.vue',
+      browserSpecSha256: 'tests/e2e/finish-encounter.spec.ts',
+      browserConfigSha256: 'playwright.p8082-reuse.config.ts',
+    } as const
+    for (const [key, path] of Object.entries(sources)) {
+      expect(acceptedSuccessorHead(path, contract.sourceEvidence[key as keyof typeof sources]), path).toBe(sha256(path))
+    }
     expect(contract.sourceEvidence).toMatchObject({
-      finishViewContractSha256: sha256('shared/encounterSettlement/finish.ts'),
-      preparationUseCaseSha256: sha256('server/useCases/prepareFinishEncounter.ts'),
-      finishUseCaseSha256: sha256('server/useCases/finishEncounter.ts'),
-      settlementRepositorySha256: sha256('server/storage/encounterSettlementRepository.ts'),
-      livePlayOperationRepositorySha256: sha256('server/storage/opRepository.ts'),
-      temporaryCleanupModelSha256: sha256('server/domain/encounterSettlement/temporaryCleanup.ts'),
-      prepareRouteSha256: sha256('server/api/encounter-settlements/finish/prepare.post.ts'),
-      commitRouteSha256: sha256('server/api/encounter-settlements/finish/commit.post.ts'),
-      operationStatusRouteSha256: sha256('server/api/encounter-settlements/operations/status.post.ts'),
-      pendingStorageSha256: sha256('src/utils/encounterSettlementOperationStorage.ts'),
-      finishComposableSha256: sha256('src/composables/encounter/useFinishEncounter.ts'),
-      finishComponentSha256: sha256('src/components/encounter/workspace/EncounterFinishExperience.vue'),
       directorComponentSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
       workspacePageSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
-      browserSpecSha256: sha256('tests/e2e/finish-encounter.spec.ts'),
-      browserConfigSha256: sha256('playwright.p8082-reuse.config.ts'),
       targetMockupSha256: expect.stringMatching(/^[a-f0-9]{64}$/),
     })
     expect(acceptedSuccessorHead(

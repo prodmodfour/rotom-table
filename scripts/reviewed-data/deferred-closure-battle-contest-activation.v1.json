@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "deferred-closure:battle-contest-native-activation:v1",
+  "ticket": "P11-080",
+  "status": "reviewed",
+  "runtimeProseParsing": false,
+  "sources": [
+    {
+      "path": "data/deferred-closure/battle-contest-fixtures-certification.v1.json",
+      "sha256": "ee2f66de8007056cfa675d4bd3856ea2bab4fc9fa61dfbc44af6cf8972fdbd70"
+    }
+  ],
+  "target": {
+    "path": "data/reference/contests.json",
+    "beforeBytes": 31801,
+    "beforeSha256": "d58fa7cf9ffda19f73af37a805faf4ff0ed79023bb411ecdb9bf295e89016972",
+    "beforeGitBlob": "a00b4733309c84c02ab8cc468adf9888fc859132",
+    "afterBytes": 31797,
+    "afterSha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497",
+    "afterGitBlob": "55bbd39ab0127fa8d790a7d063d77be7298b0fbc"
+  },
+  "changedVariantIds": ["battle"],
+  "changedStableRows": ["variants.battle.completionState"],
+  "activationPolicy": {
+    "beforeCompletionState": "structured",
+    "afterCompletionState": "native",
+    "requiredTicketRange": ["P11-065", "P11-080"],
+    "requiredCohorts": ["blend-contract", "setup", "introductions", "encounter-link", "accepted-move-appeals", "effects", "per-pokemon-voltage", "voltage-lifecycle", "replacement-attention", "end-conditions", "single-spend", "recovery", "settlement", "joined-liveplay", "deterministic-fixtures", "final-certification"],
+    "runtimeProseParsing": false,
+    "parallelMechanicsEngines": 0
+  }
+}

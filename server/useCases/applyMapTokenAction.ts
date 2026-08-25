@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { UseCaseHttpError } from '../utils/useCaseErrors'
 import { applyAa061BallFetchSendOutTriggers } from '../domain/abilityAutomation/mechanics/aa061PresenceIntegration'
 import { applyAa065CuriousMedicineSendOutTrigger } from '../domain/abilityAutomation/mechanics/aa065PresenceIntegration'
@@ -41,6 +42,12 @@ import {
   parseEncounterState,
   type EncounterState,
 } from '#shared/moveAutomation/encounterState'
+import {
+  ENCOUNTER_EVENT_SCHEMA_VERSION,
+  parseEncounterEvent,
+  type EncounterRecallEvent,
+  type EncounterSendOutEvent,
+} from '#shared/moveAutomation/events'
 import {
   createPendingMoveDeclarationResult,
   type PendingMoveDeclarationResult,
@@ -99,6 +106,7 @@ import {
   type AuthoritativeMovementSuccess,
 } from '../domain/movement/resolveMovement'
 import { EncounterResourceReductionError } from '../domain/moveAutomation/reduceEncounterResources'
+import { reduceEncounterHistoryEvent } from '../domain/moveAutomation/reduceEncounterHistory'
 import { planAuthoritativeMovementResources } from '../domain/movement/planMovementResources'
 import { applyAuthoritativeMovementMapTransition } from '../domain/movement/applyMovementTransition'
 import {
@@ -930,6 +938,24 @@ const resolveSendOutPokemonMapContext = (
   }
 }
 
+const presenceEventId = (kind: 'recall' | 'send-out', operationId: string, placementId: string): string => (
+  `event.${kind}.${createHash('sha256').update(`${operationId}\u0000${placementId}`).digest('hex').slice(0, 32)}`
+)
+
+const indexPokemonPresenceEvent = (
+  map: TabletopMap,
+  event: EncounterRecallEvent | EncounterSendOutEvent,
+): TabletopMap => {
+  const encounter = parseEncounterState(map.encounterState ?? createEmptyEncounterState())
+  return {
+    ...map,
+    encounterState: parseEncounterState({
+      ...encounter,
+      history: reduceEncounterHistoryEvent(encounter.history, event),
+    }),
+  }
+}
+
 const applySendOutPokemonToMap = (
   payload: SendOutPokemonPayload,
   context: ResolvedMapWriteContext,
@@ -1026,13 +1052,25 @@ const applySendOutPokemonToMap = (
     operationId,
     readPokemonSheet,
   })
+  const triggeredMap = applyAa065CuriousMedicineSendOutTrigger({
+    mapAfter: withBallFetch,
+    releasedPlacementId: resolved.placement.id,
+    operationId,
+    readPokemonSheet,
+  })
+  const event = parseEncounterEvent({
+    schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+    eventId: presenceEventId('send-out', operationId, resolved.placement.id),
+    kind: 'send-out',
+    sourceOperationId: operationId,
+    causalParentEventId: null,
+    reasonCode: 'live-play.pokemon-send-out',
+    placementId: resolved.placement.id,
+    sideId: resolved.placement.sideId ?? null,
+    causalProviderId: null,
+  }) as EncounterSendOutEvent
   return {
-    nextMap: applyAa065CuriousMedicineSendOutTrigger({
-      mapAfter: withBallFetch,
-      releasedPlacementId: resolved.placement.id,
-      operationId,
-      readPokemonSheet,
-    }),
+    nextMap: indexPokemonPresenceEvent(triggeredMap, event),
     placement: resolved.placement,
     ...(resolved.marsupialBaby ? {
       additionalPlacementChanges: [{
@@ -1048,6 +1086,7 @@ const applyDeleteTokenToMap = (
   payload: DeleteTokenPayload,
   context: ResolvedMapWriteContext,
   dependencies: Pick<MapTokenActionDependencySet, 'readSheet'>,
+  operationId: string,
 ): AppliedMapTokenChange => {
   const placement = context.map.placements.find((candidate) => candidate.id === payload.placementId)
   if (!placement) throw new MapTokenActionUseCaseError(404, `Placement ${payload.placementId} not found`)
@@ -1088,8 +1127,21 @@ const applyDeleteTokenToMap = (
   const companions = context.map.placements.filter(candidate => (
     candidate.id !== placement.id && removal.removedPlacementIds.has(candidate.id)
   ))
+  const nextMap = placement.sheetKind === 'pokemon'
+    ? indexPokemonPresenceEvent(removal.map, parseEncounterEvent({
+        schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+        eventId: presenceEventId('recall', operationId, placement.id),
+        kind: 'recall',
+        sourceOperationId: operationId,
+        causalParentEventId: null,
+        reasonCode: 'live-play.pokemon-recall',
+        placementId: placement.id,
+        sideId: placement.sideId ?? null,
+        causalProviderId: null,
+      }) as EncounterRecallEvent)
+    : removal.map
   return {
-    nextMap: removal.map,
+    nextMap,
     placement,
     ...(companions.length > 0 ? {
       additionalPlacementChanges: companions.map(companion => ({
@@ -1455,6 +1507,10 @@ const commandPatch = (
       ...(command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON ? { trainerId: command.payload.trainerId } : {}),
       previous: command.type === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN ? placement : null,
       current: isPlacementCreate ? placement : null,
+      ...((command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
+        || command.type === LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN && placement.sheetKind === 'pokemon')
+        ? { currentEncounterState: change.nextMap.encounterState ?? createEmptyEncounterState() }
+        : {}),
     },
   }
 }
@@ -1979,7 +2035,7 @@ export const executeMapTokenLivePlayCommandUseCase = async (
       } else if (command.type === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON) {
         change = applySendOutPokemonToMap(expectSendOutPokemonPayload(command.payload), map, deps, command.opId)
       } else {
-        change = applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map, deps)
+        change = applyDeleteTokenToMap(expectDeleteTokenPayload(command.payload), map, deps, command.opId)
       }
 
       if (!change) {

@@ -940,7 +940,7 @@ export const reduceEncounterResourceEvent = (
     resources = resetPlacement(resources, event.recalledPlacementId, 'recall')
     resources = resetPlacement(resources, event.sentOutPlacementId, 'send-out')
   }
-  else if (event.kind === 'move-ko') {
+  else if (event.kind === 'move-ko' || event.kind === 'lifecycle-ko') {
     resources = resetPlacement(resources, event.targetPlacementId, 'knockout')
   }
   else if (event.kind === 'resource-spent' || event.kind === 'resource-restored') {

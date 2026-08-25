@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-settlement-v1",
+  "ticket": "P11-077",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-recovery-certification.v1.json",
+    "sha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd"
+  },
+  "reviewedMigration": {
+    "path": "scripts/reviewed-data/deferred-closure-battle-contest-settlement.v1.json",
+    "sha256": "005788ae375051e3df5dbc8cfb879b810e7889cce780b06d78e29abf37144eb8"
+  },
+  "failureFixtureAuthority": {
+    "path": "data/deferred-closure/failure-recovery-fixtures.v1.json",
+    "sha256": "5eeef81f0d3da21882acfaa53687fbb2df0a860746c7ad44720e41864225078b",
+    "scenarioId": "dual-engine-interrupted-settlement"
+  },
+  "authorities": [
+    {
+      "id": "canonical-battle-settlement-policy",
+      "path": "data/reference/contests.json",
+      "sha256": "d58fa7cf9ffda19f73af37a805faf4ff0ed79023bb411ecdb9bf295e89016972",
+      "guarantees": ["all-declared-team-pokemon-experience", "own-level-standard-placement-formula", "all-winning-team-ribbons", "exact-preview-one-combined-transaction", "exact-retry-or-reject"]
+    },
+    {
+      "id": "typed-combined-receipt-contract",
+      "path": "shared/contests/battleSettlement.ts",
+      "sha256": "f8de6a586b8edb43d2ffb0585184f0c1c9dc6c76b226270805cb17de2d7bbacd",
+      "guarantees": ["prepared-plan-binding", "accepted-result-binding", "final-contest-sheet-hashes", "canonical-combined-digest", "changed-material-rejection"]
+    },
+    {
+      "id": "contest-document-reconciliation",
+      "path": "shared/contests/document.ts",
+      "sha256": "1ad2180ff9e998c0e84d9c3e7befd19fbd586a69fd3645d63921cc2abb988a7e",
+      "guarantees": ["six-pokemon-settlement-capacity", "all-battle-roster-experience-validation", "reward-package-hash-binding", "link-and-operation-binding", "legacy-null-default"]
+    },
+    {
+      "id": "reviewed-catalog-fail-closed-gate",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "6aaa27dac74797283258664673ce88bc048ab7d8f57e1be9f44c895a9b1f085a",
+      "guarantees": ["exact-settlement-policy-enums", "no-runtime-prose-parsing", "structured-not-native"]
+    },
+    {
+      "id": "contest-local-reward-plan",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "82c2e9ed779fc171e5a66c4f35f800e570b27ecf569a76db8e2152b6d845ee16",
+      "guarantees": ["all-declared-pokemon-experience", "all-winning-pokemon-ribbons", "accepted-combined-receipt-required", "appeal-only-placement-preserved"]
+    },
+    {
+      "id": "combined-settlement-plan-and-retry-gate",
+      "path": "server/domain/contests/battleSettlement.ts",
+      "sha256": "73a14f85d3ac6b884a67e47ce40feddfc1e910d214b4946e11f3a42511d8826f",
+      "guarantees": ["immutable-link-plan-validation", "orphan-result-and-ribbon-rejection", "encounter-result-reconciliation", "dual-journal-exact-retry-validation"]
+    },
+    {
+      "id": "atomic-combined-coordinator",
+      "path": "server/useCases/contests.ts",
+      "sha256": "0538919e9929896a11816f28e750b30399cf983a225e1127bac3d2f17a4c8782",
+      "guarantees": ["one-outer-sqlite-transaction", "encounter-plan-then-contest-reward-composition", "post-encounter-sheet-rebase", "operation-and-realtime-atomicity", "deterministic-failure-boundaries", "exact-retry"]
+    },
+    {
+      "id": "existing-encounter-atomic-settlement",
+      "path": "server/storage/encounterSettlementRepository.ts",
+      "sha256": "ba885a6bf1bebaeb977d93f51979e59b00c24f625538530f8098e240c399f57b",
+      "guarantees": ["encounter-map-sheet-group-writes", "history-and-attention-evidence", "nested-synchronous-transaction", "persisted-realtime-handoff", "operation-idempotency"]
+    },
+    {
+      "id": "battle-exclusive-finish-encounter-capability",
+      "path": "server/useCases/prepareFinishEncounter.ts",
+      "sha256": "2db3f0a7cb6a0980f0dffc78c9fb6cff96ed25c45e3ea68ed83da3170ddec7ae",
+      "guarantees": ["independent-battle-finish-rejected", "exact-link-capability", "source-bound-stake-completion", "ordinary-encounter-compatibility"]
+    },
+    {
+      "id": "declared-combined-read-write-set",
+      "path": "shared/contests/architecture.ts",
+      "sha256": "01a89ce3a66459d22ecdd35442554fc58bbace9a3c97cec413a355ad2d7f5d1f",
+      "guarantees": ["encounter-settlement-read-write", "group-inventory-read-write", "both-document-boundary", "single-sqlite-transaction"]
+    },
+    {
+      "id": "role-safe-settlement-summary",
+      "path": "shared/contests/projections.ts",
+      "sha256": "feccb64bfc44816f7ce94eb08b867491323f3105f3d4a7c97eb187bf9a84203c",
+      "guarantees": ["no-sheet-slugs", "no-attention-identities", "no-operation-identities", "no-plan-result-or-sheet-hashes", "diagnostic-only-exact-authority"]
+    },
+    {
+      "id": "reviewed-migration-checker",
+      "path": "scripts/migrate_pokemon_contests.py",
+      "sha256": "408ae82d9f0ddaa5a5921e62c12b79ae2adc1d2266573d6ffd8b48e063f00c92",
+      "guarantees": ["source-fingerprint-validation", "contiguous-canonical-target", "typed-policy-reproduction", "reviewed-target-drift-rejection"]
+    },
+    {
+      "id": "safe-settlement-summary-consumer",
+      "path": "src/pages/contests/[contestId].vue",
+      "sha256": "249d448d2fcb00d42cca761d763865d95df65a6fa674d73af5096e6a795fa120",
+      "guarantees": ["all-roster-experience-summary", "target-contestant-label-only", "attention-count-only", "no-private-coordination-rendering"]
+    },
+    {
+      "id": "operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "b1ea785a53af39f05aaba83575f9a72efe6890bbc5fd35d8992ff5004f699d93",
+      "guarantees": ["reward-ownership", "combined-commit-order", "rollback-boundary", "exact-retry", "privacy"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "e9adae6d3df573f8190287d8d1c13fbfeb2194a9fe6667bd4700dc47ec8e8b61",
+      "scenarioIds": ["round-budget-combined-settlement", "all-roster-experience", "all-winning-team-ribbons", "trainer-result-money-and-items", "independent-encounter-finish-rejected", "role-safe-preview", "dual-journal-exact-retry", "final-ko-interrupted-settlement", "zero-partial-writes", "same-operation-recovery"]
+    },
+    {
+      "path": "tests/shared/contestBattleSettlement.test.ts",
+      "sha256": "a7dd3f6d0434626183a68449a11de5040214c077a34863b05369433d88c513d3",
+      "scenarioIds": ["prepared-receipt", "accepted-receipt", "combined-hash", "changed-material-rejection", "duplicate-sheet-rejection"]
+    }
+  ],
+  "validation": {
+    "focusedRuntimeAndContractTests": 22,
+    "broadContestTests": 230,
+    "encounterSettlementRegressionTests": 31,
+    "deferredClosureDataTests": 142,
+    "nuxtTypecheck": "passed",
+    "contestMigrationCheck": "passed-761-moves-349-items",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "settlementEnginesReused": 2,
+    "newSettlementEngines": 0,
+    "contestants": 2,
+    "pokemonExperienceRecipientsPerTeamMinimum": 3,
+    "pokemonExperienceRecipientsPerTeamMaximum": 6,
+    "winningTeamRibbonRecipientsPerTeamMinimum": 3,
+    "winningTeamRibbonRecipientsPerTeamMaximum": 6,
+    "contestPlacementScore": "appeal-points",
+    "independentEncounterSettlementAllowed": false,
+    "combinedSqliteTransactions": 1,
+    "contestRewardApplicationsPerAcceptedCommit": 1,
+    "encounterConsequenceApplicationsPerAcceptedCommit": 1,
+    "exactRetryAdditionalRewardApplications": 0,
+    "exactRetryAdditionalConsequenceApplications": 0,
+    "exactRetryAdditionalSheetWrites": 0,
+    "exactRetryAdditionalHistoryRows": 0,
+    "exactRetryAdditionalRealtimeRows": 0,
+    "interruptedCommitContestRewards": 0,
+    "interruptedCommitEncounterRewards": 0,
+    "interruptedCommitSheetWrites": 0,
+    "interruptedCommitHistoryRows": 0,
+    "publicCombinedAuthorityFields": 0,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-078"
+  }
+}

@@ -28,7 +28,7 @@
     "interpretive-campaign-tool": 34,
     "canonical-data-defect": 0
   },
-  "registrySha256": "7a24494eb4b2e4b1ab45a0539ffdb00e202edabe394ee613284601e372a44ad3",
+  "registrySha256": "1c52a4408701d4d7da94fe59d1c2b28f36377f8dc303dbf9eb20ba88e9730486",
   "cohorts": [
     {
       "cohortId": "machine-move-01",
@@ -2926,7 +2926,7 @@
       "recoveryEvidence": [
         {
           "path": "server/livePlay/sqliteCommandExecutor.ts",
-          "sha256": "b1589ed4bd91ada0a89f0964fdda6543b5c8124112f37b375989ff9a716ed686"
+          "sha256": "15ddca96f5b7c0b4094b56e0c208df186a1c70c0cfa0d2085ca2f2b33ed25e94"
         },
         {
           "path": "tests/server/livePlayCommandArchitecture.test.ts",
@@ -2967,7 +2967,7 @@
         },
         {
           "path": "data/reference/contests.json",
-          "sha256": "95bf5976d349f8e4e9a5075f44bb22008156013e005ccdcec9d2b44240a5ac2e"
+          "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497"
         }
       ],
       "executableEvidence": [
@@ -3134,7 +3134,7 @@
         },
         {
           "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
-          "sha256": "bd26162b618cec4c757a354d430e13e34a694c8dacf88226ac40802fc809ae06"
+          "sha256": "5547dc4edea72fc28a4b0d6aa552f99568c398a23858814984641652d688d687"
         }
       ],
       "recoveryEvidence": [
@@ -3301,7 +3301,7 @@
         },
         {
           "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
-          "sha256": "bd26162b618cec4c757a354d430e13e34a694c8dacf88226ac40802fc809ae06"
+          "sha256": "5547dc4edea72fc28a4b0d6aa552f99568c398a23858814984641652d688d687"
         }
       ],
       "recoveryEvidence": [
@@ -3426,7 +3426,7 @@
         },
         {
           "path": "tests/components/campaignGuidedItemAdjudication.test.ts",
-          "sha256": "bd26162b618cec4c757a354d430e13e34a694c8dacf88226ac40802fc809ae06"
+          "sha256": "5547dc4edea72fc28a4b0d6aa552f99568c398a23858814984641652d688d687"
         }
       ],
       "recoveryEvidence": [

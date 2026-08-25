@@ -18,11 +18,13 @@ The sheet lists each die’s source and lifetime Poffin use. Legacy free-form `c
 
 The GM opens **Contests** from campaign navigation, creates a hall activity, and chooses:
 
-- Standard, Supercontest, Festival, or Rotation;
+- Standard, Supercontest, Festival, Rotation, or Battle;
+- optional Trainer Participant format on a compatible non-Battle base;
+- Simultaneous or Alternating when Trainer Participant is selected;
 - fixed Contest type where the variant uses one;
 - significance multiplier, ribbon flag, and a declared prize package.
 
-Enroll three through five unique Trainers and Pokémon. A profile controller must own the enrolled Trainer and every Pokémon. Rotation teams contain one distinct Pokémon per round and use the canonical shared team-dice cap.
+Ordinary and Trainer Participant formats enroll three through five unique entries. A Trainer Participant entry contains one Trainer and one Pokémon. Rotation entries contain one distinct Pokémon per round and use the canonical shared team-dice cap. Battle enrolls exactly two distinct Trainers with equal rosters of three through six Pokémon. A profile controller must own the enrolled Trainer and every Pokémon.
 
 A prize must be explicitly declared—even an empty prize—before settlement preview.
 
@@ -52,13 +54,15 @@ If Coordinator, Style Flourish, or Contest Fashion can reroll an accepted appeal
 - **Supercontest:** every round’s type comes from a journaled d6; six rerolls within a bounded server budget.
 - **Festival:** lowest performers leave between heats; Appeal carries, Fumble resets, and the final three settle once for the whole event.
 - **Rotation:** each team preselects a distinct performer per round, keeps each Pokémon’s prepared pools plus shared Introduction dice, may spend at most twice the team count across the whole Contest, and splits earned experience in roster order.
-
-Trainer Participant and Battle Contest are intentionally not selectable in Plan 10.
+- **Trainer Participant:** overlays Standard, Supercontest, Festival, or Rotation. One paired Trainer may perform beside the Pokémon under Simultaneous or Alternating scheduling; both draw from the reviewed shared Pokémon pool, while performer legality and Voltage remain distinct. The Trainer never receives Pokémon Experience.
+- **Battle:** exactly two equal teams of three through six Pokémon use one real linked Encounter. Accepted Pokémon Moves produce Appeal, all declared Pokémon keep individual Voltage, and Struggle Attacks/maneuvers produce no Appeal. The Contest ends at the accepted round boundary or a full-roster KO and ranks by Appeal only.
 
 ## GM controls and settlement
 
 The GM can pause/resume, apply bounded Appeal/Fumble/Voltage/pool corrections, reassign a controller to an owning profile, or cancel. Corrections create receipts and never edit dice journals. Score corrections during settlement recompute placements and invalidate a stale preview.
 
 Settlement preview lists placement, experience, ribbon, money, and items. Commit is one SQLite transaction. On success, Trainer Contest history, Pokémon experience, ribbons, money, and inventory update together. Level-up and move/evolution choices are detected by ordinary campaign-attention workflows.
+
+A linked Battle Contest uses combined settlement with Encounter consequences first. Every declared Pokémon receives Contest Experience and every member of the winning team receives the configured Ribbon. Independent **Finish Encounter** is blocked for the linked Encounter; settle from the Contest workflow so neither engine can finish alone.
 
 If the outcome is uncertain, use **Retry exact command**. Do not submit a new operation ID until the original outcome is known.

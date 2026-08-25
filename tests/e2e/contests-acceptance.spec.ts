@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { expect, test, type APIResponse, type BrowserContext, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
@@ -20,6 +20,10 @@ const createSheet = async (page: Page, kind: 'trainer'|'pokemon', patch: Record<
   return { slug, revision: Number((saved.sheet as Record<string, any>).revision) }
 }
 const seriousViolations = async (page: Page) => (await new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21aa']).analyze()).violations.filter(row => row.impact === 'serious' || row.impact === 'critical')
+const preserveAcceptedScreenshot = async (page: Page, path: string): Promise<void> => {
+  if (existsSync(path) && process.env.ROTOM_REFRESH_UI_EVIDENCE !== '1') return
+  await page.screenshot({ path, fullPage: true, animations: 'disabled' })
+}
 
 test('live Contest is keyboard/touch/reflow accessible and converges for GM and spectator through settlement', async ({ browser }, testInfo) => {
   test.setTimeout(180_000)
@@ -58,7 +62,7 @@ test('live Contest is keyboard/touch/reflow accessible and converges for GM and 
   await gm.goto(`/contests/${encodeURIComponent(contestId)}`)
   await expect(gm.getByRole('heading', { name: 'Enroll contestants' })).toBeVisible()
   expect(await seriousViolations(gm)).toEqual([])
-  await gm.screenshot({ path: resolve(evidence, `${testInfo.project.name}-setup.png`), fullPage: true, animations: 'disabled' })
+  await preserveAcceptedScreenshot(gm, resolve(evidence, `${testInfo.project.name}-setup.png`))
   response = await command({ commandKind: 'start-introduction', expectedRevision: response.result.revision })
   await expect(gm.getByRole('heading', { name: 'Make an impression' })).toBeVisible()
   expect(await seriousViolations(gm)).toEqual([])
@@ -92,7 +96,7 @@ test('live Contest is keyboard/touch/reflow accessible and converges for GM and 
   expect(await seriousViolations(spectator)).toEqual([])
   await gm.emulateMedia({ reducedMotion: 'reduce' })
   expect(await gm.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true)
-  await gm.screenshot({ path: resolve(evidence, `${testInfo.project.name}-performance.png`), fullPage: true, animations: 'disabled' })
+  await preserveAcceptedScreenshot(gm, resolve(evidence, `${testInfo.project.name}-performance.png`))
 
   const firstMove = gm.locator('.move-options label').filter({ hasText: 'Charm' }).first()
   await firstMove.click()
@@ -126,7 +130,7 @@ test('live Contest is keyboard/touch/reflow accessible and converges for GM and 
   await gm.reload()
   await expect(gm.getByRole('heading', { name: 'Settlement' })).toBeVisible()
   expect(await gm.evaluate(() => document.scrollingElement?.scrollWidth ?? 0)).toBeLessThanOrEqual(322)
-  await gm.screenshot({ path: resolve(evidence, `${testInfo.project.name}-settlement-320.png`), fullPage: true, animations: 'disabled' })
+  await preserveAcceptedScreenshot(gm, resolve(evidence, `${testInfo.project.name}-settlement-320.png`))
   await gm.setViewportSize(originalViewport)
   await gm.evaluate(() => { document.documentElement.style.fontSize = '200%' })
   expect(await gm.evaluate(() => (document.scrollingElement?.scrollWidth ?? 0) <= (document.scrollingElement?.clientWidth ?? 0) + 2)).toBe(true)
@@ -140,7 +144,7 @@ test('live Contest is keyboard/touch/reflow accessible and converges for GM and 
   for (const ownerPage of ownerPages) await expect(ownerPage.getByRole('heading', { name: 'Results are committed' })).toBeVisible()
   await expect(spectator.getByText('GM-only acceptance note')).toHaveCount(0)
   expect(await seriousViolations(gm)).toEqual([])
-  await gm.screenshot({ path: resolve(evidence, `${testInfo.project.name}-completed.png`), fullPage: true, animations: 'disabled' })
+  await preserveAcceptedScreenshot(gm, resolve(evidence, `${testInfo.project.name}-completed.png`))
 
   const winningPokemon = projection.scoreboard.find((row: Record<string, any>) => row.placement === 1).contestantId
   const winnerIndex = Number(String(winningPokemon).split('-').at(-1))
@@ -149,4 +153,86 @@ test('live Contest is keyboard/touch/reflow accessible and converges for GM and 
   await Promise.all(ownerContexts.map(context => context.close()))
   await spectatorContext.close()
   await gmContext.close()
+})
+
+test('Trainer Participant performer choice passes the final assistive-technology and reflow audit', async ({ page }, testInfo) => {
+  test.setTimeout(120_000)
+  await authenticate(page.context(), 'gm')
+  const sheets: Array<{ trainer: string, pokemon: string }> = []
+  for (let index = 0; index < 3; index += 1) {
+    const trainer = await createSheet(page, 'trainer', {
+      name: `Paired Trainer ${index + 1}`,
+      level: 8,
+      skills: { charm: { rankBonus: index } },
+      inventory: {},
+      money: 0,
+    })
+    const pokemon = await createSheet(page, 'pokemon', {
+      nickname: `Paired Partner ${index + 1}`,
+      species: 'Pikachu',
+      level: 10,
+      totalExp: 100,
+      stats: { hp: { base: 20 }, atk: { base: 20 }, def: { base: 20 }, satk: { base: 20 }, sdef: { base: 20 }, spd: { base: 20 + index } },
+      movelist: [{ name: 'Charm' }, { name: 'Growl' }],
+    })
+    sheets.push({ trainer: trainer.slug, pokemon: pokemon.slug })
+  }
+  const runId = `${testInfo.project.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-${Date.now().toString(36)}`
+  const contestId = `contest:v1:e2e-participant-a11y-${runId}`
+  let sequence = 0
+  const command = async (body: Record<string, unknown>) => parseOk(await page.request.post('/api/contests/command', {
+    data: {
+      schemaVersion: 1,
+      operationId: `contest-op:v1:e2e-participant-a11y-${runId}-${sequence++}`,
+      contestId,
+      clientId: 'participant-accessibility-e2e',
+      ...body,
+    },
+  }))
+  let response = await command({
+    commandKind: 'create-contest',
+    expectedRevision: 0,
+    settings: {
+      name: 'Paired Accessibility Contest', hallName: 'Jubilife Hall', description: '',
+      variantId: 'standard', participantVariantId: 'trainer-participant', participantMethodId: 'simultaneous',
+      contestTypeId: 'cute', significanceMultiplier: 1, awardRibbon: true,
+      prize: { declared: true, money: 0, items: [], notes: '' }, gmNotes: '',
+    },
+  })
+  for (const [index, pair] of sheets.entries()) response = await command({
+    commandKind: 'enroll-contestant', expectedRevision: response.result.revision,
+    contestantId: `contestant:e2e-participant-${index + 1}`,
+    trainerSheetSlug: pair.trainer, pokemonSheetSlugs: [pair.pokemon], controller: { kind: 'gm' }, rotationOrder: [],
+  })
+  response = await command({ commandKind: 'start-introduction', expectedRevision: response.result.revision })
+  for (let index = 0; index < sheets.length; index += 1) response = await command({
+    commandKind: 'declare-introduction', expectedRevision: response.result.revision,
+    contestantId: `contestant:e2e-participant-${index + 1}`, skillId: 'charm', generatedStatId: 'cute', bonusStatIds: {},
+  })
+  await command({ commandKind: 'start-performance', expectedRevision: response.result.revision })
+
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto(`/contests/${encodeURIComponent(contestId)}`)
+  const appealHeading = page.getByRole('heading', { name: 'Your appeal' })
+  await expect(appealHeading).toBeVisible()
+  await expect(appealHeading).toHaveAttribute('tabindex', '-1')
+  const choice = page.locator('.participant-performer-choice')
+  await expect(choice.getByText('Choose who appeals first')).toBeVisible()
+  const performers = choice.getByRole('button')
+  await expect(performers).toHaveCount(2)
+  await performers.first().focus()
+  await expect(performers.first()).toBeFocused()
+  await page.keyboard.press('Enter')
+  await expect(performers.first()).toHaveAttribute('aria-pressed', 'true')
+  await expect(performers.first()).toContainText('Selected')
+  for (const performer of await performers.all()) expect((await performer.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44)
+  expect(await seriousViolations(page)).toEqual([])
+  expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true)
+
+  await page.setViewportSize({ width: 320, height: 900 })
+  expect(await page.evaluate(() => document.scrollingElement?.scrollWidth ?? 0)).toBeLessThanOrEqual(322)
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%' })
+  expect(await page.evaluate(() => (document.scrollingElement?.scrollWidth ?? 0) <= (document.scrollingElement?.clientWidth ?? 0) + 2)).toBe(true)
+  expect(await seriousViolations(page)).toEqual([])
 })

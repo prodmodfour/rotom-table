@@ -114,10 +114,19 @@ describe('Trainer Participant Contest enrollment runtime', () => {
     expect(owner.ownContestant.performers.map(row => row.performerKind)).toEqual(['pokemon', 'trainer'])
     const publicProjection = loadContestUseCase(created.result.contestId, { role: 'player', playerProfile: null }, context.deps) as ContestPublicProjectionV1
     expect(publicProjection.participantVariantId).toBe('trainer-participant')
-    expect(publicProjection.scoreboard[0]).toMatchObject({ displayName: 'Avery', pokemonName: 'Spark' })
+    expect(publicProjection.scoreboard[0]).toMatchObject({
+      displayName: 'Avery',
+      pokemonName: 'Spark',
+      performers: [
+        { performerKind: 'pokemon', displayName: 'Spark', activePerformer: true, voltage: 0 },
+        { performerKind: 'trainer', displayName: 'Avery', activePerformer: true, voltage: 0 },
+      ],
+    })
     expect('contestants' in publicProjection).toBe(false)
     expect(JSON.stringify(publicProjection)).not.toContain('trainer-avery')
     expect(JSON.stringify(publicProjection)).not.toContain('pokemon-spark')
+    expect(JSON.stringify(publicProjection)).not.toContain('providerIds')
+    expect(JSON.stringify(publicProjection)).not.toContain('dicePools')
 
     const stored = createSqliteContestRepository(context.database).get(created.result.contestId)!.document
     expect(stored.contestants[0]?.performers.map(row => row.performerKind)).toEqual(['pokemon', 'trainer'])

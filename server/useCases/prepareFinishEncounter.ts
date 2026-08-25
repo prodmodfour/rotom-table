@@ -169,6 +169,8 @@ interface FinishAuthorityRead {
   readonly activeReservationOperationIds: readonly string[]
   readonly capture: CaptureAuthorityBundle
   readonly group: { readonly slug: string, readonly revision: number, readonly document: GroupInventoryDocument } | null
+  /** Exact internal link capability permits source-bound Battle stakes to close with the Contest. */
+  readonly autoResolveLinkedBattleStakes: boolean
 }
 
 export interface PreparedFinishEncounter {
@@ -525,11 +527,18 @@ const readAuthority = (
   database: RotomDatabase,
   encounterId: string,
   profiles: readonly PlayerProfile[] = listPlayerProfiles(),
+  coordinatedBattleContestId: string | null = null,
 ): FinishAuthorityRead => {
   if (!ID.test(encounterId)) throw new PrepareFinishEncounterUseCaseError(400, 'Encounter identity is invalid.')
   const encounters = createSqliteEncounterDocumentRepository(database)
   const encounter = encounters.get(encounterId) ?? encounters.findByMapSlug(encounterId)
   if (!encounter) throw new PrepareFinishEncounterUseCaseError(404, 'Finish Encounter requires an initialized Encounter Document.')
+  if (encounter.battleContest && encounter.battleContest.link.contestId !== coordinatedBattleContestId) {
+    throw new PrepareFinishEncounterUseCaseError(409, 'A linked Battle Contest encounter settles only through the combined Battle Contest coordinator.')
+  }
+  if (!encounter.battleContest && coordinatedBattleContestId !== null) {
+    throw new PrepareFinishEncounterUseCaseError(409, 'Combined Battle Contest settlement requires the exact linked Encounter authority.')
+  }
   if (!['active', 'paused', 'completed'].includes(encounter.lifecycle)) {
     throw new PrepareFinishEncounterUseCaseError(409, 'Only an active or paused encounter can be settled.')
   }
@@ -576,6 +585,7 @@ const readAuthority = (
     activeReservationOperationIds: blockers.reservationIds,
     capture,
     group: group ? { slug: group.slug, revision: group.revision, document: group.document } : null,
+    autoResolveLinkedBattleStakes: encounter.battleContest !== null && coordinatedBattleContestId !== null,
   })
 }
 
@@ -879,7 +889,10 @@ const lootPlanning = (settlement: EncounterSettlementDocument, read: FinishAutho
   return { declarations, containers: Object.freeze([...containerMap.values()]), unresolvedCount }
 }
 
-const outcomeDeclarations = (encounter: EncounterDocument): readonly EncounterSettlementOutcomeDeclaration[] => {
+const outcomeDeclarations = (
+  encounter: EncounterDocument,
+  autoResolveLinkedBattleStakes: boolean,
+): readonly EncounterSettlementOutcomeDeclaration[] => {
   const declarations: EncounterSettlementOutcomeDeclaration[] = []
   for (const objective of encounter.objectives) {
     if (objective.status === 'completed' || objective.status === 'failed') declarations.push({
@@ -894,6 +907,14 @@ const outcomeDeclarations = (encounter: EncounterDocument): readonly EncounterSe
   for (const phase of encounter.phases) {
     if (phase.status === 'completed') declarations.push({
       kind: 'phase', subjectId: phase.phaseId, status: 'completed', summary: phase.summary,
+    })
+  }
+  if (autoResolveLinkedBattleStakes) for (const visibility of ['public', 'gm'] as const) {
+    if (encounter.stakes[visibility] !== null) declarations.push({
+      kind: 'stake',
+      subjectId: visibility,
+      result: 'realized',
+      summary: 'Resolved by the linked source-bound Battle Contest ending.',
     })
   }
   return Object.freeze(declarations)
@@ -949,7 +970,7 @@ const buildComponents = (input: {
     authority: {
       completeness: 'authoritative-current',
       encounterDocument: input.read.encounter,
-      declarations: outcomeDeclarations(input.read.encounter),
+      declarations: outcomeDeclarations(input.read.encounter, input.read.autoResolveLinkedBattleStakes),
       campaignConsequencesComplete: true,
       campaignConsequences: [],
       authorization: {
@@ -1306,6 +1327,8 @@ export const prepareFinishEncounter = (input: {
 }, dependencies: {
   readonly database?: RotomDatabase
   readonly playerProfiles?: readonly PlayerProfile[]
+  /** Internal-only capability: public Finish Encounter ingress never sets this identity. */
+  readonly coordinatedBattleContestId?: string
 } = {}): PreparedFinishEncounter => {
   if (input.role !== 'gm') throw new PrepareFinishEncounterUseCaseError(403, 'Only the GM may prepare encounter settlement.')
   if (typeof input.encounterId !== 'string' || !ID.test(input.encounterId)) {
@@ -1313,7 +1336,7 @@ export const prepareFinishEncounter = (input: {
   }
   try {
     const database = dependencies.database ?? getRotomDatabase()
-    const read = readAuthority(database, input.encounterId, dependencies.playerProfiles)
+    const read = readAuthority(database, input.encounterId, dependencies.playerProfiles, dependencies.coordinatedBattleContestId ?? null)
     const repository = createSqliteEncounterSettlementRepository(database)
     const settlement = persistFreshDraft(repository, repository.getByEncounterId(read.encounter.encounterId), read)
     const now = input.now ?? Date.now()
@@ -1329,6 +1352,8 @@ export const rebuildPreparedFinishEncounter = (input: {
 }, dependencies: {
   readonly database?: RotomDatabase
   readonly playerProfiles?: readonly PlayerProfile[]
+  /** Internal-only capability paired with the immutable Contest/Encounter link. */
+  readonly coordinatedBattleContestId?: string
 } = {}): PreparedFinishEncounter => {
   if (input.role !== 'gm') throw new PrepareFinishEncounterUseCaseError(403, 'Only the GM may rebuild encounter settlement.')
   const committedAt = committedAtFromOperationId(input.command.operationId)
@@ -1340,7 +1365,7 @@ export const rebuildPreparedFinishEncounter = (input: {
     if (!settlement || settlement.revision !== input.command.expectedSettlementRevision) {
       throw new PrepareFinishEncounterUseCaseError(409, 'The selected settlement preview is unavailable or stale.')
     }
-    const read = readAuthority(database, settlement.encounter.encounterId, dependencies.playerProfiles)
+    const read = readAuthority(database, settlement.encounter.encounterId, dependencies.playerProfiles, dependencies.coordinatedBattleContestId ?? null)
     const prepared = buildPrepared({
       database,
       encounterId: settlement.encounter.encounterId,

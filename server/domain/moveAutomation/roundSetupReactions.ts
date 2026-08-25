@@ -154,7 +154,7 @@ export const createMoveRoundSetupState = (input: {
 
 const sourceLeaves = (state: MoveRoundSetupState, event: EncounterEvent): boolean => (
   event.kind === 'scene-end'
-  || (event.kind === 'move-ko' && event.targetPlacementId === state.actorPlacementId)
+  || ((event.kind === 'move-ko' || event.kind === 'lifecycle-ko') && event.targetPlacementId === state.actorPlacementId)
   || (event.kind === 'recall' && event.placementId === state.actorPlacementId)
   || (event.kind === 'switch' && event.recalledPlacementId === state.actorPlacementId)
 )

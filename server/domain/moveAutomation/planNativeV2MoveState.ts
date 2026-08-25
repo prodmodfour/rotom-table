@@ -602,15 +602,29 @@ const combinedStateChanges = (options: {
   const coalescedCoreInputs = coreInputs.filter(input => !(
     input.kind === 'encounter-state' && (mapEncounter || itemEncounter)
   ))
-  const coalescedMapInputs = mapInputs.map((input): MoveStateChangeInput => (
-    input.kind === 'encounter-state' && (coreEncounter || itemEncounter)
-      ? {
-          ...input,
-          sourceOperationId: null,
-          reasonCode: 'core-item-and-battlefield-state',
-        }
-      : input
-  ))
+  const coalescedMapInputs = mapInputs.map((input): MoveStateChangeInput => {
+    if (input.kind !== 'encounter-state' || (!coreEncounter && !itemEncounter)) return input
+    const companion = coreEncounter && !itemEncounter
+      ? coreEncounter
+      : itemEncounter && !coreEncounter
+        ? itemEncounter
+        : null
+    // Accepted-result indexing adds evidence, not a second mechanic. When it
+    // is the only map-level Encounter delta, retain the pre-existing sole
+    // mechanic's provenance rather than manufacturing a multi-source write.
+    if (input.reasonCode === 'accepted-move.history-recorded' && companion) {
+      return {
+        ...input,
+        sourceOperationId: companion.sourceOperationId,
+        reasonCode: companion.reasonCode,
+      }
+    }
+    return {
+      ...input,
+      sourceOperationId: null,
+      reasonCode: 'core-item-and-battlefield-state',
+    }
+  })
   const existingInputs = [
     ...coalescedCoreInputs,
     ...permanentMoveListInputs,
@@ -1814,10 +1828,18 @@ export const planNativeV2MoveState = (options: {
       },
     }]
   })
+  const acceptedMoveKnockoutTargetIds = [...new Set(native.faintedPlacementIds)]
   const mapReduction = reduceMoveMapOperations({
     context,
     initialMap: mapAfterSpatialMovement,
     operations: mapOperations,
+    recordAcceptedMoveHistory: options.operationId !== undefined,
+    acceptedMoveKnockoutTargetIds,
+    acceptedMoveBranchSelections: native.branchSelections.flatMap(selection => selection.decisions.map(decision => ({
+      selectionId: selection.selectionId,
+      recipientId: decision.recipientId,
+      branchId: decision.branchId,
+    }))),
     dynamicRecipients: native.dynamicRecipients,
     contextForOperation,
     usageResources,

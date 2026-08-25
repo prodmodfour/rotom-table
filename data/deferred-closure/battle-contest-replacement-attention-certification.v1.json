@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-replacement-attention-v1",
+  "ticket": "P11-073",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-voltage-lifecycle-certification.v1.json",
+    "sha256": "388019c9c29ec8da3e6cd462d1efab2765da1aa7d749347dc2bb5639ec195909"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "eba1cce2536912c7b9fd6cc8662949a950671505c7282364b6c776b6fe73d65c",
+    "rowId": "battle",
+    "completionState": "structured",
+    "replacementPolicy": "center-of-attention-first-acting-turn"
+  },
+  "authorities": [
+    {
+      "id": "reviewed-replacement-policy",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "b8f42f698bc8da28f709071c01f054d7f29fb2672c0b7cb9c8456af89784442f",
+      "guarantees": ["exact-first-acting-turn-policy", "structured-not-native", "runtime-prose-parsing-forbidden"]
+    },
+    {
+      "id": "typed-encounter-presence-events",
+      "path": "shared/moveAutomation/events.ts",
+      "sha256": "4d7494cfc53cb3ec091f967d1941edec0d52734a0a6034683a90a69c37139a72",
+      "guarantees": ["same-side-switch-identity", "recall-and-send-out-events", "server-authored-provider", "legacy-normalization"]
+    },
+    {
+      "id": "bounded-replacement-history",
+      "path": "shared/moveAutomation/encounterHistory.ts",
+      "sha256": "0c57020ff08bd8499b0e4110cbb1d1145828ffed242001daf9319c2c8f66f778",
+      "guarantees": ["move-and-lifecycle-ko-pairing", "same-side-send-out", "unique-ko-consumption", "first-turn-round-and-turn", "strict-bounded-shape"]
+    },
+    {
+      "id": "encounter-owned-replacement-reducer",
+      "path": "server/domain/moveAutomation/reduceEncounterHistory.ts",
+      "sha256": "3eef169984b3bf6b82398301125fd1008582070ff7ec3e450fa32a829aa94f7a",
+      "guarantees": ["ko-before-replacement", "unmatched-send-out-no-authority", "first-turn-at-most-once", "zero-contest-writes"]
+    },
+    {
+      "id": "authoritative-presence-operation-emission",
+      "path": "server/useCases/applyMapTokenAction.ts",
+      "sha256": "4dcb9e69a3f4dc2a73c8b81407986888265d45d1d206cfef9305009a9ab0d76c",
+      "guarantees": ["deterministic-recall-event", "deterministic-send-out-event", "side-from-placement", "operation-owned-history-patch"]
+    },
+    {
+      "id": "liveplay-presence-patch-convergence",
+      "path": "src/utils/livePlayPatches.ts",
+      "sha256": "4ae840a6ea33fa1f302d114925f427f7b83d0df28b719007c44332825baccb59",
+      "guarantees": ["placement-and-history-converge-together", "malformed-history-rejection", "presence-command-only-history"]
+    },
+    {
+      "id": "replacement-aware-handoff-contract",
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "1a67db085189f38f64d5622584e99bf47a6c08452808165161adb8a7a450689d",
+      "guarantees": ["typed-ko-replacement-turn-evidence", "canonical-fact-hash", "client-extra-field-rejection", "at-most-once-receipt"]
+    },
+    {
+      "id": "source-authoritative-accepted-move-derivation",
+      "path": "server/domain/contests/battleAcceptedMove.ts",
+      "sha256": "d09e2fe6d29558187fc030554afb893d8ea1f0cd74abf29be25890b21d753500",
+      "guarantees": ["accepted-patch-and-current-history-equality", "actor-current-turn-match", "completion-round-match", "later-turn-expiry", "zero-client-center-fields"]
+    },
+    {
+      "id": "manual-recall-source-authority",
+      "path": "server/domain/contests/battleLifecycle.ts",
+      "sha256": "00d6e8c31ebfbaca7f02ff4e87af12d93ec36adc6fe0a1a1500d683ba0625461",
+      "guarantees": ["accepted-delete-token-reconstruction", "exact-history-patch", "recall-voltage-floor", "no-send-out-consequence"]
+    },
+    {
+      "id": "shared-center-scoring-execution",
+      "path": "server/domain/contests/battleAppeal.ts",
+      "sha256": "c792c42d7aac211f8d63f8cb7a6f2ac1d53426b393f945f3b8d2cad0cd58882e",
+      "guarantees": ["shared-ordinary-center-scorer", "canonical-center-table", "effect-interaction-reuse", "later-turn-normal-table", "exact-retry"]
+    },
+    {
+      "id": "appeal-score-reconciliation",
+      "path": "shared/contests/document.ts",
+      "sha256": "fdf4b14740ad0d04bdf8cdd65d05cfa89580834013662ac2c0181c455147c339",
+      "guarantees": ["center-flag-score-replay", "immutable-journal-results", "center-forgery-rejection", "per-pokemon-voltage-reconciliation"]
+    },
+    {
+      "id": "operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "b885fb6cc2be95ed84fb5123e44c027d73e03dbdd3a1c3bdf66318e968015da9",
+      "guarantees": ["source-fact-boundary", "first-turn-semantics", "privacy", "retry-and-write-ownership"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "deece0acc83232d08bdab4d4a1f8e8dc4740e4c3049ceb90b09e43f8931f0c1d",
+      "scenarioIds": ["accepted-attack-ko", "authoritative-recall", "same-side-reserve-send-out", "first-turn-center-scoring", "later-turn-expiry", "exact-retry", "score-forgery-rejection", "projection-source-redaction"]
+    },
+    {
+      "path": "tests/server/moveAutomationHistory.test.ts",
+      "sha256": "2e6f45b9e11e8bd206d4cde5773e62e14fb8af25626a9279dacb87e020c85863",
+      "scenarioIds": ["attack-ko-replacement-pairing", "lifecycle-ko-replacement-pairing", "first-turn-at-most-once"]
+    },
+    {
+      "path": "tests/shared/contestBattleBlendContract.test.ts",
+      "sha256": "0fbcde0981bafda71b5f433b0a33fd6a99491c2a84f8f6004f7ff720a4146322",
+      "scenarioIds": ["strict-replacement-evidence", "client-extra-field-rejection", "canonical-hash"]
+    },
+    {
+      "path": "tests/utils/livePlayPatches.test.ts",
+      "sha256": "9b5a797c4e8e81494116304409a2bc40e11740c51226143c79340fc41cc67c12",
+      "scenarioIds": ["send-out-placement-and-history-convergence", "malformed-patch-rejection"]
+    }
+  ],
+  "validation": {
+    "focusedReplacementAndLifecycleTests": 68,
+    "liveplayPatchTests": 19,
+    "broadContestEncounterAndCertificationTests": 233,
+    "deferredClosureDataTests": 133,
+    "nuxtTypecheck": "passed",
+    "contestMigrationCheck": "passed",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "supportedKnockoutSources": ["accepted-move-ko", "accepted-lifecycle-ko"],
+    "replacementSidePolicy": "same-side-exactly-once",
+    "attentionWindow": "first-authoritative-acting-turn",
+    "firstTurnScoringTable": "canonical-center",
+    "laterTurnScoringTable": "canonical-normal",
+    "clientAuthoredCenterFields": 0,
+    "encounterWritesFromContestEngine": 0,
+    "contestWritesFromEncounterEngine": 0,
+    "publicSourceIdentityFields": 0,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-074"
+  }
+}

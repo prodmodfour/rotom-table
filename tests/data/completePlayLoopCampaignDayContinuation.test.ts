@@ -100,7 +100,7 @@ describe('P8-091 campaign-day continuation evidence', () => {
       expect(source.sha256, source.path).toMatch(/^[a-f0-9]{64}$/)
       if (isLocalUiArtifactPath(source.path)) {
         const bytes = readOptionalLocalUiArtifact(process.cwd(), source.path)
-        if (bytes) expect(sha256(bytes), source.path).toBe(source.sha256)
+        if (bytes) expect(acceptedSuccessorHead(source.path, source.sha256), source.path).toBe(sha256(bytes))
       }
       else {
         expect(acceptedSuccessorHead(source.path, source.sha256), source.path)

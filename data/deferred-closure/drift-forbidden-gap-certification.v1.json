@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-drift-forbidden-gap-v1",
+  "ticket": "P11-088",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/final-documentation-certification.v1.json",
+    "sha256": "33097d1c68f9e9347a493d70a820d2ba64085c0b6ec225deec9293542c88b5b9"
+  },
+  "gate": {
+    "path": "data/deferred-closure/drift-forbidden-gap-gate.v1.json",
+    "sha256": "ee889bed74b8a152da6e08ad688ae9f84385fd995574dd088682013fdb68b438"
+  },
+  "policies": {
+    "acceptedSuccessorChainRequired": true,
+    "generatedBytesMustMatch": true,
+    "unregisteredRowsForbidden": true,
+    "orphanHandlersForbidden": true,
+    "deferralFlavoredFinalStatesForbidden": true,
+    "unknownDocumentContractsForbidden": true,
+    "parallelAuthoritiesForbidden": true,
+    "qualityGateRegistrationRequired": true
+  },
+  "authorities": [
+    {
+      "path": "scripts/check_deferred_closure.py",
+      "sha256": "a7dd5a1b74134101871be3616898dcb42cdcce23e97f2b1557ee18ea51aa4382"
+    },
+    {
+      "path": "package.json",
+      "sha256": "21e9d20157e537aa5b75472290c2af660d365936326cb1ad9531f6caefd02dbd"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "39e70b1dccf20138aecb32c5c29d41d5f0a86dcbb97bce98bde4917f1e6f8c5d"
+    },
+    {
+      "path": "scripts/generate_complete_play_loop_equipment_definitions.py",
+      "sha256": "29469d1190829f4a1b88c20205a07877f0326646105e2d753c0c42f2ce66d32e"
+    },
+    {
+      "path": "scripts/generate_complete_play_loop_equipment_grants.py",
+      "sha256": "c354a4e301c818f18f7535207226b8c673c326da4fd9b93f12822de26c12c970"
+    },
+    {
+      "path": "scripts/generate_complete_play_loop_equipment_contributions.py",
+      "sha256": "28f92734ccc01d8bf64e75fb0086fb9a1fab4fe0557f3a8e9c51bfad8a7a738f"
+    },
+    {
+      "path": "scripts/generate_complete_play_loop_item_catalog_cohorts.py",
+      "sha256": "6c9132703ab9844204f54f38265a09c40416502997ed377b016e1b78cfb0dd71"
+    },
+    {
+      "path": "scripts/migrate_pokemon_contests.py",
+      "sha256": "19f1263814a6131d5d783ad44e7a36dd7eb682299ef8d8d41a5d4f5d50a9f6bc"
+    },
+    {
+      "path": "scripts/generate_contest_variant_fixtures.ts",
+      "sha256": "ebcdca0dfb2720734ba69d019541c9bc64a05befb00ecebf01c44c42898ea71e"
+    },
+    {
+      "path": "scripts/generate_battle_contest_fixtures.ts",
+      "sha256": "4e0b67416735b30b2bce98189de4d65b1fc7470aae96a3a49d023a5df7b617b4"
+    },
+    {
+      "path": "data/complete-play-loop/equipment-grants.v1.json",
+      "sha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52"
+    },
+    {
+      "path": "data/complete-play-loop/item-catalog-cohorts.v1.json",
+      "sha256": "219011073e478a59ff2bafb841bf07f3a11c0e905784e9add2b101f40141e3ee"
+    },
+    {
+      "path": "data/reference/contests.json",
+      "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497"
+    },
+    {
+      "path": "shared/capabilityAutomation/weaponMoves.ts",
+      "sha256": "4d7bf8aaf62c807a8eabfda4424298eefe03354049f6da9fbb1c324a1e6c9f5e"
+    },
+    {
+      "path": "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+      "sha256": "beb286fe860f0829992890e59010c46be2677d91d7e53d14691a371a602915c9"
+    },
+    {
+      "path": "server/domain/moveAutomation/handlers/registry.ts",
+      "sha256": "2ebb41ada3e9c8b485bb897454d4a3d84ef1140e521e50524ca41095c15a1d3c"
+    },
+    {
+      "path": "shared/skillChecks/contract.ts",
+      "sha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4"
+    },
+    {
+      "path": "shared/contests/document.ts",
+      "sha256": "1ad2180ff9e998c0e84d9c3e7befd19fbd586a69fd3645d63921cc2abb988a7e"
+    },
+    {
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "c1d8ab09e0500ee266c24552a19b71cdecd7664b9670be4549961c423a481bd4"
+    },
+    {
+      "path": "server/storage/migrations.ts",
+      "sha256": "69cfdda140e9449ee70d43e13d850728b52027769c3ad596c27ae2059b8264d9"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/data/deferredClosureDriftGate.test.ts",
+      "sha256": "cfd16748250bc58bab1788fad2dea3420001a5d359ec4db5a8082fa8b0b3bcbe"
+    },
+    {
+      "path": "tests/data/deferredClosureInventory.test.ts",
+      "sha256": "5701df40c0492f2d1c1546bb1e98440c60f21fdc8ee724353a6bec4cbdf5ed0c"
+    },
+    {
+      "path": "tests/data/deferredClosureRubric.test.ts",
+      "sha256": "d311d43a485fcb8d99078c9e7644528208a8bf4cd8342368b0671d2ef74675af"
+    },
+    {
+      "path": "tests/data/deferredClosureSourceAuthority.test.ts",
+      "sha256": "6377631c17f2e88e5ce78ea5d5f20d069b07c4fce579e192651c33758314c56b"
+    },
+    {
+      "path": "tests/data/deferredClosureItemProof.test.ts",
+      "sha256": "d7bfe11b8df4c010f7cf0678262b0c2d08a86c646bc51f22f5e93f9c8e5091e4"
+    },
+    {
+      "path": "tests/data/deferredClosureWeaponMoves.test.ts",
+      "sha256": "2083f90cb8a8b643f66c3a0c3c4050191b45053d91807b77004ef779d20ce85f"
+    },
+    {
+      "path": "tests/data/deferredClosureBattleContestCompletion.test.ts",
+      "sha256": "dc5a96a66860ece289cc8f7ab34981f937db6ef4a79fa5a382fae6c66bfe9978"
+    },
+    {
+      "path": "tests/server/deferredClosureWeaponMovesRuntime.test.ts",
+      "sha256": "aac22c751fedb16f5d336db4bff05337e1982f305b39db6685e15c949d2de09f"
+    },
+    {
+      "path": "tests/server/deferredClosureStorageMigrations.test.ts",
+      "sha256": "e2ff273f05eef7031e64f800533948d4fec4ed4ec91ade3be3edfb79bbd70511"
+    },
+    {
+      "path": "tests/shared/skillCheckContract.test.ts",
+      "sha256": "20b0e1b3d5f8e1f479293d040dc19676d4a94f60d6e8de61e40035ddb582d530"
+    }
+  ],
+  "validation": {
+    "successorChain": "passed",
+    "generatedBytes": "passed",
+    "registryCoverage": "passed",
+    "handlerCoverage": "passed",
+    "documentContracts": "passed",
+    "qualityGateWiring": "passed"
+  },
+  "acceptance": {
+    "closureRows": 29,
+    "finalRows": 29,
+    "generatedChecks": 7,
+    "documentContracts": 6,
+    "orphanHandlers": 0,
+    "unregisteredRows": 0,
+    "deferralFlavoredFinalStates": 0,
+    "successorBranchesOrGaps": 0,
+    "qualityGateRegistrations": 1,
+    "hardFailures": 0,
+    "nextTicket": "P11-089"
+  }
+}

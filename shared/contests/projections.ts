@@ -1,4 +1,5 @@
-import { contestCatalog, contestChart, contestStatById } from './catalog'
+import { contestCatalog, contestChart } from './catalog'
+export { explainContestTypeRelationship } from './typeRelationship'
 import { contestActiveContestants, contestCurrentContestant, contestCurrentPerformer, contestPerformerIsPokemon, contestPerformerIsTrainer, type ContestAppealLedgerEntryV1, type ContestDocumentV1, type ContestantStateV1 } from './document'
 import { resolveTrainerParticipantMethodTurn, type ContestParticipantPerformerKind } from './participantMethods'
 import type { ContestLetter, ContestStatId } from './ids'
@@ -10,11 +11,21 @@ export interface ContestPositionProjectionV1 {
   readonly adjacentContestantIds: readonly string[]
   readonly centerOfAttention: boolean
 }
+export interface ContestPublicPerformerProjectionV1 {
+  readonly performerKind: 'trainer' | 'pokemon'
+  readonly displayName: string
+  readonly portraitUrl: string | null
+  readonly activePerformer: boolean
+  readonly voltage: number
+}
 export interface ContestScoreboardRowProjectionV1 {
   readonly contestantId: string
   readonly displayName: string
+  /** Compatibility label for ordinary Pokémon-only scoreboards. */
   readonly pokemonName: string
   readonly portraitUrl: string | null
+  /** Public paired identity and per-performer Voltage; never includes sheet or provider authority. */
+  readonly performers: readonly ContestPublicPerformerProjectionV1[]
   readonly letter: ContestLetter | null
   readonly appeal: number
   readonly fumble: number
@@ -24,6 +35,51 @@ export interface ContestScoreboardRowProjectionV1 {
   readonly placement: number | null
   readonly position: ContestPositionProjectionV1 | null
 }
+export type ContestPublicHistoryProjectionV1 = Omit<ContestDocumentV1['history'][number], 'operationId'>
+/** Public consequence keeps visible score arithmetic but omits sheet-derived performer identity. */
+export type ContestPublicAppealConsequenceProjectionV1 = Omit<ContestAppealLedgerEntryV1['consequences'][number], 'performerId'>
+/** Public contributor keeps arithmetic and labels but omits provider/implementation identity. */
+export type ContestPublicAppealContributorProjectionV1 = Omit<ContestAppealLedgerEntryV1['contributors'][number], 'id'>
+/** Public accepted result omits operation, journal, correction, option, provider, and performer authority. */
+export type ContestPublicAppealProjectionV1 = Omit<ContestAppealLedgerEntryV1,
+  'operationId' | 'journalIds' | 'correctionIds' | 'performerId' | 'moveOptionId' | 'partnerEffectTargetPerformerId' | 'adjacentPerformerIds' | 'contributors' | 'consequences'
+> & {
+  readonly contributors: readonly ContestPublicAppealContributorProjectionV1[]
+  readonly consequences: readonly ContestPublicAppealConsequenceProjectionV1[]
+}
+
+/** Role-safe reward summary. Exact sheets, operation IDs, attention IDs, and combined evidence stay diagnostic-only. */
+export interface ContestPublicSettlementProjectionV1 {
+  readonly status: 'preview' | 'committed'
+  readonly entries: readonly {
+    readonly contestantId: string
+    readonly placement: number
+    readonly finalScore: number
+    readonly experienceByPokemon: readonly { readonly experience: number }[]
+    readonly ribbon: boolean
+  }[]
+  readonly money: number
+  readonly items: readonly {
+    readonly itemId: string
+    readonly quantity: number
+    readonly targetContestantId: string | null
+  }[]
+  readonly attentionItemCount: number
+}
+
+export interface ContestPublicBattleProjectionV1 {
+  readonly declaredPokemonPerTrainer: number | null
+  readonly roundBudget: number | null
+  readonly encounter: null | {
+    readonly status: 'linked'
+    readonly encounterId: string
+    readonly mapSlug: string
+    readonly openingRound: 1
+    readonly deployedCount: number
+    readonly readyReserveCount: number
+  }
+}
+
 export interface ContestPublicProjectionV1 {
   readonly schemaVersion: 1
   readonly contestId: string
@@ -31,6 +87,8 @@ export interface ContestPublicProjectionV1 {
   readonly updatedAt: number
   readonly display: ContestDocumentV1['display']
   readonly variantId: ContestDocumentV1['variantId']
+  /** Public Battle counters and safe cockpit destination; never contains blend hashes, sheets, providers, or consent authority. */
+  readonly battle: ContestPublicBattleProjectionV1 | null
   readonly participantVariantId: ContestDocumentV1['participantVariantId']
   readonly participantMethodId: ContestDocumentV1['participantMethodId']
   readonly rotationOrderPolicy: ContestDocumentV1['policy']['rotationOrderPolicy']
@@ -45,22 +103,28 @@ export interface ContestPublicProjectionV1 {
   readonly pendingInterventionAppealId: string | null
   readonly festivalHeat: number
   readonly scoreboard: readonly ContestScoreboardRowProjectionV1[]
-  readonly acceptedAppeals: readonly ContestAppealLedgerEntryV1[]
-  readonly history: readonly ContestDocumentV1['history'][number][]
+  readonly acceptedAppeals: readonly ContestPublicAppealProjectionV1[]
+  readonly history: readonly ContestPublicHistoryProjectionV1[]
   readonly declaredPrize: ContestDocumentV1['policy']['prize'] | null
-  readonly settlement: ContestDocumentV1['settlement']
+  readonly settlement: ContestPublicSettlementProjectionV1 | null
   readonly cancellationReason: string | null
 }
 export interface ContestOwnerProjectionV1 extends ContestPublicProjectionV1 {
   readonly audience: 'owner'
   readonly ownerContestantId: string
   readonly ownContestant: ContestantStateV1
+  /** Exact accepted Appeal authority for this owner entry only. */
+  readonly ownAcceptedAppeals: ContestDocumentV1['appealLedger']
   readonly ownCurrentPerformerId: string | null
   readonly ownLegalPerformerIds: readonly string[]
   readonly ownsCurrentDecision: boolean
 }
-export interface ContestGmProjectionV1 extends ContestPublicProjectionV1 {
+export interface ContestGmProjectionV1 extends Omit<ContestPublicProjectionV1, 'history' | 'acceptedAppeals'> {
   readonly audience: 'gm' | 'diagnostic'
+  /** Exact current action authority; omitted from public projections. */
+  readonly currentLegalPerformerIds: readonly string[]
+  readonly history: ContestDocumentV1['history']
+  readonly acceptedAppeals: ContestDocumentV1['appealLedger']
   readonly contestants: readonly ContestantStateV1[]
   readonly policy: ContestDocumentV1['policy']
   readonly gmNotes: string
@@ -68,11 +132,71 @@ export interface ContestGmProjectionV1 extends ContestPublicProjectionV1 {
 }
 export interface ContestDiagnosticProjectionV1 extends ContestGmProjectionV1 {
   readonly audience: 'diagnostic'
+  /** Exact sheet, operation, attention, and combined settlement authority. */
+  readonly diagnosticSettlement: ContestDocumentV1['settlement']
+  readonly acceptedAppeals: ContestDocumentV1['appealLedger']
   readonly diceJournal: ContestDocumentV1['diceJournal']
+  /** GM diagnostic-only source hashes and at-most-once Battle handoff receipts. */
+  readonly battleHandoffReceipts: ContestDocumentV1['battleHandoffReceipts']
+  readonly battleVoltageLifecycleLedger: ContestDocumentV1['battleVoltageLifecycleLedger']
+  readonly battleRecoveryReceipts: ContestDocumentV1['battleRecoveryReceipts']
   readonly catalogId: string
   readonly contributorIndex: Readonly<Record<string, readonly { readonly id: string, readonly dice: number, readonly explanation: string }[]>>
 }
 export type ContestRoleProjectionV1 = ContestPublicProjectionV1 | ContestOwnerProjectionV1 | ContestGmProjectionV1 | ContestDiagnosticProjectionV1
+
+const publicHistory = (rows: ContestDocumentV1['history']): readonly ContestPublicHistoryProjectionV1[] => Object.freeze(rows.map(({ operationId: _operationId, ...row }) => Object.freeze(row)))
+const publicSettlement = (document: ContestDocumentV1): ContestPublicSettlementProjectionV1 | null => {
+  const settlement = document.settlement
+  if (!settlement) return null
+  const contestantIdByTrainer = new Map(document.contestants.map(contestant => [contestant.trainerSheetSlug, contestant.contestantId]))
+  return Object.freeze({
+    status: settlement.status,
+    entries: Object.freeze(settlement.entries.map(entry => Object.freeze({
+      contestantId: entry.contestantId,
+      placement: entry.placement,
+      finalScore: entry.finalScore,
+      experienceByPokemon: Object.freeze(entry.experienceByPokemon.map(award => Object.freeze({ experience: award.experience }))),
+      ribbon: entry.ribbon,
+    }))),
+    money: settlement.money,
+    items: Object.freeze(settlement.items.map(item => Object.freeze({
+      itemId: item.itemId,
+      quantity: item.quantity,
+      targetContestantId: item.targetTrainerSlug === null ? null : contestantIdByTrainer.get(item.targetTrainerSlug) ?? null,
+    }))),
+    attentionItemCount: settlement.attentionItemIds.length,
+  })
+}
+const publicConsequences = (rows: ContestAppealLedgerEntryV1['consequences']): readonly ContestPublicAppealConsequenceProjectionV1[] => {
+  const aggregate = new Map<string, { contestantId: string, appealDelta: number, fumbleDelta: number, voltageDelta: number, reason: string }>()
+  for (const { performerId: _performerId, ...row } of rows) {
+    const key = `${row.contestantId}:${row.reason}`
+    const existing = aggregate.get(key)
+    if (existing) {
+      existing.appealDelta += row.appealDelta
+      existing.fumbleDelta += row.fumbleDelta
+      existing.voltageDelta += row.voltageDelta
+    } else aggregate.set(key, { ...row })
+  }
+  return Object.freeze([...aggregate.values()].map(row => Object.freeze(row)))
+}
+const publicAppeals = (rows: ContestDocumentV1['appealLedger']): readonly ContestPublicAppealProjectionV1[] => Object.freeze(rows.map(({
+  operationId: _operationId,
+  journalIds: _journalIds,
+  correctionIds: _correctionIds,
+  performerId: _performerId,
+  moveOptionId: _moveOptionId,
+  partnerEffectTargetPerformerId: _partnerEffectTargetPerformerId,
+  adjacentPerformerIds: _adjacentPerformerIds,
+  contributors,
+  consequences,
+  ...row
+}) => Object.freeze({
+  ...row,
+  contributors: Object.freeze(contributors.map(({ id: _id, ...contributor }) => Object.freeze(contributor))),
+  consequences: publicConsequences(consequences),
+})))
 
 const positionMap = (document: ContestDocumentV1): ReadonlyMap<string, ContestPositionProjectionV1> => {
   const active = contestActiveContestants(document)
@@ -91,6 +215,23 @@ const positionMap = (document: ContestDocumentV1): ReadonlyMap<string, ContestPo
   })]))
 }
 
+const publicBattleProjection = (document: ContestDocumentV1): ContestPublicBattleProjectionV1 | null => {
+  if (!document.battle) return null
+  const binding = document.battle.encounter
+  return Object.freeze({
+    declaredPokemonPerTrainer: document.battle.declaredPokemonPerTrainer,
+    roundBudget: document.battle.roundBudget,
+    encounter: binding ? Object.freeze({
+      status: 'linked' as const,
+      encounterId: binding.link.encounterId,
+      mapSlug: binding.link.linkedMapSlug,
+      openingRound: binding.openingRound,
+      deployedCount: binding.openingInitiativeOrderIds.length,
+      readyReserveCount: binding.teams.reduce((sum, team) => sum + team.pokemon.filter(member => member.openingPlacementId === null).length, 0),
+    }) : null,
+  })
+}
+
 export const projectContestPublic = (document: ContestDocumentV1): ContestPublicProjectionV1 => {
   const positions = positionMap(document)
   const current = contestCurrentContestant(document)
@@ -101,6 +242,7 @@ export const projectContestPublic = (document: ContestDocumentV1): ContestPublic
     updatedAt: document.updatedAt,
     display: document.display,
     variantId: document.variantId,
+    battle: publicBattleProjection(document),
     participantVariantId: document.participantVariantId,
     participantMethodId: document.participantMethodId,
     rotationOrderPolicy: document.policy.rotationOrderPolicy,
@@ -118,11 +260,25 @@ export const projectContestPublic = (document: ContestDocumentV1): ContestPublic
       const rotationIndex = document.variantId === 'rotation' && document.stage === 'performance' ? contestant.rotationOrder[document.round - 1] : undefined
       const selected = Number.isInteger(rotationIndex) ? contestant.performers[Number(rotationIndex)] : undefined
       const performer = selected && contestPerformerIsPokemon(selected) ? selected : contestant.performers.find(contestPerformerIsPokemon)
+      const publicPerformers = document.variantId === 'battle'
+        ? contestant.performers.filter(contestPerformerIsPokemon).map(candidate => Object.freeze({ performerKind: 'pokemon' as const, displayName: candidate.displayName, portraitUrl: candidate.portraitUrl, activePerformer: false, voltage: contestant.performerVoltages[candidate.performerId] ?? 0 }))
+        : document.participantVariantId === 'trainer-participant'
+          ? contestant.performers
+              .filter(candidate => contestPerformerIsTrainer(candidate) || candidate.performerId === performer?.performerId)
+              .map(candidate => Object.freeze({
+                performerKind: candidate.performerKind,
+                displayName: candidate.displayName,
+                portraitUrl: candidate.portraitUrl,
+                activePerformer: contestPerformerIsTrainer(candidate) || candidate.performerId === performer?.performerId,
+                voltage: document.participantMethodId === 'simultaneous' ? contestant.performerVoltages[candidate.performerId] ?? 0 : contestant.voltage,
+              }))
+          : performer ? [Object.freeze({ performerKind: 'pokemon' as const, displayName: performer.displayName, portraitUrl: performer.portraitUrl, activePerformer: true, voltage: contestant.voltage })] : []
       return Object.freeze({
         contestantId: contestant.contestantId,
         displayName: contestant.displayName,
         pokemonName: performer?.displayName ?? 'Performer',
         portraitUrl: performer?.portraitUrl ?? null,
+        performers: Object.freeze(publicPerformers),
         letter: contestant.letter,
         appeal: contestant.appeal,
         fumble: contestant.fumble,
@@ -133,40 +289,44 @@ export const projectContestPublic = (document: ContestDocumentV1): ContestPublic
         position: positions.get(contestant.contestantId) ?? null,
       })
     })),
-    acceptedAppeals: Object.freeze(document.appealLedger.map(row => Object.freeze({ ...row }))),
-    history: Object.freeze(document.history.filter(row => row.visibility === 'public')),
+    acceptedAppeals: publicAppeals(document.appealLedger),
+    history: publicHistory(document.history.filter(row => row.visibility === 'public')),
     declaredPrize: document.policy.prize.declared ? document.policy.prize : null,
-    settlement: document.settlement,
+    settlement: publicSettlement(document),
     cancellationReason: document.cancellationReason,
   })
+}
+
+const legalPerformerIdsFor = (document: ContestDocumentV1, contestant: ContestantStateV1 | null): readonly string[] => {
+  const current = contestCurrentContestant(document)
+  if (!contestant || document.stage !== 'performance' || current?.contestantId !== contestant.contestantId || (document.variantId === 'rotation' && !Number.isInteger(contestant.rotationOrder[document.round - 1]))) return Object.freeze([])
+  if (document.participantVariantId !== 'trainer-participant' || document.participantMethodId === null) return Object.freeze([contestCurrentPerformer(document, contestant).performerId])
+  const trainer = contestant.performers.find(contestPerformerIsTrainer)
+  const pokemon = document.variantId === 'rotation' ? contestCurrentPerformer(document, contestant) : contestant.performers.find(contestPerformerIsPokemon)
+  const currentTurn = document.turnIndex + 1
+  const atCurrentCursor = (appeal: ContestAppealLedgerEntryV1): boolean => appeal.contestantId === contestant.contestantId && appeal.round === document.round && appeal.turn === currentTurn && (document.variantId !== 'festival' || Number(/-(\d+)-(\d+)-(\d+)-(\d+)$/u.exec(appeal.appealId)?.[1] ?? 0) === document.festivalHeat)
+  const acceptedKinds = document.appealLedger.filter(atCurrentCursor).map(appeal => contestPerformerIsTrainer(contestant.performers.find(performer => performer.performerId === appeal.performerId)!) ? 'trainer' as const : 'pokemon' as const)
+  const previousAppeal = [...document.appealLedger].reverse().find(appeal => appeal.contestantId === contestant.contestantId && !atCurrentCursor(appeal))
+  const previousPerformer = previousAppeal ? contestant.performers.find(performer => performer.performerId === previousAppeal.performerId) : null
+  const previousKind: ContestParticipantPerformerKind | null = previousPerformer ? contestPerformerIsTrainer(previousPerformer) ? 'trainer' : 'pokemon' : null
+  const turn = resolveTrainerParticipantMethodTurn({ methodId: document.participantMethodId, acceptedPerformerKindsThisRound: acceptedKinds, previousRoundTerminalPerformerKind: previousKind })
+  return trainer && pokemon && contestPerformerIsPokemon(pokemon)
+    ? Object.freeze(turn.legalNextPerformerKinds.map(kind => (kind === 'trainer' ? trainer : pokemon).performerId))
+    : Object.freeze([])
 }
 
 export const projectContestOwner = (document: ContestDocumentV1, profileId: string): ContestOwnerProjectionV1 | null => {
   const contestant = document.contestants.find(row => row.controller.kind === 'profile' && row.controller.profileId === profileId)
   if (!contestant) return null
   const current = contestCurrentContestant(document)
-  let legalPerformers: readonly ContestantStateV1['performers'][number][] = Object.freeze([])
-  if (document.stage === 'performance' && current?.contestantId === contestant.contestantId && (document.variantId !== 'rotation' || Number.isInteger(contestant.rotationOrder[document.round - 1]))) {
-    if (document.participantVariantId === 'trainer-participant' && document.participantMethodId !== null) {
-      const trainer = contestant.performers.find(contestPerformerIsTrainer)
-      const pokemon = document.variantId === 'rotation' ? contestCurrentPerformer(document, contestant) : contestant.performers.find(contestPerformerIsPokemon)
-      const currentTurn = document.turnIndex + 1
-      const atCurrentCursor = (appeal: ContestAppealLedgerEntryV1): boolean => appeal.contestantId === contestant.contestantId && appeal.round === document.round && appeal.turn === currentTurn && (document.variantId !== 'festival' || Number(/-(\d+)-(\d+)-(\d+)-(\d+)$/u.exec(appeal.appealId)?.[1] ?? 0) === document.festivalHeat)
-      const acceptedKinds = document.appealLedger.filter(atCurrentCursor).map(appeal => contestPerformerIsTrainer(contestant.performers.find(performer => performer.performerId === appeal.performerId)!) ? 'trainer' as const : 'pokemon' as const)
-      const previousAppeal = [...document.appealLedger].reverse().find(appeal => appeal.contestantId === contestant.contestantId && !atCurrentCursor(appeal))
-      const previousPerformer = previousAppeal ? contestant.performers.find(performer => performer.performerId === previousAppeal.performerId) : null
-      const previousKind: ContestParticipantPerformerKind | null = previousPerformer ? contestPerformerIsTrainer(previousPerformer) ? 'trainer' : 'pokemon' : null
-      const turn = resolveTrainerParticipantMethodTurn({ methodId: document.participantMethodId, acceptedPerformerKindsThisRound: acceptedKinds, previousRoundTerminalPerformerKind: previousKind })
-      if (trainer && pokemon && contestPerformerIsPokemon(pokemon)) legalPerformers = Object.freeze(turn.legalNextPerformerKinds.map(kind => kind === 'trainer' ? trainer : pokemon))
-    } else legalPerformers = Object.freeze([contestCurrentPerformer(document, contestant)])
-  }
-  const legalPerformerIds = Object.freeze(legalPerformers.map(performer => performer.performerId))
+  const legalPerformerIds = legalPerformerIdsFor(document, contestant)
   return Object.freeze({
     ...projectContestPublic(document),
-    history: Object.freeze(document.history.filter(row => row.visibility === 'public' || (row.visibility === 'owner' && (row.contestantId === null || row.contestantId === contestant.contestantId)))),
+    history: publicHistory(document.history.filter(row => row.visibility === 'public' || (row.visibility === 'owner' && (row.contestantId === null || row.contestantId === contestant.contestantId)))),
     audience: 'owner',
     ownerContestantId: contestant.contestantId,
     ownContestant: contestant,
+    ownAcceptedAppeals: Object.freeze(document.appealLedger.filter(row => row.contestantId === contestant.contestantId)),
     ownCurrentPerformerId: legalPerformerIds.length === 1 ? legalPerformerIds[0]! : null,
     ownLegalPerformerIds: legalPerformerIds,
     ownsCurrentDecision: current?.contestantId === contestant.contestantId,
@@ -176,7 +336,9 @@ export const projectContestOwner = (document: ContestDocumentV1, profileId: stri
 export const projectContestGm = (document: ContestDocumentV1): ContestGmProjectionV1 => Object.freeze({
   ...projectContestPublic(document),
   history: Object.freeze(document.history.filter(row => row.visibility !== 'diagnostic')),
+  acceptedAppeals: document.appealLedger,
   audience: 'gm',
+  currentLegalPerformerIds: legalPerformerIdsFor(document, contestCurrentContestant(document)),
   contestants: document.contestants,
   policy: document.policy,
   gmNotes: document.gmNotes,
@@ -188,11 +350,5 @@ export const projectContestDiagnostic = (document: ContestDocumentV1): ContestDi
   for (const contestant of document.contestants) for (const performer of contestant.performers) for (const statId of Object.keys(performer.dicePools) as ContestStatId[]) {
     contributorIndex[`${performer.performerId}:${statId}`] = Object.freeze(performer.dicePools[statId].contributors.map(row => ({ id: row.id, dice: row.dice, explanation: row.explanation })))
   }
-  return Object.freeze({ ...projectContestGm(document), history: Object.freeze([...document.history]), audience: 'diagnostic', diceJournal: document.diceJournal, catalogId: contestCatalog.catalogId, contributorIndex: Object.freeze(contributorIndex) })
-}
-
-export const explainContestTypeRelationship = (moveTypeId: ContestStatId, contestTypeId: ContestStatId): { readonly relationship: 'matching' | 'allied' | 'opposed', readonly dice: number, readonly explanation: string } => {
-  if (moveTypeId === contestTypeId) return Object.freeze({ relationship: 'matching', dice: contestCatalog.performance.appealTypeModifiers.matching, explanation: `${contestStatById.get(moveTypeId)!.label} matches the Contest: +1d6.` })
-  if (contestStatById.get(contestTypeId)!.alliedStatIds.includes(moveTypeId)) return Object.freeze({ relationship: 'allied', dice: 0, explanation: `${contestStatById.get(moveTypeId)!.label} is allied: no modifier.` })
-  return Object.freeze({ relationship: 'opposed', dice: -1, explanation: `${contestStatById.get(moveTypeId)!.label} is opposed: -1d6 (zero causes a fumble).` })
+  return Object.freeze({ ...projectContestGm(document), diagnosticSettlement: document.settlement, history: Object.freeze([...document.history]), acceptedAppeals: document.appealLedger, audience: 'diagnostic', diceJournal: document.diceJournal, battleHandoffReceipts: document.battleHandoffReceipts, battleVoltageLifecycleLedger: document.battleVoltageLifecycleLedger, battleRecoveryReceipts: document.battleRecoveryReceipts, catalogId: contestCatalog.catalogId, contributorIndex: Object.freeze(contributorIndex) })
 }

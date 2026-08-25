@@ -1,5 +1,5 @@
 import { contestCatalog, contestEffectById } from './catalog'
-import { explainContestTypeRelationship } from './projections'
+import { explainContestTypeRelationship } from './typeRelationship'
 import type { ContestEffectId, ContestStatId } from './ids'
 
 export interface ContestAppealAssemblyInputV1 {

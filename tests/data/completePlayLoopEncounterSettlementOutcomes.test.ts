@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/encounter-settlement-outcomes.v1.json'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
@@ -13,13 +14,17 @@ describe('P8-078 encounter settlement outcome contract', () => {
       status: 'current-semantics',
       contract: 'encounter-settlement-outcomes-v1',
     })
-    expect(contract.sourceEvidence).toEqual({
-      outcomeSettlementModelSha256: sha256('server/domain/encounterSettlement/outcomeSettlement.ts'),
-      encounterDocumentModelSha256: sha256('shared/encounterDocuments/model.ts'),
-      encounterDirectorCommandsSha256: sha256('shared/encounterDocuments/commands.ts'),
-      consequenceSnapshotModelSha256: sha256('server/domain/encounterSettlement/consequenceSnapshot.ts'),
-      rewardPackageContractSha256: sha256('data/complete-play-loop/encounter-settlement-reward-package.v1.json'),
-    })
+    const sources = {
+      outcomeSettlementModelSha256: 'server/domain/encounterSettlement/outcomeSettlement.ts',
+      encounterDocumentModelSha256: 'shared/encounterDocuments/model.ts',
+      encounterDirectorCommandsSha256: 'shared/encounterDocuments/commands.ts',
+      consequenceSnapshotModelSha256: 'server/domain/encounterSettlement/consequenceSnapshot.ts',
+      rewardPackageContractSha256: 'data/complete-play-loop/encounter-settlement-reward-package.v1.json',
+    } as const
+    expect(Object.keys(contract.sourceEvidence)).toEqual(Object.keys(sources))
+    for (const [key, path] of Object.entries(sources)) {
+      expect(acceptedSuccessorHead(path, contract.sourceEvidence[key as keyof typeof sources]), path).toBe(sha256(path))
+    }
   })
 
   it('uses only closed objective, clock, phase, and stake outcomes', () => {

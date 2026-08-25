@@ -1,3 +1,9 @@
+import {
+  parseBattleContestEncounterBinding,
+  type BattleContestEncounterBindingV1,
+} from '../contests/battleEncounter'
+import { parseBattleContestRecoveryReceipts, type BattleContestRecoveryReceiptV1 } from '../contests/battleRecovery'
+
 export const ENCOUNTER_DOCUMENT_SCHEMA_VERSION = 1 as const
 
 export const ENCOUNTER_RECIPE_IDS = [
@@ -84,6 +90,10 @@ export interface EncounterDocument {
   readonly revision: number
   readonly name: string
   readonly linkedMapSlug: string
+  /** Immutable opening blend evidence; null for ordinary Encounter Documents. */
+  readonly battleContest: BattleContestEncounterBindingV1 | null
+  /** Coordinator-owned receipts mirrored exactly in the linked Contest document. */
+  readonly battleRecoveryReceipts: readonly BattleContestRecoveryReceiptV1[]
   readonly lifecycle: 'draft' | 'active' | 'paused' | 'completed' | 'archived'
   readonly recipe: EncounterRecipeId
   readonly presentation: {
@@ -245,10 +255,13 @@ const parseBoundedObjects = <T>(value: unknown, path: string, limit: number, par
   return Object.freeze(value.map((entry, index) => parse(entry, `${path}[${index}]`)))
 }
 
-export const parseEncounterDocument = (value: unknown): EncounterDocument => {
-  if (!isRecord(value)) fail('encounter', 'must be an object')
+export const parseEncounterDocument = (input: unknown): EncounterDocument => {
+  if (!isRecord(input)) fail('encounter', 'must be an object')
+  const value = structuredClone(input)
+  if (!Object.hasOwn(value, 'battleContest')) value.battleContest = null
+  if (!Object.hasOwn(value, 'battleRecoveryReceipts')) value.battleRecoveryReceipts = []
   exactKeys(value, [
-    'schemaVersion', 'encounterId', 'revision', 'name', 'linkedMapSlug', 'lifecycle', 'recipe', 'presentation',
+    'schemaVersion', 'encounterId', 'revision', 'name', 'linkedMapSlug', 'battleContest', 'battleRecoveryReceipts', 'lifecycle', 'recipe', 'presentation',
     'hiddenParticipantIds', 'castRoles', 'reserves', 'waves', 'objectives', 'clocks', 'phases', 'activePhaseId',
     'stakes', 'notes', 'createdAt', 'updatedAt',
   ], 'encounter')
@@ -278,14 +291,37 @@ export const parseEncounterDocument = (value: unknown): EncounterDocument => {
   const createdAt = integer(value.createdAt, 'encounter.createdAt')
   const updatedAt = integer(value.updatedAt, 'encounter.updatedAt')
   if (updatedAt < createdAt) fail('encounter.updatedAt', 'must not precede createdAt')
+  const encounterId = id(value.encounterId, 'encounter.encounterId')
+  const linkedMapSlug = id(value.linkedMapSlug, 'encounter.linkedMapSlug')
+  const lifecycle = oneOf(value.lifecycle, ['draft', 'active', 'paused', 'completed', 'archived'] as const, 'encounter.lifecycle')
+  const recipe = oneOf(value.recipe, ENCOUNTER_RECIPE_IDS, 'encounter.recipe')
+  const battleContest = value.battleContest === null ? null : parseBattleContestEncounterBinding(value.battleContest)
+  if (battleContest && (battleContest.link.encounterId !== encounterId || battleContest.link.linkedMapSlug !== linkedMapSlug)) {
+    fail('encounter.battleContest', 'must identify this exact Encounter Document and linked battlefield')
+  }
+  if (battleContest && (lifecycle === 'draft' || recipe !== 'trainer-duel')) {
+    fail('encounter.battleContest', 'requires a launched trainer-duel Encounter Document')
+  }
+  let battleRecoveryReceipts: readonly BattleContestRecoveryReceiptV1[]
+  try { battleRecoveryReceipts = parseBattleContestRecoveryReceipts(value.battleRecoveryReceipts, 'encounter.battleRecoveryReceipts') }
+  catch (error) { return fail('encounter.battleRecoveryReceipts', error instanceof Error ? error.message : 'is invalid') }
+  if (!battleContest && battleRecoveryReceipts.length) fail('encounter.battleRecoveryReceipts', 'requires an immutable Battle Contest binding')
+  for (const [index, receipt] of battleRecoveryReceipts.entries()) {
+    if (receipt.linkId !== battleContest?.link.linkId) fail(`encounter.battleRecoveryReceipts[${index}].linkId`, 'does not identify the immutable Battle Contest binding')
+    if (receipt.encounterDocumentRevisionAfter > Number(value.revision)) fail(`encounter.battleRecoveryReceipts[${index}].encounterDocumentRevisionAfter`, 'cannot exceed current Encounter document authority')
+  }
+  const latestBattleRecovery = battleRecoveryReceipts.at(-1)
+  if (latestBattleRecovery?.encounterDocumentRevisionAfter === Number(value.revision) && latestBattleRecovery.encounterLifecycleAfter !== lifecycle) fail('encounter.lifecycle', 'does not match the latest coordinated Battle recovery receipt')
   return Object.freeze({
     schemaVersion: ENCOUNTER_DOCUMENT_SCHEMA_VERSION,
-    encounterId: id(value.encounterId, 'encounter.encounterId'),
+    encounterId,
     revision: integer(value.revision, 'encounter.revision'),
     name: text(value.name, 'encounter.name'),
-    linkedMapSlug: id(value.linkedMapSlug, 'encounter.linkedMapSlug'),
-    lifecycle: oneOf(value.lifecycle, ['draft', 'active', 'paused', 'completed', 'archived'] as const, 'encounter.lifecycle'),
-    recipe: oneOf(value.recipe, ENCOUNTER_RECIPE_IDS, 'encounter.recipe'),
+    linkedMapSlug,
+    battleContest,
+    battleRecoveryReceipts,
+    lifecycle,
+    recipe,
     presentation: Object.freeze({
       stage: oneOf(value.presentation.stage, ['standard', 'boss', 'chase'] as const, 'encounter.presentation.stage'),
       tactical: oneOf(value.presentation.tactical, ['on-demand', 'split'] as const, 'encounter.presentation.tactical'),
@@ -320,6 +356,8 @@ export const createEncounterDocument = (input: {
   revision: 0,
   name: input.name,
   linkedMapSlug: input.linkedMapSlug,
+  battleContest: null,
+  battleRecoveryReceipts: [],
   lifecycle: 'draft',
   recipe: input.recipe ?? 'blank',
   presentation: {

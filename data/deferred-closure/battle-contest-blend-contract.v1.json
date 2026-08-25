@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "contractId": "battle-contest-blend:v1",
+  "ticket": "P11-065",
+  "status": "reviewed",
+  "runtimeProseParsing": false,
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "c6c9274eedb5319db840336d20a1d82568b2cc857058a73c1542e3b2d10e1b14",
+    "rowId": "battle",
+    "completionState": "structured",
+    "structuredSemanticsVersion": 1
+  },
+  "existingAuthorities": [
+    {
+      "id": "contest-scoring-document",
+      "path": "shared/contests/document.ts",
+      "sha256": "87dfbcd6eb2820ff29c52cfd6d05ee087a15e0802c750b208023d08b66fbf39a",
+      "owns": ["contestants", "contest-dice", "appeal-ledger", "voltage", "placements", "contest-settlement"]
+    },
+    {
+      "id": "encounter-director-document",
+      "path": "shared/encounterDocuments/model.ts",
+      "sha256": "16191d4b3090eb7f29fb9aa6303e4c3d553da3bf356fd01650c16a851fd3fd5c",
+      "owns": ["encounter-identity", "linked-map-identity", "encounter-lifecycle", "reserves"]
+    },
+    {
+      "id": "encounter-result-history",
+      "path": "shared/moveAutomation/encounterHistory.ts",
+      "sha256": "989335a1345de5b17bbdeb7c43ee2739f511260e91186cb7a9d048ea37a53a94",
+      "owns": ["accepted-move-completions", "knockouts", "switches", "turn-and-round-windows"]
+    },
+    {
+      "id": "accepted-move-result",
+      "path": "shared/livePlayMoveResolution.ts",
+      "sha256": "e3992c8c193edd22d767e1c04d873fe8025c95ef44e6db137da18fb170d9f915",
+      "owns": ["server-roll-ledger", "resolved-script", "resolved-transaction", "accepted-move-presentation"]
+    },
+    {
+      "id": "accepted-operation-store",
+      "path": "server/storage/opRepository.ts",
+      "sha256": "470635456261e180d04e3c9518fb937fd313f2b36cd5e278a581fca77f6fb480",
+      "owns": ["operation-command-hash", "accepted-result", "accepted-map-revision", "exact-retry-source"]
+    }
+  ],
+  "sharedContract": {
+    "path": "shared/contests/battleBlend.ts",
+    "sha256": "914e4aef20cc7bb67adc34817296476ff85a3885204c1dc9ff894f63f1947461",
+    "schemaVersion": 1,
+    "linkIdentity": "battle-contest-link:v1:<stable-id>",
+    "handoffIdentity": "battle-contest-handoff:v1:<stable-id>"
+  },
+  "linkage": {
+    "authority": "coordination-ledger-only",
+    "immutableFields": ["linkId", "contestId", "encounterId", "linkedMapSlug", "contestRosterSha256", "createdAt"],
+    "relinkPolicy": "reject",
+    "mechanicsAuthority": "none",
+    "requiredBeforePerformance": true
+  },
+  "handoffs": {
+    "kinds": ["accepted-move", "knockout", "switch", "turn-start", "round-boundary", "encounter-ended"],
+    "derivation": "server-only-from-persisted-accepted-live-play-operation-and-matching-encounter-history",
+    "sourceDigest": "sha256-of-complete-persisted-source-result",
+    "handoffDigest": "sha256-of-canonical-fact-json-excluding-refreshable-read-set",
+    "clientSubmission": "forbidden",
+    "moveSourceClassifications": ["pokemon-move", "struggle-attack", "combat-maneuver"],
+    "canonicalExclusions": ["struggle-attack", "combat-maneuver"],
+    "unknownOrUnboundSource": "fail-closed"
+  },
+  "revisionCoupling": {
+    "requiredReadSet": ["contestRevision", "encounterDocumentRevision", "encounterRevision", "encounterSceneId"],
+    "validationOrder": ["immutable-link-identities", "contest-revision", "encounter-document-revision", "encounter-map-revision", "encounter-scene"],
+    "stalePolicy": "zero-write-conflict-and-rederive-from-current-authority",
+    "errorCodes": [
+      "battle-contest.link-mismatch",
+      "battle-contest.contest-revision-stale",
+      "battle-contest.encounter-document-revision-stale",
+      "battle-contest.encounter-revision-stale",
+      "battle-contest.encounter-scene-stale"
+    ]
+  },
+  "idempotency": {
+    "operationKey": "contest-operation-id-plus-canonical-command-hash",
+    "factKey": "handoff-id-plus-source-result-id-plus-handoff-sha256",
+    "receiptOwner": "contest-document",
+    "receiptRevisionPolicy": "contest-revision-plus-one",
+    "sameFact": "exact-retry-original-receipt-with-no-roll-or-spend",
+    "sameIdentityDifferentFact": "battle-contest.handoff-conflict",
+    "refreshableReadSetChangesFactHash": false
+  },
+  "atomicity": {
+    "acceptedMoveToAppeal": [
+      "encounter-engine-commits-move-and-resources-first",
+      "blend-coordinator-derives-and-revalidates-fact",
+      "contest-engine-commits-score-dice-journal-receipt-operation-and-realtime-atomically"
+    ],
+    "encounterRollbackAfterAcceptance": "forbidden",
+    "contestFailureAfterEncounterAcceptance": "leave-unconsumed-fact-for-exact-retry",
+    "combinedTransitions": "each-engine-plans-owned-writes-then-shared-coordinator-commits-all-plans-in-one-database-transaction-or-none",
+    "partialCrossEngineState": "never-accepted"
+  },
+  "writeOwnership": {
+    "contest-engine": ["contest-document", "contest-operation"],
+    "encounter-engine": ["encounter-document", "encounter-map", "live-play-operation"],
+    "blend-coordinator": ["blend-link"],
+    "crossDocumentWrite": "battle-contest.cross-document-write",
+    "directEngineRepositoryCallsAcrossBoundary": "forbidden"
+  },
+  "privacy": {
+    "public": ["public-link-status", "accepted-score-effects", "public-scoreboard"],
+    "owner": ["own-team-roster", "own-contest-dice", "own-legal-actions", "public-encounter-state"],
+    "gm": ["both-rosters", "link-health", "pending-handoff-count", "correction-controls"],
+    "diagnosticOnly": ["source-result-sha256", "handoff-sha256", "operation-command-hash", "exact-read-set", "provider-identities"],
+    "neverOpponent": ["private-contest-dice-plans", "private-provider-authority", "operation-identities", "diagnostics"]
+  },
+  "failureFixtures": {
+    "path": "data/deferred-closure/failure-recovery-fixtures.v1.json",
+    "sha256": "5eeef81f0d3da21882acfaa53687fbb2df0a860746c7ad44720e41864225078b",
+    "scenarioIds": ["dual-engine-stale-contest", "dual-engine-stale-encounter", "dual-engine-duplicate-handoff", "dual-engine-interrupted-settlement"]
+  },
+  "nonGoals": ["parallel-combat-engine", "parallel-contest-dice-engine", "client-authored-handoff", "distributed-two-phase-commit", "runtime-documentary-prose", "cross-document-engine-writes"]
+}

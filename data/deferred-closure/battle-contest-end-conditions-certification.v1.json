@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-end-conditions-v1",
+  "ticket": "P11-074",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-replacement-attention-certification.v1.json",
+    "sha256": "2493cf5b31388c90184255badb73d242f76ebd517b99daa858070155551984b7"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "eba1cce2536912c7b9fd6cc8662949a950671505c7282364b6c776b6fe73d65c",
+    "rowId": "battle",
+    "completionState": "structured",
+    "endConditions": ["round-budget-exhausted", "one-trainer-all-pokemon-knocked-out"],
+    "score": "appeal-points",
+    "winner": "highest-appeal-points"
+  },
+  "authorities": [
+    {
+      "id": "reviewed-end-policy",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "b8f42f698bc8da28f709071c01f054d7f29fb2672c0b7cb9c8456af89784442f",
+      "guarantees": ["two-closed-end-conditions", "appeal-points-score", "highest-score-winner", "structured-not-native"]
+    },
+    {
+      "id": "typed-round-boundary-history",
+      "path": "shared/moveAutomation/encounterHistory.ts",
+      "sha256": "e85004dcf90a0e723aab0788b633cb6b36b3d5ebd13511c1bdd88fb830d30613",
+      "guarantees": ["bounded-round-end", "following-round-start-link", "source-operation-binding", "legacy-normalization"]
+    },
+    {
+      "id": "encounter-owned-round-boundary-reducer",
+      "path": "server/domain/moveAutomation/reduceEncounterHistory.ts",
+      "sha256": "704ae72b4412ca197d81a32ca03226113fc399c29319d9a29978cb237435f622",
+      "guarantees": ["round-end-recording", "next-round-linking", "at-most-once", "zero-contest-writes"]
+    },
+    {
+      "id": "terminal-handoff-contract",
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "c1d8ab09e0500ee266c24552a19b71cdecd7664b9670be4549961c423a481bd4",
+      "guarantees": ["round-boundary-fact", "encounter-ended-fact", "contest-ended-receipt", "canonical-hash-and-read-set"]
+    },
+    {
+      "id": "terminal-document-reconciliation",
+      "path": "shared/contests/document.ts",
+      "sha256": "e6c32ac54bb46d34d961c26b8cf2ce5e3eb1b65a0f0a660e49b6df65ee6cdf0b",
+      "guarantees": ["exactly-one-terminal-receipt", "receipt-history-binding", "battle-final-score-equals-appeal", "terminal-stage-coupling"]
+    },
+    {
+      "id": "shared-placement-finalizer",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "2606bdab8a26ebf75eb98b51312cc62cdb3e4ffcc17931bf43a271cd26d87899",
+      "guarantees": ["shared-placement-authority", "appeal-only-policy-injection", "journaled-tie-randomness", "performance-to-settling"]
+    },
+    {
+      "id": "source-authoritative-end-derivation-and-execution",
+      "path": "server/domain/contests/battleEnd.ts",
+      "sha256": "987bc5758c01de20eb9e8711a755cf1297a695e0b42ede2c2deae252a00aaae7",
+      "guarantees": ["accepted-round-patch-reconstruction", "canonical-final-ko-ancestry", "whole-roster-hp-read", "appeal-only-winner", "exact-retry"]
+    },
+    {
+      "id": "server-only-end-command",
+      "path": "shared/contests/operations.ts",
+      "sha256": "7ecb4ceb0a9e4a949627ca572dbc840b162da6d685e9361a04461ccf2cb45325",
+      "guarantees": ["source-identities-only", "bounded-strict-shape", "no-condition-or-score-fields"]
+    },
+    {
+      "id": "atomicity-declaration",
+      "path": "shared/contests/architecture.ts",
+      "sha256": "028918e773f7d8090b4be6e99072bd81c4b0bdd5d6f6ead0c240af78fde70336",
+      "guarantees": ["single-sqlite-transaction", "read-encounter-map-operation-and-roster", "write-contest-and-tie-journal-only"]
+    },
+    {
+      "id": "server-owned-coordinator",
+      "path": "server/useCases/contests.ts",
+      "sha256": "2e216dc8909ceb13b60f1ae08de158e4d499c2b8c3b64b34ba0907fe54dd8b92",
+      "guarantees": ["public-ingress-rejection", "exact-authority-reread", "whole-roster-sheet-reread", "atomic-contest-commit"]
+    },
+    {
+      "id": "terminal-realtime-routing",
+      "path": "server/realtime/contestRealtime.ts",
+      "sha256": "4d9c91a56019c7fee321e26b685850b5cf17d221b0db776d7b439a7041716b83",
+      "guarantees": ["performance-completed-event", "role-scoped-batch", "operation-dedupe"]
+    },
+    {
+      "id": "operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "7ebfcef969d5dca523d5350585037d57d4656fd58d6cf8862600e13f419b999e",
+      "guarantees": ["both-end-paths", "appeal-only-tally", "retry-and-privacy", "write-ownership"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "c21c0b600ac0cd0224cfe067f3a1c34343ade8f6a9d757a4d82151da17b8e827",
+      "scenarioIds": ["six-round-budget-exhaustion", "accepted-final-team-ko", "incomplete-roster-rejection", "appeal-only-winner", "exact-retry", "score-forgery-rejection", "server-only-ingress", "projection-redaction"]
+    },
+    {
+      "path": "tests/shared/moveAutomationEncounterHistory.test.ts",
+      "sha256": "5d832ce4d0e94f6a1cc26cf98f605846215dd95f116b8012d6cca269c7a8c593",
+      "scenarioIds": ["round-boundary-shape", "legacy-history-normalization", "strict-bounds"]
+    },
+    {
+      "path": "tests/server/livePlayInitiativeLifecycle.test.ts",
+      "sha256": "3f7845dbe96c081312e0b5832880661dd33387d02c0404224ea937db5552eb94",
+      "scenarioIds": ["accepted-round-transition", "atomic-map-history-patch", "exact-operation-retry"]
+    },
+    {
+      "path": "data/contests/variant-matrix.v1.json",
+      "sha256": "cb3b7e81a0977e721a2e4121d66ba2f995ee589bc69024a05f05ec8f11ff8116",
+      "scenarioIds": ["eighteen-ordinary-deterministic-replays", "canonical-source-refresh"]
+    },
+    {
+      "path": "data/contests/trainer-participant-variant-matrix.v1.json",
+      "sha256": "0ef37bbf63103423677a3c01a28e808d0b8ead0c544a22ac21e903fbd887a0bc",
+      "scenarioIds": ["twenty-four-trainer-participant-deterministic-replays", "canonical-source-refresh"]
+    }
+  ],
+  "validation": {
+    "focusedEndHistoryAndInitiativeTests": 28,
+    "broadContestEncounterAndCertificationTests": 211,
+    "deferredClosureDataTests": 136,
+    "nuxtTypecheck": "passed",
+    "contestMigrationCheck": "passed-761-moves-349-items-18-plus-24-fixtures",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "endConditions": ["round-budget-exhausted", "one-trainer-all-pokemon-knocked-out"],
+    "roundBudgetAuthority": "immutable-setup-budget-plus-accepted-round-boundary",
+    "knockoutAuthority": "accepted-canonical-ko-plus-authoritative-whole-roster-hp",
+    "finalScore": "appeal-points",
+    "winner": "highest-appeal-points",
+    "tieResolution": "shared-journaled-placement-randomness",
+    "terminalReceiptsPerContest": 1,
+    "clientAuthoredEndMechanicsFields": 0,
+    "encounterWritesFromContestEngine": 0,
+    "contestWritesFromEncounterEngine": 0,
+    "publicSourceIdentityFields": 0,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-075"
+  }
+}

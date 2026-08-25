@@ -6,7 +6,7 @@ Rotom Table is liveplay-only. Do not operate a parallel local-host campaign or t
 
 Use a private campaign root outside the application checkout. The default SQLite path is `<campaign-root>/rotom-table.sqlite`; include its WAL/SHM sidecars in coordinated backup procedures. Hosted writes require the explicit production opt-in documented in `.env.vps.example` and an outer private access gate.
 
-Schema 44 is the current Complete Play Loop baseline in this plan: it preserves existing guided requests while admitting only reviewed `campaign-tool-adjudication` requests. Startup applies migrations in order. Never skip a schema version or manually weaken a CHECK constraint.
+The current application schema is 50. Schema 44 remains the historical Complete Play Loop baseline; v45 adds onboarding, v46 adds Contests, v47 adds replay-safe Encounter equipment actions, v48 adds fishing declarations, v49 adds Snag conversion, and v50 adds generic Skill Check documents and operation journals. Startup applies every migration in order and refuses an unknown future version without writing. Never skip a schema version or manually weaken a CHECK constraint.
 
 ## Before deployment
 
@@ -19,6 +19,13 @@ npm run check:complete-play-loop-performance
 npm run check:complete-play-loop-accessibility-visual
 npm run check:complete-play-loop-concurrency-failure
 npm run check:complete-play-loop-golden-campaigns
+npm run check:deferred-closure-golden-journeys
+npm run check:deferred-closure-migrations
+npm run check:deferred-closure-backup-restore
+npm run check:deferred-closure-accessibility
+npm run check:deferred-closure-performance
+npm run check:deferred-closure-privacy
+npm run check:deferred-closure-docs
 npm run typecheck
 npm run build
 bash scripts/quality-gate.sh
@@ -34,8 +41,9 @@ The quality gate installs exact dependencies, so run it only when network, memor
 4. Start one application instance, allow migrations to finish, and check health.
 5. Run the private liveplay smoke checklist.
 6. Confirm current Campaign continuation and one retained-command status check before normal play.
+7. When present, reload one generic Skill Check, one source-bound shield/net effect, and one linked Battle Contest/Encounter from persisted authority.
 
-A restart must not rerun item rolls, capture rolls, settlement commit, campaign-day commit, or correction. Durable journals answer exact retries.
+A restart must not rerun item, capture, Skill Check, Contest, or Encounter rolls; reapply equipment effects; recreate a Battle link; duplicate settlement/campaign-day commit; or duplicate correction. Durable journals answer exact retries. Follow the stopped-service closed-SQLite procedure and Plan 11 smoke checks in [Private VPS backups](private-vps-backups.md); never repair SQLite or JSON manually.
 
 ## Monitoring symptoms
 
@@ -77,6 +85,12 @@ Treat as integrity failure. Identify the changed canonical/runtime/evidence file
 ### Resource pressure or OOM
 
 Stop duplicate Node/Vitest/Nuxt processes, inspect active processes, and resume one bounded command at a time. Do not repeatedly launch the full suite.
+
+## Deferred Mechanics Closure operations
+
+Ranged and weapon actions, item actions, Skill Checks, and both added Contest formats are liveplay-only. Their accepted state remains in the campaign SQLite database even if post-commit realtime delivery fails. A linked Battle Contest must be recovered as one coordinated Contest/Encounter/map lineage; independent **Finish Encounter** is forbidden for its Encounter.
+
+GM/owner/public projections are rebuilt over HTTP after reconnect. Realtime events are access-scoped invalidations, not documents. Do not expose sheets, Profile IDs, private prompts, dice journals, providers, team pools, handoff receipts, source hashes, or combined settlement evidence in logs or support captures. See [Deferred mechanics closure](deferred-mechanics-closure.md) for the current surface and gate map.
 
 ## Existing deployment references
 

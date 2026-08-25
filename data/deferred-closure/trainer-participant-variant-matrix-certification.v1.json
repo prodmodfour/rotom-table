@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-variant-matrix-v1",
+  "ticket": "P11-063",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-cockpit-certification.v1.json",
+    "sha256": "a8e3412013c64d8286c5192196d6098e7b4d79ef6056e6cb3c79790205a46697"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "14f86a563d788980e6ac4f27f36b1bf6a159a2311a0605a936f41f91911316a7",
+    "rowId": "trainer-participant"
+  },
+  "authorities": [
+    {
+      "id": "paired-variant-fixture-generator",
+      "path": "scripts/generate_contest_variant_fixtures.ts",
+      "sha256": "ebcdca0dfb2720734ba69d019541c9bc64a05befb00ecebf01c44c42898ea71e",
+      "guarantees": ["same-engine-command-path", "seeded-server-randomness", "ordinary-matrix-reproduction", "paired-matrix-byte-reproduction", "no-client-mechanical-mutation"]
+    },
+    {
+      "id": "paired-variant-matrix",
+      "path": "data/contests/trainer-participant-variant-matrix.v1.json",
+      "sha256": "54feef203712b4b5084c5ff887c2c60d090cb51d2341fa16c579c854653aaaaf",
+      "guarantees": ["four-base-variants", "both-participant-methods", "three-four-five-contestants", "letters-and-accepted-appeal-counts", "festival-and-supercontest-progression", "performer-sequences", "placements-and-settlement", "immutable-evidence-hash"]
+    },
+    {
+      "id": "ordinary-fixture-successor",
+      "path": "data/contests/variant-matrix.v1.json",
+      "sha256": "7897507fdd33d302e349b1f05ef9fef7a0d82437a32234cdb229aef0590f1948",
+      "guarantees": ["eighteen-ordinary-scenarios-preserved", "current-canonical-source-hash", "reviewed-zero-voltage-consequence-normalization"]
+    },
+    {
+      "id": "matrix-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "bfae2a14ac649974656cc7f36abeecd8015313397c596309d926e1bc24008da8",
+      "guarantees": ["scenario-cross-product-documented", "byte-exact-replay-check-documented"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/data/deferredClosureTrainerParticipantVariantMatrix.test.ts",
+      "sha256": "0bb5be3477147afe6ad4bc1139dfc35bb150a08406debec06a102d563a2ff491",
+      "scenarioIds": ["twenty-four-scenario-cross-product", "method-specific-appeal-count", "simultaneous-pair-completion", "alternating-kind-sequence", "entry-score-formula", "variant-specific-pokemon-awards", "unique-evidence-hashes"]
+    }
+  ],
+  "acceptance": {
+    "deterministicScenarios": 24,
+    "baseVariants": ["standard", "supercontest", "festival", "rotation"],
+    "participantMethods": ["simultaneous", "alternating"],
+    "contestantCounts": [3, 4, 5],
+    "ordinaryRegressionScenarios": 18,
+    "exactReplayFixtureCheck": true,
+    "duplicateEvidenceHashes": 0,
+    "nextTicket": "P11-064"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-native-activation-v1",
+  "ticket": "P11-080",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-fixtures-certification.v1.json",
+    "sha256": "ee2f66de8007056cfa675d4bd3856ea2bab4fc9fa61dfbc44af6cf8972fdbd70"
+  },
+  "reviewedMigration": {
+    "path": "scripts/reviewed-data/deferred-closure-battle-contest-activation.v1.json",
+    "sha256": "637eff96e899f82fb81035449f6a21cdf0159c062e4dafd90cebcb64e8aa2534"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497",
+    "rowId": "battle",
+    "completionState": "native",
+    "structuredSemanticsVersion": 1
+  },
+  "authorities": [
+    {
+      "id": "native-catalog-gate",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "0ce9ffd7b11d90e42e499b8bdf0d353ef11fc49a9a2351eab93e74d36a3aebd2",
+      "guarantees": ["exact-native-battle-row", "complete-blend-policy-validation", "ordinary-native-variant-predicate", "no-structured-setup-exception"]
+    },
+    {
+      "id": "reviewed-canonical-migration",
+      "path": "scripts/migrate_pokemon_contests.py",
+      "sha256": "19f1263814a6131d5d783ad44e7a36dd7eb682299ef8d8d41a5d4f5d50a9f6bc",
+      "guarantees": ["exact-before-and-after-fingerprints", "p11-079-predecessor-source", "native-state-enforcement", "contiguous-successor-validation"]
+    },
+    {
+      "id": "ordinary-native-workshop-gate",
+      "path": "src/pages/contests/index.vue",
+      "sha256": "0184d892e74c4cf71f8241a3a36540fa1de191cd0eda1d02d2f7a11e3d43e54a",
+      "guarantees": ["native-runtime-variants-only", "no-battle-special-case", "existing-fixed-type-setup", "liveplay-only-navigation"]
+    },
+    {
+      "id": "deterministic-battle-replay-generator",
+      "path": "scripts/generate_battle_contest_fixtures.ts",
+      "sha256": "4e0b67416735b30b2bce98189de4d65b1fc7470aae96a3a49d023a5df7b617b4",
+      "guarantees": ["production-authorities-only", "server-seeded-randomness", "minimum-and-maximum-scale", "byte-exact-replay"]
+    },
+    {
+      "id": "native-source-bound-battle-fixtures",
+      "path": "data/contests/battle-contest-scenarios.v1.json",
+      "sha256": "7dcc5a9f508cc1899de11b681fdc919fb4791ee7c88ddd3d133b5692f122d1dd",
+      "guarantees": ["four-battle-scenarios", "native-canonical-source-hash", "ko-and-budget-endings", "switch-and-voltage-lifecycle", "appeal-only-placements"]
+    },
+    {
+      "id": "joined-role-safe-liveplay-coordinator",
+      "path": "server/useCases/battleContestLiveplay.ts",
+      "sha256": "ced838b0c2adb016d354c774c65d46844f963de4b0ab28a62e9ae0e95397886f",
+      "guarantees": ["gm-owner-public-structural-projections", "persisted-source-reconstruction", "existing-authority-delegation", "exact-allocation-retry", "authoritative-round-gate"]
+    },
+    {
+      "id": "role-projection-authority",
+      "path": "shared/contests/projections.ts",
+      "sha256": "feccb64bfc44816f7ce94eb08b867491323f3105f3d4a7c97eb187bf9a84203c",
+      "guarantees": ["public-private-structural-distinction", "owner-opponent-isolation", "diagnostic-only-raw-authority", "safe-settlement-summary"]
+    },
+    {
+      "id": "persisted-contest-realtime-authority",
+      "path": "server/realtime/contestRealtime.ts",
+      "sha256": "4d9c91a56019c7fee321e26b685850b5cf17d221b0db776d7b439a7041716b83",
+      "guarantees": ["post-commit-publication", "gm-owner-public-families", "operation-deduplication", "score-voltage-terminal-settlement-convergence"]
+    },
+    {
+      "id": "native-operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "a77bb995481a4f0b245cf97dbf2e8967505a8af6e1f55e4650e5a3f5e30888dd",
+      "guarantees": ["complete-p11-065-through-p11-080-runtime", "privacy-and-retry-boundaries", "fixture-drift-policy", "native-activation-contract"]
+    }
+  ],
+  "cohortCertifications": [
+    { "ticket": "P11-065", "path": "data/deferred-closure/battle-contest-blend-certification.v1.json", "sha256": "dfbf196699dcabec9156ee2a51cf6483632ce31e0354c9f78154720e5638fcc1" },
+    { "ticket": "P11-066", "path": "data/deferred-closure/battle-contest-setup-certification.v1.json", "sha256": "0fad08cbb517670d526217e30ad9d1a7ff0646ba1b54d4d92a2a1c6ce551e365" },
+    { "ticket": "P11-067", "path": "data/deferred-closure/battle-contest-introductions-certification.v1.json", "sha256": "dada337c5db9ff2f8e51c48d8f49826736aa6bbe0c5671132b13a78aaff017bb" },
+    { "ticket": "P11-068", "path": "data/deferred-closure/battle-contest-encounter-link-certification.v1.json", "sha256": "03f0e2ae0b99e61d6b2472e56e20cb242e1d88f2fc2642a092e02ad19848f394" },
+    { "ticket": "P11-069", "path": "data/deferred-closure/battle-contest-accepted-move-appeals-certification.v1.json", "sha256": "e398c1d0f60487c976dfcf875cc55d35c7bcfefe1ed3b929bbfb049ddb90fdb0" },
+    { "ticket": "P11-070", "path": "data/deferred-closure/battle-contest-effects-certification.v1.json", "sha256": "7014f9211471525fd1b3629fb80b5fdea55cfa2571571e25c32a159f459f1a0b" },
+    { "ticket": "P11-071", "path": "data/deferred-closure/battle-contest-pokemon-voltage-certification.v1.json", "sha256": "5d46a590275b5c8b4ea568c75cab75bca2c2a538a153892ca9fa7ed487d20661" },
+    { "ticket": "P11-072", "path": "data/deferred-closure/battle-contest-voltage-lifecycle-certification.v1.json", "sha256": "388019c9c29ec8da3e6cd462d1efab2765da1aa7d749347dc2bb5639ec195909" },
+    { "ticket": "P11-073", "path": "data/deferred-closure/battle-contest-replacement-attention-certification.v1.json", "sha256": "2493cf5b31388c90184255badb73d242f76ebd517b99daa858070155551984b7" },
+    { "ticket": "P11-074", "path": "data/deferred-closure/battle-contest-end-conditions-certification.v1.json", "sha256": "a47100336a323ea32afc1998ad6082d79589f12000010ffb0493e6fa435b211d" },
+    { "ticket": "P11-075", "path": "data/deferred-closure/battle-contest-single-spend-certification.v1.json", "sha256": "54e9a8f27424fccb3dc8850b9eb7729a8ab90400619279a7d40951458e60cc94" },
+    { "ticket": "P11-076", "path": "data/deferred-closure/battle-contest-recovery-certification.v1.json", "sha256": "eaf78774face694d4047efac2e886dec2211556805aab394a2143b06a234acbd" },
+    { "ticket": "P11-077", "path": "data/deferred-closure/battle-contest-settlement-certification.v1.json", "sha256": "674989566b4aa1298d346cd759e1732efd6a2b6106498e29221092651b61a2d0" },
+    { "ticket": "P11-078", "path": "data/deferred-closure/battle-contest-liveplay-certification.v1.json", "sha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b" },
+    { "ticket": "P11-079", "path": "data/deferred-closure/battle-contest-fixtures-certification.v1.json", "sha256": "ee2f66de8007056cfa675d4bd3856ea2bab4fc9fa61dfbc44af6cf8972fdbd70" }
+  ],
+  "evidence": [
+    {
+      "path": "tests/data/deferredClosureBattleContestCompletion.test.ts",
+      "sha256": "dc5a96a66860ece289cc8f7ab34981f937db6ef4a79fa5a382fae6c66bfe9978",
+      "scenarioIds": ["ordered-sixteen-ticket-chain", "native-only-canonical-migration", "temporary-gate-removal", "all-forty-six-fixtures", "aggregate-privacy-realtime-performance-multiclient-and-retry", "native-final-acceptance"]
+    },
+    {
+      "path": "tests/data/deferredClosureBattleContestFixtures.test.ts",
+      "sha256": "90c4ccc8624b3f97226949bed507c7ce64a39ad5d743abcb104c42489a6f8c9f",
+      "scenarioIds": ["three-and-six-pokemon", "ko-and-budget-endings", "switching", "voltage-rules", "appeal-tallies", "placements", "exact-replay"]
+    },
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "27c871074298175b3c49f1e11f2622dc543dfc430294f635f802ed84aedd259a",
+      "scenarioIds": ["both-engine-authority", "role-safe-liveplay", "exact-handoff-retry", "changed-retry-conflict", "interruption-and-settlement", "one-hundred-projection-budget"]
+    },
+    {
+      "path": "tests/shared/contestBattleSettlement.test.ts",
+      "sha256": "a7dd3f6d0434626183a68449a11de5040214c077a34863b05369433d88c513d3",
+      "scenarioIds": ["typed-prepared-and-accepted-coordination", "exact-combined-retry", "orphan-rejection", "projection-sanitization"]
+    },
+    {
+      "path": "tests/components/contestBattleJoinedLiveplay.test.ts",
+      "sha256": "82ab68a5f305671e87a3997c60352fc8f34c83a6f6f4b3cbbd4593d4d9bb0e52",
+      "scenarioIds": ["single-encounter-cockpit", "role-safe-decision", "six-voltage-rows", "responsive-score-summary", "raw-authority-absence"]
+    },
+    {
+      "path": "tests/e2e/contest-battle-encounter-link.spec.ts",
+      "sha256": "45e78682555971c1fa16e02c74d29edc0192aefb69e3693ae554f57ae9657dcf",
+      "scenarioIds": ["production-gm-owner-opponent-public", "realtime-convergence", "exact-owner-authority", "keyboard-and-mobile", "axe-and-privacy"]
+    },
+    {
+      "path": "tests/server/contestPerformanceBudgets.test.ts",
+      "sha256": "e9f6ac365d3a0d3ebbfb058ce270865774e1a0a09abf256b5dd33c52071cc413",
+      "scenarioIds": ["existing-contest-performance-budget"]
+    }
+  ],
+  "validation": {
+    "focusedBattleCertificationTests": "passed",
+    "broadContestTests": "passed",
+    "deferredClosureDataTests": "passed",
+    "deterministicFixtureDriftChecks": "passed-18-ordinary-24-participant-4-battle",
+    "productionMultiClientJourney": "passed",
+    "targetedEslintErrors": 0,
+    "nuxtTypecheck": "passed",
+    "contestMigrationCheck": "passed-761-defined-16-unavailable-349-items",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "completionState": "native",
+    "certifiedTicketRange": ["P11-065", "P11-080"],
+    "cohortCertifications": 16,
+    "deterministicScenarios": 46,
+    "battleDeterministicScenarios": 4,
+    "trainerTeams": 2,
+    "rosterSizes": [3, 6],
+    "productionLiveplayJourneys": 1,
+    "multiClientRoles": ["gm", "acting-owner", "opposing-owner", "spectator"],
+    "publicPrivateAuthorityFields": 0,
+    "seriousOrCriticalAxeViolations": 0,
+    "joinedProjectionSamplesWithinBudget": 100,
+    "joinedProjectionBudgetMilliseconds": 250,
+    "exactRetryAdditionalEncounterEffects": 0,
+    "exactRetryAdditionalContestEffects": 0,
+    "exactRetryAdditionalRewards": 0,
+    "parallelMechanicsEngines": 0,
+    "blockedCanonicalRows": 0,
+    "runtimeProseParsing": false,
+    "nextTicket": "P11-081"
+  }
+}

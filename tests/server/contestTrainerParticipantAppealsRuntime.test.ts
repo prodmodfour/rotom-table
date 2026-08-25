@@ -181,7 +181,7 @@ describe('Trainer Participant appeal runtime', () => {
     expect(partnerAppeal.contributors.find(contributor => contributor.kind === 'base')!.explanation).not.toContain('×2')
   })
 
-  it('enforces exact alternation, preserves ordinary scoring/fumble/effect journals, and stops before reward settlement', () => {
+  it('enforces exact alternation, preserves ordinary scoring/fumble/effect journals, and hands off to ordinary reward settlement', () => {
     const context = setup()
     let document = preparePerformance(context), sequence = 0
     while (document.stage === 'performance') {
@@ -225,9 +225,12 @@ describe('Trainer Participant appeal runtime', () => {
     expect(gm.acceptedAppeals.filter(appeal => appeal.performerId.startsWith('performer:trainer-'))).toHaveLength(6)
 
     const settlementCommand = base(document.contestId, 'prepare-settlement', 'prepare-rewards', document.revision)
-    expect(() => executeContestCommandUseCase(settlementCommand, { role: 'gm' }, context.deps)).toThrow(/placements and reward settlement are not active/)
+    const prepared = executeContestCommandUseCase(settlementCommand, { role: 'gm' }, context.deps)
+    expect(prepared.result).toMatchObject({ exactRetry: false, revision: document.revision + 1, stage: 'settling' })
+    expect(prepared.projection.settlement).toMatchObject({ status: 'preview' })
+    expect(executeContestCommandUseCase(settlementCommand, { role: 'gm' }, context.deps).result).toMatchObject({ exactRetry: true, revision: prepared.result.revision })
     const stored = createSqliteContestRepository(context.database).get(document.contestId)!
-    expect(stored).toMatchObject({ revision: document.revision, document: { settlement: null } })
-    expect(createSqliteContestRepository(context.database).findOperation(operationId('prepare-rewards'))).toBeNull()
+    expect(stored).toMatchObject({ revision: prepared.result.revision, document: { settlement: { status: 'preview' } } })
+    expect(createSqliteContestRepository(context.database).findOperation(operationId('prepare-rewards'))).not.toBeNull()
   })
 })

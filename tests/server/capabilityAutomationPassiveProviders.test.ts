@@ -48,7 +48,7 @@ describe('Capability passive providers', () => {
       }),
       expect.objectContaining({
         kind: 'move', canonicalId: 'Gouge', minimumCombatRank: 6,
-        pokemonWielderEligible: false, executionStatus: 'definition-missing',
+        pokemonWielderEligible: false, executionStatus: 'native',
       }),
     ]))
   })

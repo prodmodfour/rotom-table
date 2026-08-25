@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/encounter-settlement-temporary-cleanup.v1.json'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
@@ -13,15 +14,19 @@ describe('P8-079 encounter settlement temporary-cleanup contract', () => {
       status: 'current-semantics',
       contract: 'encounter-settlement-temporary-cleanup-v1',
     })
-    expect(contract.sourceEvidence).toEqual({
-      temporaryCleanupModelSha256: sha256('server/domain/encounterSettlement/temporaryCleanup.ts'),
-      encounterLifecyclePlannerSha256: sha256('server/domain/moveAutomation/planInitiativeLifecycle.ts'),
-      durationLifecycleSha256: sha256('server/domain/moveAutomation/durationLifecycle.ts'),
-      effectLifecycleSha256: sha256('server/domain/moveAutomation/effectLifecycle.ts'),
-      encounterResourceReducerSha256: sha256('server/domain/moveAutomation/reduceEncounterResources.ts'),
-      settlementDocumentModelSha256: sha256('shared/encounterSettlement/document.ts'),
-      encounterStateModelSha256: sha256('shared/moveAutomation/encounterState.ts'),
-    })
+    const sources = {
+      temporaryCleanupModelSha256: 'server/domain/encounterSettlement/temporaryCleanup.ts',
+      encounterLifecyclePlannerSha256: 'server/domain/moveAutomation/planInitiativeLifecycle.ts',
+      durationLifecycleSha256: 'server/domain/moveAutomation/durationLifecycle.ts',
+      effectLifecycleSha256: 'server/domain/moveAutomation/effectLifecycle.ts',
+      encounterResourceReducerSha256: 'server/domain/moveAutomation/reduceEncounterResources.ts',
+      settlementDocumentModelSha256: 'shared/encounterSettlement/document.ts',
+      encounterStateModelSha256: 'shared/moveAutomation/encounterState.ts',
+    } as const
+    expect(Object.keys(contract.sourceEvidence)).toEqual(Object.keys(sources))
+    for (const [key, path] of Object.entries(sources)) {
+      expect(acceptedSuccessorHead(path, contract.sourceEvidence[key as keyof typeof sources]), path).toBe(sha256(path))
+    }
   })
 
   it('requires exact complete source coverage and source-owned behavior', () => {

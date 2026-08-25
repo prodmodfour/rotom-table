@@ -194,6 +194,7 @@ export class ImmediateMoveSpecResolutionError extends Error {
 export interface NativeMoveSpecResolutionProjection {
   readonly operations: readonly MoveSpecEmittedOperation[]
   readonly childExecutions: readonly MoveSpecChildExecution[]
+  readonly branchSelections: MoveSpecExecutionCompleteResult['branchSelections']
   readonly dynamicRecipients: MoveCoreTokenDynamicRecipientSets
   /** Every server-resolved KO recipient, including a self-KO actor. */
   readonly faintedPlacementIds: readonly string[]
@@ -1749,6 +1750,7 @@ export const reduceCompletedMoveSpec = (
     native: Object.freeze({
       operations: [...uncommittedOperations, ...digestionBuffOperations],
       childExecutions: execution.childExecutions,
+      branchSelections: execution.branchSelections,
       dynamicRecipients: Object.freeze(dynamicRecipients),
       faintedPlacementIds: Object.freeze([...faintedSet]),
       coreStateChanges: finalCoreStateChanges,

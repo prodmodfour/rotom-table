@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-single-spend-v1",
+  "ticket": "P11-075",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-end-conditions-certification.v1.json",
+    "sha256": "a47100336a323ea32afc1998ad6082d79589f12000010ffb0493e6fa435b211d"
+  },
+  "failureFixtureAuthority": {
+    "path": "data/deferred-closure/failure-recovery-fixtures.v1.json",
+    "sha256": "5eeef81f0d3da21882acfaa53687fbb2df0a860746c7ad44720e41864225078b",
+    "scenarioIds": ["dual-engine-stale-contest", "dual-engine-stale-encounter", "dual-engine-duplicate-handoff", "dual-engine-interrupted-settlement"]
+  },
+  "authorities": [
+    {
+      "id": "accepted-encounter-random-journal",
+      "path": "shared/livePlayMoveResolution.ts",
+      "sha256": "e3992c8c193edd22d767e1c04d873fe8025c95ef44e6db137da18fb170d9f915",
+      "guarantees": ["strict-roll-ledger", "unique-roll-identities", "natural-draw-evidence", "accepted-move-transaction"]
+    },
+    {
+      "id": "encounter-action-resource-authority",
+      "path": "shared/moveAutomation/encounterResources.ts",
+      "sha256": "4a03aac95915db59b24479b700998a5ec32042532a1da546d3641409219942e7",
+      "guarantees": ["per-placement-action-ledger", "canonical-action-types", "bounded-spend", "turn-and-round-resets"]
+    },
+    {
+      "id": "encounter-frequency-authority",
+      "path": "src/utils/moveUsage.ts",
+      "sha256": "ca044630e39b303542f24ebc1b5432c8cf4691cf47d468d965ba40c6f495b5f4",
+      "guarantees": ["eot-scene-daily-map-tracking", "daily-sheet-tracking", "canonical-move-key", "single-use-increment"]
+    },
+    {
+      "id": "contest-random-authority",
+      "path": "shared/contests/dice.ts",
+      "sha256": "9e5265cbc38fe7ae782bff5dd45cfe1a9bdaf9446209eb78d89ea4772032c3e3",
+      "guarantees": ["server-owned-randomness", "operation-bound-journal", "immutable-results", "seeded-fixture-source"]
+    },
+    {
+      "id": "contest-journal-and-spend-reconciliation",
+      "path": "shared/contests/document.ts",
+      "sha256": "e6c32ac54bb46d34d961c26b8cf2ce5e3eb1b65a0f0a660e49b6df65ee6cdf0b",
+      "guarantees": ["appeal-journal-lineage", "battle-team-pool-single-spend", "receipt-appeal-binding", "immutable-score-replay"]
+    },
+    {
+      "id": "immutable-handoff-idempotency",
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "c1d8ab09e0500ee266c24552a19b71cdecd7664b9670be4549961c423a481bd4",
+      "guarantees": ["source-result-sha256", "handoff-sha256", "at-most-once-receipt", "changed-material-conflict"]
+    },
+    {
+      "id": "durable-operation-idempotency",
+      "path": "server/storage/opRepository.ts",
+      "sha256": "470635456261e180d04e3c9518fb937fd313f2b36cd5e278a581fca77f6fb480",
+      "guarantees": ["operation-primary-key", "canonical-command-hash", "accepted-result-persistence", "reconnect-replay"]
+    },
+    {
+      "id": "source-result-reconstruction",
+      "path": "server/domain/contests/battleAcceptedMove.ts",
+      "sha256": "d09e2fe6d29558187fc030554afb893d8ea1f0cd74abf29be25890b21d753500",
+      "guarantees": ["accepted-operation-only", "exact-move-patch", "history-and-presentation-match", "complete-source-hash"]
+    },
+    {
+      "id": "contest-appeal-execution",
+      "path": "server/domain/contests/battleAppeal.ts",
+      "sha256": "c792c42d7aac211f8d63f8cb7a6f2ac1d53426b393f945f3b8d2cad0cd58882e",
+      "guarantees": ["one-appeal-or-exclusion", "one-contest-roll-lineage", "optional-one-team-spend", "exact-retry-no-reroll"]
+    },
+    {
+      "id": "cross-engine-accounting-gate",
+      "path": "server/domain/contests/battleAccounting.ts",
+      "sha256": "b32c78144a16a7d29852af292b27eca83146f79048dfa3237fa9e8e6c0113dcf",
+      "guarantees": ["frequency-delta-zero-or-one", "action-delta-exactly-one", "encounter-and-contest-random-digests", "team-dice-exactly-once", "duplicate-and-reconnect-convergence", "divergence-rejection"]
+    },
+    {
+      "id": "precommit-and-reread-coordinator",
+      "path": "server/useCases/contests.ts",
+      "sha256": "def635b3f56f7f59907faafbba1b362bc22d00e69ed5c84ed961e446164e2970",
+      "guarantees": ["mandatory-accounting-before-write", "same-transaction-contest-commit", "whole-source-reread", "zero-encounter-replay"]
+    },
+    {
+      "id": "operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "a332d053b5b02d8312e3bd780b0909a0270ddb4f92a46c57c7468b5be68e4cde",
+      "guarantees": ["single-spend-boundary", "convergent-randomness", "retry-and-reconnect", "privacy-and-write-ownership"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "4629af94019687c6d242450146b98dd2cc399313cbf7e94ef10cad3619650b70",
+      "scenarioIds": ["tracked-eot-frequency-once", "untracked-frequency-zero", "action-resource-once", "encounter-and-contest-random-digests", "team-dice-once", "struggle-zero-contest-roll", "duplicate-handoff-no-reroll", "reconnect-no-reroll", "frequency-divergence-rejection", "action-divergence-rejection", "stable-convergence-digest", "one-liveplay-operation"]
+    }
+  ],
+  "validation": {
+    "focusedRuntimeTests": 16,
+    "broadContestTests": 213,
+    "deferredClosureDataTests": 138,
+    "nuxtTypecheck": "passed",
+    "contestMigrationAndFixtureCheck": "passed-761-moves-349-items-18-plus-24-fixtures",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "encounterOperationCountPerMove": 1,
+    "trackedFrequencySpendDelta": 1,
+    "untrackedFrequencySpendDelta": 0,
+    "actionResourceSpendDelta": 1,
+    "contestAppealsPerPokemonMove": 1,
+    "contestAppealsPerCanonicalExclusion": 0,
+    "teamDiceReceiptsPerSpendingAppeal": 1,
+    "duplicateDeliveryAdditionalRandomDraws": 0,
+    "reconnectAdditionalRandomDraws": 0,
+    "divergenceCode": "battle-contest.accounting-divergence",
+    "convergenceProofPersistence": "recomputable-from-existing-immutable-journals-and-hashes",
+    "encounterWritesFromContestEngine": 0,
+    "contestWritesFromEncounterEngine": 0,
+    "publicAccountingFields": 0,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-076"
+  }
+}

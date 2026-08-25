@@ -86,6 +86,9 @@ const populatedHistory = () => ({
     kind: 'switch' as const,
     recalledPlacementId: 'target-token',
     sentOutPlacementId: 'replacement-token',
+    sideId: null,
+    round: null,
+    causalProviderId: null,
   }],
   knockouts: [{
     ...declared(),
@@ -158,7 +161,7 @@ describe('encounter history contract', () => {
   })
 
   it('normalizes legacy MA-063 indexes without inventing provenance and remains idempotent', () => {
-    const { moveUses: _moveUses, ...legacyEmpty } = createEmptyEncounterHistory()
+    const { moveUses: _moveUses, lifecycleKnockouts: _lifecycleKnockouts, knockoutReplacements: _knockoutReplacements, roundBoundaries: _roundBoundaries, ...legacyEmpty } = createEmptyEncounterHistory()
     const legacy = {
       ...legacyEmpty,
       lastDeclaredMoves: [{

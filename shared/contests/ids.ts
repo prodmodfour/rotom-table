@@ -2,7 +2,11 @@ export const CONTEST_STAT_IDS = Object.freeze(['beauty', 'cool', 'cute', 'smart'
 export type ContestStatId = typeof CONTEST_STAT_IDS[number]
 
 export const CONTEST_VARIANT_IDS = Object.freeze(['standard', 'supercontest', 'festival', 'rotation'] as const)
-export type ContestVariantId = typeof CONTEST_VARIANT_IDS[number]
+export const CONTEST_BASE_VARIANT_IDS = CONTEST_VARIANT_IDS
+export type ContestBaseVariantId = typeof CONTEST_BASE_VARIANT_IDS[number]
+/** Runtime document identities; Battle remains setup-only until its P11-080 native certification. */
+export const CONTEST_RUNTIME_VARIANT_IDS = Object.freeze([...CONTEST_BASE_VARIANT_IDS, 'battle'] as const)
+export type ContestVariantId = typeof CONTEST_RUNTIME_VARIANT_IDS[number]
 
 /** Reviewed additive Contest formats that layer onto one canonical base variant. */
 export const CONTEST_PARTICIPANT_VARIANT_IDS = Object.freeze(['trainer-participant'] as const)
@@ -54,8 +58,11 @@ export const isContestStatId = (value: unknown): value is ContestStatId =>
 export const isContestEffectId = (value: unknown): value is ContestEffectId =>
   typeof value === 'string' && CONTEST_EFFECT_IDS.includes(value as ContestEffectId)
 
+export const isContestBaseVariantId = (value: unknown): value is ContestBaseVariantId =>
+  typeof value === 'string' && CONTEST_BASE_VARIANT_IDS.includes(value as ContestBaseVariantId)
+
 export const isContestVariantId = (value: unknown): value is ContestVariantId =>
-  typeof value === 'string' && CONTEST_VARIANT_IDS.includes(value as ContestVariantId)
+  typeof value === 'string' && CONTEST_RUNTIME_VARIANT_IDS.includes(value as ContestVariantId)
 
 export const isContestParticipantVariantId = (value: unknown): value is ContestParticipantVariantId =>
   typeof value === 'string' && CONTEST_PARTICIPANT_VARIANT_IDS.includes(value as ContestParticipantVariantId)

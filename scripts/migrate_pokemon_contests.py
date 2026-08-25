@@ -19,6 +19,11 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "scripts/reviewed-data/pokemon-contests.v1.json"
 DEFERRED_CLOSURE_SUCCESSOR_PATH = ROOT / "scripts/reviewed-data/deferred-closure-contest-variants.v1.json"
+BATTLE_CONTEST_EFFECTS_SUCCESSOR_PATH = ROOT / "scripts/reviewed-data/deferred-closure-battle-contest-effects.v1.json"
+BATTLE_CONTEST_VOLTAGE_LIFECYCLE_SUCCESSOR_PATH = ROOT / "scripts/reviewed-data/deferred-closure-battle-contest-voltage-lifecycle.v1.json"
+BATTLE_CONTEST_SETTLEMENT_SUCCESSOR_PATH = ROOT / "scripts/reviewed-data/deferred-closure-battle-contest-settlement.v1.json"
+BATTLE_CONTEST_ACTIVATION_SUCCESSOR_PATH = ROOT / "scripts/reviewed-data/deferred-closure-battle-contest-activation.v1.json"
+DEFERRED_CLOSURE_SUCCESSOR_CHAIN_PATH = ROOT / "data/deferred-closure/successor-chain.v1.json"
 MOVES_PATH = ROOT / "data/reference/moves.json"
 ITEMS_PATH = ROOT / "data/reference/items.json"
 CONTESTS_PATH = ROOT / "data/reference/contests.json"
@@ -253,6 +258,158 @@ def expected_items(current: dict[str, Any]) -> dict[str, Any]:
     return output
 
 
+def expected_contests(
+    current: dict[str, Any],
+    battle_effect_review: dict[str, Any],
+    battle_voltage_review: dict[str, Any],
+    battle_settlement_review: dict[str, Any],
+    battle_activation_review: dict[str, Any],
+) -> dict[str, Any]:
+    output = json.loads(json.dumps(current))
+    variants = [row for row in output.get("variants", []) if row.get("id") == "battle"]
+    if len(variants) != 1:
+        raise RuntimeError("contests derivative requires exactly one Battle Contest row")
+    effect_policy = battle_effect_review.get("contestEffectPolicy")
+    voltage_policy = battle_voltage_review.get("voltagePolicy")
+    settlement_policy = battle_settlement_review.get("settlementPolicy")
+    activation_policy = battle_activation_review.get("activationPolicy")
+    if not isinstance(effect_policy, dict):
+        raise RuntimeError("Battle Contest effect review has no typed policy")
+    if not isinstance(voltage_policy, dict):
+        raise RuntimeError("Battle Contest voltage lifecycle review has no typed policy")
+    if not isinstance(settlement_policy, dict):
+        raise RuntimeError("Battle Contest settlement review has no typed policy")
+    if not isinstance(activation_policy, dict) or activation_policy.get("afterCompletionState") != "native":
+        raise RuntimeError("Battle Contest activation review has no native completion policy")
+    variants[0]["contestEffectPolicy"] = json.loads(json.dumps(effect_policy))
+    variants[0]["voltagePolicy"] = json.loads(json.dumps(voltage_policy))
+    variants[0]["settlementPolicy"] = json.loads(json.dumps(settlement_policy))
+    variants[0]["completionState"] = activation_policy["afterCompletionState"]
+    return output
+
+
+def validate_battle_effect_review(review: dict[str, Any]) -> None:
+    if (
+        review.get("schemaVersion") != 1
+        or review.get("migrationId") != "deferred-closure:battle-contest-effects:v1"
+        or review.get("ticket") != "P11-070"
+        or review.get("status") != "reviewed"
+    ):
+        raise RuntimeError("Battle Contest effect review identity is invalid")
+    sources = review.get("sources")
+    if not isinstance(sources, list) or not sources:
+        raise RuntimeError("Battle Contest effect review has no source fingerprints")
+    for source in sources:
+        path = ROOT / str(source.get("path", ""))
+        if not path.is_file() or sha256_bytes(path.read_bytes()) != source.get("sha256"):
+            raise RuntimeError(f"Battle Contest effect source fingerprint drift for {source.get('path')}")
+    target = review.get("target", {})
+    successor = json.loads(BATTLE_CONTEST_VOLTAGE_LIFECYCLE_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+    if (
+        target.get("path") != str(CONTESTS_PATH.relative_to(ROOT))
+        or target.get("afterSha256") != successor.get("target", {}).get("beforeSha256")
+    ):
+        raise RuntimeError("Battle Contest effect target is not the accepted voltage-lifecycle predecessor")
+
+
+def validate_battle_voltage_review(review: dict[str, Any]) -> None:
+    if (
+        review.get("schemaVersion") != 1
+        or review.get("migrationId") != "deferred-closure:battle-contest-voltage-lifecycle:v1"
+        or review.get("ticket") != "P11-072"
+        or review.get("status") != "reviewed"
+    ):
+        raise RuntimeError("Battle Contest voltage lifecycle review identity is invalid")
+    sources = review.get("sources")
+    if not isinstance(sources, list) or len(sources) != 2:
+        raise RuntimeError("Battle Contest voltage lifecycle review has incomplete source fingerprints")
+    for source in sources:
+        path = ROOT / str(source.get("path", ""))
+        if not path.is_file() or sha256_bytes(path.read_bytes()) != source.get("sha256"):
+            raise RuntimeError(f"Battle Contest voltage source fingerprint drift for {source.get('path')}")
+    target = review.get("target", {})
+    successor = json.loads(BATTLE_CONTEST_SETTLEMENT_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+    if (
+        target.get("path") != str(CONTESTS_PATH.relative_to(ROOT))
+        or target.get("afterSha256") != successor.get("target", {}).get("beforeSha256")
+    ):
+        raise RuntimeError("Battle Contest voltage lifecycle target is not the accepted settlement predecessor")
+    policy = review.get("voltagePolicy", {})
+    if policy.get("jugglerRecallExceptionProviderIds") != ["feature:Quick Switch", "feature:Round Trip"]:
+        raise RuntimeError("Battle Contest Juggler recall exceptions are not explicit reviewed providers")
+
+
+def validate_battle_settlement_review(review: dict[str, Any]) -> None:
+    if (
+        review.get("schemaVersion") != 1
+        or review.get("migrationId") != "deferred-closure:battle-contest-settlement:v1"
+        or review.get("ticket") != "P11-077"
+        or review.get("status") != "reviewed"
+    ):
+        raise RuntimeError("Battle Contest settlement review identity is invalid")
+    sources = review.get("sources")
+    if not isinstance(sources, list) or len(sources) != 1:
+        raise RuntimeError("Battle Contest settlement review has incomplete source fingerprints")
+    for source in sources:
+        path = ROOT / str(source.get("path", ""))
+        if not path.is_file() or sha256_bytes(path.read_bytes()) != source.get("sha256"):
+            raise RuntimeError(f"Battle Contest settlement source fingerprint drift for {source.get('path')}")
+    target = review.get("target", {})
+    activation = json.loads(BATTLE_CONTEST_ACTIVATION_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+    activation_target = activation.get("target", {})
+    if (
+        target.get("path") != str(CONTESTS_PATH.relative_to(ROOT))
+        or activation_target.get("path") != target.get("path")
+        or activation_target.get("beforeBytes") != target.get("afterBytes")
+        or activation_target.get("beforeSha256") != target.get("afterSha256")
+        or activation_target.get("beforeGitBlob") != target.get("afterGitBlob")
+    ):
+        raise RuntimeError("Battle Contest settlement target is not the reviewed native-activation predecessor")
+    policy = review.get("settlementPolicy", {})
+    if (
+        policy.get("experienceRecipients") != "all-declared-team-pokemon"
+        or policy.get("encounterReconciliation") != "exact-preview-one-combined-transaction"
+        or policy.get("duplicateSourcePolicy") != "exact-retry-or-reject"
+    ):
+        raise RuntimeError("Battle Contest settlement policy is not exact reviewed authority")
+
+
+def validate_battle_activation_review(review: dict[str, Any]) -> None:
+    if (
+        review.get("schemaVersion") != 1
+        or review.get("migrationId") != "deferred-closure:battle-contest-native-activation:v1"
+        or review.get("ticket") != "P11-080"
+        or review.get("status") != "reviewed"
+        or review.get("runtimeProseParsing") is not False
+    ):
+        raise RuntimeError("Battle Contest native activation review identity is invalid")
+    sources = review.get("sources")
+    if not isinstance(sources, list) or len(sources) != 1:
+        raise RuntimeError("Battle Contest native activation review has incomplete source fingerprints")
+    for source in sources:
+        path = ROOT / str(source.get("path", ""))
+        if not path.is_file() or sha256_bytes(path.read_bytes()) != source.get("sha256"):
+            raise RuntimeError(f"Battle Contest activation source fingerprint drift for {source.get('path')}")
+    target = review.get("target", {})
+    data = CONTESTS_PATH.read_bytes()
+    if (
+        target.get("path") != str(CONTESTS_PATH.relative_to(ROOT))
+        or target.get("afterBytes") != len(data)
+        or target.get("afterSha256") != sha256_bytes(data)
+        or target.get("afterGitBlob") != git_blob_bytes(data)
+    ):
+        raise RuntimeError("Battle Contest native activation target fingerprint drift")
+    policy = review.get("activationPolicy", {})
+    if (
+        policy.get("beforeCompletionState") != "structured"
+        or policy.get("afterCompletionState") != "native"
+        or policy.get("requiredTicketRange") != ["P11-065", "P11-080"]
+        or policy.get("runtimeProseParsing") is not False
+        or policy.get("parallelMechanicsEngines") != 0
+    ):
+        raise RuntimeError("Battle Contest native activation policy is incomplete")
+
+
 def expected_equipment_definitions(current: dict[str, Any], items: dict[str, Any]) -> dict[str, Any]:
     output = json.loads(json.dumps(current))
     changed_ids = {"Fancy Clothes", "Contest Accessory", "Contest Fashion"}
@@ -298,6 +455,60 @@ def validate_reviewed_targets(manifest: dict[str, Any]) -> None:
                 and successor_target.get("afterGitBlob") == git_blob_bytes(data)
             ):
                 continue
+            if DEFERRED_CLOSURE_SUCCESSOR_CHAIN_PATH.exists():
+                chain = json.loads(DEFERRED_CLOSURE_SUCCESSOR_CHAIN_PATH.read_text(encoding="utf-8"))
+                edges = [edge for edge in chain.get("edges", []) if edge.get("surface") == target["path"]]
+                contiguous = bool(edges) and edges[0].get("beforeSha256") == target.get("afterSha256")
+                contiguous = contiguous and all(edges[index].get("beforeSha256") == edges[index - 1].get("afterSha256") for index in range(1, len(edges)))
+                if contiguous and all(edge.get("reviewStatus") == "accepted" for edge in edges):
+                    if edges[-1].get("afterSha256") == sha256_bytes(data):
+                        continue
+                    if BATTLE_CONTEST_ACTIVATION_SUCCESSOR_PATH.exists():
+                        activation = json.loads(BATTLE_CONTEST_ACTIVATION_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+                        activation_target = activation.get("target", {})
+                        if (
+                            activation.get("status") == "reviewed"
+                            and activation_target.get("beforeSha256") == edges[-1].get("afterSha256")
+                            and activation_target.get("afterSha256") == sha256_bytes(data)
+                            and activation_target.get("afterBytes") == len(data)
+                            and activation_target.get("afterGitBlob") == git_blob_bytes(data)
+                        ):
+                            continue
+                    if BATTLE_CONTEST_VOLTAGE_LIFECYCLE_SUCCESSOR_PATH.exists():
+                        voltage = json.loads(BATTLE_CONTEST_VOLTAGE_LIFECYCLE_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+                        voltage_target = voltage.get("target", {})
+                        if (
+                            voltage.get("status") == "reviewed"
+                            and voltage_target.get("beforeSha256") == edges[-1].get("afterSha256")
+                            and voltage_target.get("afterSha256") == sha256_bytes(data)
+                            and voltage_target.get("afterBytes") == len(data)
+                            and voltage_target.get("afterGitBlob") == git_blob_bytes(data)
+                        ):
+                            continue
+                    if BATTLE_CONTEST_SETTLEMENT_SUCCESSOR_PATH.exists():
+                        settlement = json.loads(BATTLE_CONTEST_SETTLEMENT_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+                        settlement_target = settlement.get("target", {})
+                        if (
+                            settlement.get("status") == "reviewed"
+                            and settlement_target.get("beforeSha256") == edges[-1].get("afterSha256")
+                            and settlement_target.get("afterSha256") == sha256_bytes(data)
+                            and settlement_target.get("afterBytes") == len(data)
+                            and settlement_target.get("afterGitBlob") == git_blob_bytes(data)
+                        ):
+                            continue
+                        if BATTLE_CONTEST_ACTIVATION_SUCCESSOR_PATH.exists():
+                            activation = json.loads(BATTLE_CONTEST_ACTIVATION_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+                            activation_target = activation.get("target", {})
+                            if (
+                                settlement.get("status") == "reviewed"
+                                and settlement_target.get("beforeSha256") == edges[-1].get("afterSha256")
+                                and activation.get("status") == "reviewed"
+                                and activation_target.get("beforeSha256") == settlement_target.get("afterSha256")
+                                and activation_target.get("afterSha256") == sha256_bytes(data)
+                                and activation_target.get("afterBytes") == len(data)
+                                and activation_target.get("afterGitBlob") == git_blob_bytes(data)
+                            ):
+                                continue
         raise RuntimeError(f"reviewed target fingerprint drift for {target['path']}")
 
 
@@ -315,6 +526,10 @@ def main() -> int:
     current_items = json.loads(ITEMS_PATH.read_text(encoding="utf-8"))
     current_equipment = json.loads(EQUIPMENT_DEFINITIONS_PATH.read_text(encoding="utf-8"))
     current_contests = json.loads(CONTESTS_PATH.read_text(encoding="utf-8"))
+    battle_effect_review = json.loads(BATTLE_CONTEST_EFFECTS_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+    battle_voltage_review = json.loads(BATTLE_CONTEST_VOLTAGE_LIFECYCLE_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+    battle_settlement_review = json.loads(BATTLE_CONTEST_SETTLEMENT_SUCCESSOR_PATH.read_text(encoding="utf-8"))
+    battle_activation_review = json.loads(BATTLE_CONTEST_ACTIVATION_SUCCESSOR_PATH.read_text(encoding="utf-8"))
     if current_contests.get("reviewedMigrationId") != manifest["migrationId"]:
         raise RuntimeError("contests.json is not bound to the reviewed migration")
     reviewed_sources = {source["path"]: source["sha256"] for source in manifest["sources"]}
@@ -332,21 +547,33 @@ def main() -> int:
 
     moves = expected_moves(current_moves, manifest)
     items = expected_items(current_items)
+    contests = expected_contests(current_contests, battle_effect_review, battle_voltage_review, battle_settlement_review, battle_activation_review)
     equipment = expected_equipment_definitions(current_equipment, items)
     if args.write:
         dump(MOVES_PATH, moves)
         dump(ITEMS_PATH, items)
+        dump(CONTESTS_PATH, contests)
         dump(EQUIPMENT_DEFINITIONS_PATH, equipment)
+        validate_battle_effect_review(battle_effect_review)
+        validate_battle_voltage_review(battle_voltage_review)
+        validate_battle_settlement_review(battle_settlement_review)
+        validate_battle_activation_review(battle_activation_review)
         validate_reviewed_targets(manifest)
-        print(f"wrote {len(moves)} Move contest identities, {len(items)} canonical items, and synchronized equipment hashes")
+        print(f"wrote {len(moves)} Move contest identities, {len(items)} canonical items, native Battle Contest authority, and synchronized equipment hashes")
         return 0
 
+    validate_battle_effect_review(battle_effect_review)
+    validate_battle_voltage_review(battle_voltage_review)
+    validate_battle_settlement_review(battle_settlement_review)
+    validate_battle_activation_review(battle_activation_review)
     validate_reviewed_targets(manifest)
     errors: list[str] = []
     if current_moves != moves:
         errors.append("data/reference/moves.json differs from reviewed Pokémon Contest migration")
     if current_items != items:
         errors.append("data/reference/items.json differs from reviewed Pokémon Contest migration")
+    if current_contests != contests:
+        errors.append("data/reference/contests.json differs from reviewed Battle Contest effect/Voltage/settlement/activation migrations")
     if current_equipment != equipment:
         errors.append("equipment definitions are stale against reviewed Contest item rows")
     if errors:

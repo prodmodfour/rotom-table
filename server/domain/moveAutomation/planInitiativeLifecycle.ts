@@ -286,7 +286,7 @@ const placementById = (
     `Initiative lifecycle placement ${placementId} was not found.`,
   )
 
-const eventSourceOperationId = (operationId: string): string => (
+export const initiativeLifecycleSourceOperationId = (operationId: string): string => (
   `initiative.${createHash('sha256').update(operationId).digest('hex').slice(0, 24)}`
 )
 
@@ -365,7 +365,7 @@ export const createInitiativeLifecycleEvents = (input: {
 }): readonly EncounterEvent[] => {
   if (input.current.activeId === null) return Object.freeze([])
 
-  const sourceOperationId = eventSourceOperationId(input.operationId)
+  const sourceOperationId = initiativeLifecycleSourceOperationId(input.operationId)
   const events: EncounterEvent[] = []
   const append = (event: EncounterEvent): void => {
     events.push(event)
@@ -588,6 +588,54 @@ const lifecycleKnockoutPlacementIds = (
       : []
   ))
 )))].sort())
+
+/**
+ * Convert post-reduction HP crossings into typed non-Move KO facts. The
+ * lifecycle trace binds every effect operation back to the exact accepted
+ * boundary event and therefore to its root live-play operation.
+ */
+const lifecycleKnockoutEvents = (input: {
+  readonly reduction: EncounterLifecycleReductionResult
+  readonly operationResults: readonly MoveCoreTokenEffectOperationResult[]
+}): readonly EncounterEvent[] => {
+  const operationById = new Map(input.reduction.operations.map(operation => [operation.id, operation]))
+  const eventById = new Map(input.reduction.processedEvents.map(event => [event.eventId, event]))
+  const triggerEventIdByOperationId = new Map(input.reduction.trace.flatMap(entry => (
+    entry.kind === 'operation-enqueued' ? [[entry.operationId, entry.eventId] as const] : []
+  )))
+  const events: EncounterEvent[] = []
+  for (const result of input.operationResults) {
+    const operation = operationById.get(result.operationId)
+    if (!operation || operation.kind !== 'direct-hp') continue
+    const triggerEvent = eventById.get(triggerEventIdByOperationId.get(operation.id) ?? '')
+    if (!triggerEvent) return fail('operation-source-missing', `Lifecycle knockout operation ${operation.id} has no triggering event authority.`)
+    for (const recipient of result.recipients) {
+      if (recipient.previous.kind !== 'hp' || recipient.current.kind !== 'hp'
+        || recipient.previous.currentHp <= 0 || recipient.current.currentHp > 0) continue
+      const suffix = createHash('sha256')
+        .update(`${triggerEvent.eventId}\u0000${operation.id}\u0000${recipient.recipientId}`)
+        .digest('hex').slice(0, 32)
+      const cause = operation.payload.mode === 'lose' ? 'damage-over-time' as const : 'other' as const
+      events.push({
+        schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
+        eventId: `event.lifecycle.ko.${suffix}`,
+        kind: 'lifecycle-ko',
+        sourceOperationId: triggerEvent.sourceOperationId,
+        causalParentEventId: triggerEvent.eventId,
+        reasonCode: cause === 'damage-over-time'
+          ? 'encounter.lifecycle.damage-over-time-knockout'
+          : 'encounter.lifecycle.other-knockout',
+        targetPlacementId: recipient.recipientId,
+        sourceEffectOperationId: operation.id,
+        round: 'round' in triggerEvent && Number.isSafeInteger(triggerEvent.round)
+          ? triggerEvent.round
+          : input.reduction.state.history.currentRound,
+        cause,
+      })
+    }
+  }
+  return parseEncounterEvents(events, 'lifecycleKnockoutEvents')
+}
 
 const sheetWriteFromChange = (input: {
   readonly map: TabletopMap
@@ -1271,13 +1319,18 @@ export const planEncounterLifecycle = (
     sheetWrites = writes
   }
 
+  const knockoutEvents = lifecycleKnockoutEvents({ reduction, operationResults })
+  const knockoutReduction = knockoutEvents.length > 0
+    ? reduceEncounterLifecycle(lifecycleOperationState, knockoutEvents, [], random)
+    : null
+  const stateAfterKnockouts = knockoutReduction?.state ?? lifecycleOperationState
   const cleanupEvents = vortexKnockoutCleanupEvents({ reduction, operationResults })
   const cleanupReduction = cleanupEvents.length > 0
-    ? reduceEncounterLifecycle(lifecycleOperationState, cleanupEvents, [], random)
+    ? reduceEncounterLifecycle(stateAfterKnockouts, cleanupEvents, [], random)
     : null
-  const reductions = cleanupReduction ? [reduction, cleanupReduction] : [reduction]
-  const plannedEvents = cleanupReduction ? [...events, ...cleanupEvents] : events
-  let currentEncounterState = cleanupReduction?.state ?? lifecycleOperationState
+  const reductions = [reduction, ...(knockoutReduction ? [knockoutReduction] : []), ...(cleanupReduction ? [cleanupReduction] : [])]
+  const plannedEvents = [...events, ...knockoutEvents, ...cleanupEvents]
+  let currentEncounterState = cleanupReduction?.state ?? stateAfterKnockouts
   for (const event of plannedEvents) {
     let abilityEvent: AbilityEffectLifecycleEvent | null = null
     if (event.kind === 'turn-start' || event.kind === 'turn-end') {

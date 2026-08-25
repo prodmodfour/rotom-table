@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-recovery-v1",
+  "ticket": "P11-076",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-single-spend-certification.v1.json",
+    "sha256": "54e9a8f27424fccb3dc8850b9eb7729a8ab90400619279a7d40951458e60cc94"
+  },
+  "failureFixtureAuthority": {
+    "path": "data/deferred-closure/failure-recovery-fixtures.v1.json",
+    "sha256": "5eeef81f0d3da21882acfaa53687fbb2df0a860746c7ad44720e41864225078b",
+    "scenarioIds": [
+      "dual-engine-stale-contest",
+      "dual-engine-stale-encounter",
+      "dual-engine-duplicate-handoff",
+      "dual-engine-interrupted-settlement"
+    ]
+  },
+  "authorities": [
+    {
+      "id": "mirrored-recovery-receipt-contract",
+      "path": "shared/contests/battleRecovery.ts",
+      "sha256": "c697779a454f3d0988f4f87c70c8a450e2589ebba32922f275772e7babb4e7b8",
+      "guarantees": ["exact-two-document-receipt", "monotonic-revisions", "typed-lifecycle-transition", "exact-pokemon-correction-target", "intent-sha256"]
+    },
+    {
+      "id": "contest-recovery-reconciliation",
+      "path": "shared/contests/document.ts",
+      "sha256": "09a76d1bfed4cb4c634e60ef93c387bf093d86a0cb26c469d7d50621866b5ecf",
+      "guarantees": ["receipt-history-binding", "ordered-voltage-correction-replay", "ordered-fumble-correction-replay", "legacy-default-without-fabrication", "battle-appeal-only-final-score"]
+    },
+    {
+      "id": "encounter-recovery-reconciliation",
+      "path": "shared/encounterDocuments/model.ts",
+      "sha256": "0c61c6ffc1d8e0ff606ce4009003cd602d063b4cdc7d9a4f16ce9df8bfa55bd1",
+      "guarantees": ["matching-link", "encounter-revision-bound", "latest-lifecycle-bound", "legacy-default-without-fabrication"]
+    },
+    {
+      "id": "contest-local-recovery-plan",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "82a4d1d34b76d7f0067c015d6e7719082bbd6d70022baa071176e7f7f8ed48c5",
+      "guarantees": ["pause-resume-local-transition", "bounded-correction", "exact-pokemon-voltage", "team-pool-correction", "appeal-only-settling-recalculation", "public-safe-history"]
+    },
+    {
+      "id": "encounter-local-recovery-plan",
+      "path": "server/domain/contests/battleRecovery.ts",
+      "sha256": "ac7cbe8ebc9d04395f89b3252e19efdf7506b04f06342927c32f9d5b4dd2f4e7",
+      "guarantees": ["immutable-link-reread", "scene-and-map-revision-reread", "mirrored-sequence-check", "pause-required-for-correction", "server-restart-reconstruction", "no-op-rejection"]
+    },
+    {
+      "id": "atomic-cross-engine-coordinator",
+      "path": "server/useCases/contests.ts",
+      "sha256": "ae81ae805ebfaf842c2f7126f232899c91b26e91c0f9f1846e3df173f2408fdc",
+      "guarantees": ["one-sqlite-transaction", "both-document-cas", "operation-and-realtime-atomicity", "second-write-rollback", "whole-roster-controller-validation", "exact-retry"]
+    },
+    {
+      "id": "bounded-correction-command-contract",
+      "path": "shared/contests/operations.ts",
+      "sha256": "dc7f8de032988e4657426f463b369dce1d426d4de5abdf224d65f05a5023ff5a",
+      "guarantees": ["optional-exact-performer-input", "voltage-only-performer-target", "bounded-delta", "server-revalidated-authority"]
+    },
+    {
+      "id": "declared-read-write-boundary",
+      "path": "shared/contests/architecture.ts",
+      "sha256": "79708ff3a03b37cda5c7301a81e20f26d3051544c630b44032bd1abb4e0e0482",
+      "guarantees": ["contest-document-read-write", "encounter-document-read-write", "map-and-scene-read-only", "single-sqlite-transaction"]
+    },
+    {
+      "id": "accepted-retry-before-interruption",
+      "path": "server/livePlay/commandExecutor.ts",
+      "sha256": "64524781fa71b2e961d8d49ce052b5f779fc11081e17d6b71fb76c05ccecb9a0",
+      "guarantees": ["durable-result-first", "prequeue-gate", "queued-race-gate", "zero-map-planning-while-blocked"]
+    },
+    {
+      "id": "linked-map-pause-gate",
+      "path": "server/livePlay/sqliteCommandExecutor.ts",
+      "sha256": "670e6f8571dca98ce71d2c06dbf1f8dc5eb43fa640412c32ec9d314d64e8f16e",
+      "guarantees": ["linked-contest-lifecycle-reread", "new-command-rejection", "cancelled-only-encounter-end", "no-new-operation-row"]
+    },
+    {
+      "id": "director-lifecycle-boundary",
+      "path": "server/useCases/encounterDocuments.ts",
+      "sha256": "41d1ae84c2575948ded3cd2694fd760e61bed271b2ebbcbbd6996aa81dd8248a",
+      "guarantees": ["no-independent-reactivation", "paused-to-completed-only", "completed-to-archived-only", "coordinator-ownership"]
+    },
+    {
+      "id": "role-projection-boundary",
+      "path": "shared/contests/projections.ts",
+      "sha256": "1a9061b448102e1d449471270fefcee51b882ec224eb6b20e251fcfe0a6ce1b7",
+      "guarantees": ["diagnostic-receipts-only", "public-safe-history", "owner-no-operation-identity", "gm-no-intent-hash"]
+    },
+    {
+      "id": "operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "80f891d61368a705b0682ca4a907d8a7fbe2f950fe8bd052ebae3a489f074179",
+      "guarantees": ["pause-and-drain-policy", "restart-policy", "bounded-correction-policy", "cancellation-boundary", "fixture-mapping"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "10de49617feec8a17c7eef765848bc8650387acc74dbb9a204ec984b19e608e9",
+      "scenarioIds": ["atomic-pause", "restart-resume", "exact-retry", "new-map-command-blocked", "accepted-map-retry-returned", "active-correction-rejected", "appeal-correction", "exact-pokemon-voltage-correction", "second-write-rollback", "gm-cancellation", "changed-retry-conflict", "projection-redaction"]
+    },
+    {
+      "path": "tests/shared/contestBattleBlendContract.test.ts",
+      "sha256": "0fbcde0981bafda71b5f433b0a33fd6a99491c2a84f8f6004f7ff720a4146322",
+      "scenarioIds": ["dual-engine-stale-contest", "dual-engine-stale-encounter", "dual-engine-duplicate-handoff"]
+    }
+  ],
+  "validation": {
+    "focusedRuntimeTests": 27,
+    "broadContestTests": 236,
+    "deferredClosureDataTests": 140,
+    "nuxtTypecheck": "passed",
+    "contestMigrationAndFixtureCheck": "passed-761-moves-349-items-18-plus-24-fixtures",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "recoveryReceiptCopies": 2,
+    "contestRevisionDeltaPerRecovery": 1,
+    "encounterDocumentRevisionDeltaPerRecovery": 1,
+    "encounterMapWritesPerRecovery": 0,
+    "randomDrawsPerRecovery": 0,
+    "correctionRequiresBothPaused": true,
+    "newMapCommandsWhilePaused": 0,
+    "acceptedOperationRetriesWhilePaused": "durable-result-without-replay",
+    "interruptedCommitContestWrites": 0,
+    "interruptedCommitEncounterWrites": 0,
+    "interruptedCommitOperationRows": 0,
+    "staleContestCode": "battle-contest.contest-revision-stale",
+    "staleEncounterCode": "battle-contest.encounter-revision-stale",
+    "orphanCode": "battle-contest.recovery-orphaned",
+    "directRepairAllowed": false,
+    "publicRecoveryAuthorityFields": 0,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-077"
+  }
+}

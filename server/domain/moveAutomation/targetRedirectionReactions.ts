@@ -300,7 +300,7 @@ const sourceLeaves = (
   event: EncounterEvent,
 ): boolean => (
   event.kind === 'scene-end'
-  || (event.kind === 'move-ko' && event.targetPlacementId === state.sourcePlacementId)
+  || ((event.kind === 'move-ko' || event.kind === 'lifecycle-ko') && event.targetPlacementId === state.sourcePlacementId)
   || (event.kind === 'recall' && event.placementId === state.sourcePlacementId)
   || (event.kind === 'switch' && event.recalledPlacementId === state.sourcePlacementId)
 )
@@ -309,7 +309,7 @@ const affectedActorLeaves = (
   placementId: string,
   event: EncounterEvent,
 ): boolean => (
-  (event.kind === 'move-ko' && event.targetPlacementId === placementId)
+  ((event.kind === 'move-ko' || event.kind === 'lifecycle-ko') && event.targetPlacementId === placementId)
   || (event.kind === 'recall' && event.placementId === placementId)
   || (event.kind === 'switch' && event.recalledPlacementId === placementId)
 )

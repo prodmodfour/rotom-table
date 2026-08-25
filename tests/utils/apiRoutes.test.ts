@@ -114,6 +114,7 @@ describe('API route constants', () => {
       formChanges: '/api/items/form-changes',
       exploration: '/api/items/exploration',
       guided: '/api/items/guided',
+      equipmentActions: '/api/items/equipment-actions',
     })
   })
 

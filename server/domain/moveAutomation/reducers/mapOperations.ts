@@ -56,6 +56,8 @@ import {
   reduceFuryCutterChainCompletion,
   resetFuryCutterChainForDifferentMove,
 } from '../furyCutter'
+import { recordAcceptedMoveHistory } from '../recordAcceptedMoveHistory'
+import { actionTypeFromMoveRange } from '../planMoveResources'
 
 const MAP_OPERATION_KINDS = new Set<string>([
   'field',
@@ -163,12 +165,48 @@ export const reduceMoveMapOperations = (
   const differentMoveReset = resetFuryCutterChainForDifferentMove({
     history: encounterBeforeMove.history,
     actorPlacementId: input.context.actor.placement.id,
-    canonicalMoveId: input.presentation.move.name,
+    canonicalMoveId: input.trace.program.canonicalId,
   })
   if (differentMoveReset.changed) {
     workingMap.encounterState = parseEncounterState({
       ...encounterBeforeMove,
       history: differentMoveReset.history,
+    })
+  }
+
+  // Index only the accepted primary resolution before mechanics reducers so
+  // later operation touches retain their existing causal attribution and each
+  // action/consecutive mechanic is still applied exactly once.
+  if (input.recordAcceptedMoveHistory === true) {
+    const encounter = parseEncounterState(
+      workingMap.encounterState ?? createEmptyEncounterState(),
+    )
+    const source = input.context.queries.resolveActorMoveEntry(input.trace.program.canonicalId)
+    const entry = source.ok ? source.entry : failMoveMapOperationReduction('unsupported-operation', `Accepted Move history cannot resolve canonical source: ${source.message}`)
+    const ancestry = input.context.ancestry.at(-1)
+    const origin = entry.moveListSource.kind === 'history'
+      ? { kind: 'copied' as const, sourceResolutionId: entry.moveListSource.resolutionId }
+      : entry.moveListSource.kind === 'reviewed-pool' && ancestry
+        ? { kind: 'random' as const, sourceResolutionId: ancestry.resolutionId }
+        : { kind: 'direct' as const }
+    workingMap.encounterState = parseEncounterState({
+      ...encounter,
+      history: recordAcceptedMoveHistory({
+        history: encounter.history,
+        round: Number.isSafeInteger(workingMap.initiative?.round) ? Number(workingMap.initiative!.round) : encounter.history.currentRound,
+        operationId: input.presentation.operationId,
+        resolutionId: input.context.resolutionId,
+        actorPlacementId: input.context.actor.placement.id,
+        canonicalMoveId: entry.canonicalMoveName,
+        specVersion: input.trace.program.runtimeVersion,
+        actionType: actionTypeFromMoveRange(entry.move.range ?? ''),
+        origin,
+        moveListSource: entry.moveListSource,
+        attackedTargetIds: dynamic['attacked-targets'],
+        hitTargetIds: dynamic['hit-targets'],
+        knockoutTargetIds: input.acceptedMoveKnockoutTargetIds ?? [],
+        branchSelections: input.acceptedMoveBranchSelections ?? [],
+      }),
     })
   }
 
@@ -399,6 +437,14 @@ export const reduceMoveMapOperations = (
       }),
     }))
   })
+
+  if (input.recordAcceptedMoveHistory === true && (laneTouches.get('encounterState')?.length ?? 0) === 0) {
+    touch('encounterState', {
+      order: input.operations.length,
+      operationId: input.presentation.operationId,
+      reasonCode: 'accepted-move.history-recorded',
+    })
+  }
 
   const selectedTargetIds = input.presentation.selectedTargetIds === undefined
     ? undefined

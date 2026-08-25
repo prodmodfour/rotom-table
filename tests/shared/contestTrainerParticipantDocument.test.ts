@@ -71,10 +71,10 @@ const enroll = (document: ContestDocumentV1, performers: readonly (ContestPokemo
 }
 
 describe('Trainer Participant Contest document authority', () => {
-  it('binds the structured canonical row to every reviewed native base variant', () => {
+  it('binds the native canonical participant row to every reviewed native base variant', () => {
     expect(trainerParticipantContestVariant).toMatchObject({
       id: 'trainer-participant',
-      completionState: 'structured',
+      completionState: 'native',
       structuredSemanticsVersion: 1,
       contestantMinimum: 3,
       contestantMaximum: 5,

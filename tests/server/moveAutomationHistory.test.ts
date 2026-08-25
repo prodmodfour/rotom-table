@@ -9,6 +9,7 @@ import {
 } from '#shared/moveAutomation/events'
 import { createEmptyEncounterState } from '#shared/moveAutomation/encounterState'
 import { createMoveAutomationHistoryResolver } from '~~/server/domain/moveAutomation/history'
+import { recordAcceptedMoveHistory } from '~~/server/domain/moveAutomation/recordAcceptedMoveHistory'
 import { reduceEncounterLifecycle } from '~~/server/domain/moveAutomation/reduceLifecycle'
 import type { EncounterLifecycleTriggerHandler } from '~~/server/domain/moveAutomation/reduceLifecycle'
 
@@ -190,11 +191,42 @@ const historyEvents = (): readonly EncounterEvent[] => {
       ...envelope('switch', 'event.target.switch'),
       recalledPlacementId: 'target-token',
       sentOutPlacementId: 'replacement-token',
+      sideId: 'villains',
+      causalProviderId: null,
     },
   ])
 }
 
 describe('bounded encounter move history', () => {
+  it('indexes exact primary accepted-Move provenance and branch selections', () => {
+    const history = recordAcceptedMoveHistory({
+      history: createEmptyEncounterState().history,
+      round: 3,
+      operationId: 'op_Mixed_Case_Accepted_001',
+      resolutionId: 'resolution.accepted.branch',
+      actorPlacementId: 'actor-token',
+      canonicalMoveId: 'Branch Test',
+      specVersion: 2,
+      actionType: 'standard',
+      origin: { kind: 'direct' },
+      moveListSource: { kind: 'placement', placementId: 'actor-token' },
+      attackedTargetIds: ['target-token'],
+      hitTargetIds: ['target-token'],
+      branchSelections: [{ selectionId: 'effect-choice', recipientId: 'target-token', branchId: 'apply' }],
+    })
+
+    expect(history.moveUses).toEqual([expect.objectContaining({
+      resolutionId: 'resolution.accepted.branch',
+      canonicalId: 'Branch Test',
+      declaration: expect.objectContaining({ sourceOperationId: 'op_Mixed_Case_Accepted_001' }),
+      completion: expect.objectContaining({
+        round: 3,
+        sourceOperationId: 'op_Mixed_Case_Accepted_001',
+        branches: [{ selectionId: 'effect-choice', recipientId: 'target-token', branchId: 'apply' }],
+      }),
+    })])
+  })
+
   it('indexes authoritative move, damage, action, switch, KO, chain, and ancestry facts', () => {
     const result = reduceEncounterLifecycle(createEmptyEncounterState(), historyEvents())
     const { history } = result.state
@@ -316,10 +348,75 @@ describe('bounded encounter move history', () => {
 
     expect(history.switches).toHaveLength(1)
     expect(history.knockouts).toHaveLength(1)
+    expect(history.knockoutReplacements).toEqual([expect.objectContaining({
+      replacementEventId: 'event.target.switch',
+      knockoutEventId: 'event.fury.1.ko',
+      knockedOutPlacementId: 'target-token',
+      replacementPlacementId: 'replacement-token',
+      sideId: 'villains',
+      sentOutRound: 2,
+      firstTurnEventId: null,
+    })])
+    const replacementTurn = reduceEncounterLifecycle(result.state, [parseEncounterEvent({
+      ...envelope('turn-start', 'event.replacement.turn-start'),
+      round: 3,
+      turn: 7,
+      placementId: 'replacement-token',
+      sideId: 'villains',
+    })]).state.history
+    expect(replacementTurn.knockoutReplacements[0]).toMatchObject({
+      firstTurnEventId: 'event.replacement.turn-start', firstActingRound: 3, firstActingTurn: 7,
+    })
     expect(Object.isFrozen(result.state)).toBe(true)
     expect(Object.isFrozen(history.moveAncestry)).toBe(true)
     expect(Object.isFrozen(history.moveUses)).toBe(true)
     expect(Object.isFrozen(queries.completedMovesThisScene())).toBe(true)
+  })
+
+  it('pairs a lifecycle knockout with a same-side replacement and its first acting turn', () => {
+    const events = parseEncounterEvents([
+      { ...envelope('scene-start', 'event.replacement.scene'), sceneId: 'scene.replacement.1' },
+      { ...envelope('round-start', 'event.replacement.round'), round: 4 },
+      {
+        ...envelope('lifecycle-ko', 'event.replacement.lifecycle-ko'),
+        targetPlacementId: 'fainted-token',
+        sourceEffectOperationId: 'effect.weather.hail.1',
+        round: 4,
+        cause: 'damage-over-time',
+      },
+      {
+        ...envelope('recall', 'event.replacement.recall'),
+        placementId: 'fainted-token',
+        sideId: 'villains',
+        causalProviderId: null,
+      },
+      {
+        ...envelope('send-out', 'event.replacement.send-out'),
+        placementId: 'reserve-token',
+        sideId: 'villains',
+        causalProviderId: null,
+      },
+      {
+        ...envelope('turn-start', 'event.replacement.first-turn'),
+        round: 4,
+        turn: 9,
+        placementId: 'reserve-token',
+        sideId: 'villains',
+      },
+    ])
+    const history = reduceEncounterLifecycle(createEmptyEncounterState(), events).state.history
+    expect(history.knockoutReplacements).toEqual([{
+      replacementEventId: 'event.replacement.send-out',
+      sourceOperationId: 'op.history.test',
+      knockoutEventId: 'event.replacement.lifecycle-ko',
+      knockedOutPlacementId: 'fainted-token',
+      replacementPlacementId: 'reserve-token',
+      sideId: 'villains',
+      sentOutRound: 4,
+      firstTurnEventId: 'event.replacement.first-turn',
+      firstActingRound: 4,
+      firstActingTurn: 9,
+    }])
   })
 
   it('rejects conflicting move identity and completion without declaration', () => {

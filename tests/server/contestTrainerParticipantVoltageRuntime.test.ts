@@ -6,7 +6,7 @@ import { executeContestCommandUseCase } from '../../server/useCases/contests'
 import { createSeededContestRandomSource } from '../../shared/contests/dice'
 import { contestCurrentContestant, contestPerformerIsPokemon, contestPerformerIsTrainer, parseContestDocument, type ContestDocumentV1 } from '../../shared/contests/document'
 import { emptyContestStatRecord } from '../../shared/contests/ids'
-import { projectContestOwner } from '../../shared/contests/projections'
+import { projectContestOwner, projectContestPublic } from '../../shared/contests/projections'
 
 const databases: RotomDatabase[] = []
 afterEach(() => { while (databases.length) databases.pop()!.close() })
@@ -27,7 +27,7 @@ const setup = (rotation = false) => {
   const seeded = createSeededContestRandomSource(580)
   let randomCalls = 0, now = 800
   const deps = { database, random: { nextInteger: (minimum: number, maximum: number) => { randomCalls += 1; return seeded.nextInteger(minimum, maximum) } }, now: () => ++now, publishPersistedRealtimeEvent: () => {}, reportAfterCommitPublicationFailure: () => {} }
-  return { database, deps, randomCalls: () => randomCalls }
+  return { database, sheets, deps, randomCalls: () => randomCalls }
 }
 
 const preparePerformance = (context: ReturnType<typeof setup>, rotation = false): ContestDocumentV1 => {
@@ -57,8 +57,18 @@ describe('Trainer Participant paired Voltage runtime', () => {
     expect(document).toMatchObject({ stage: 'performance', round: 1, turnIndex: 0 })
     expect(updated).toMatchObject({ voltage: 0, performerVoltages: { [trainer.performerId]: 2, [pokemon.performerId]: 0 } })
     expect(document.appealLedger.at(-1)).toMatchObject({ performerId: trainer.performerId, voltageBefore: 0, voltageAfter: 2, consequences: [expect.objectContaining({ contestantId: current.contestantId, performerId: trainer.performerId, voltageDelta: 2, reason: 'Excitement' })] })
+    const publicAfter = projectContestPublic(document)
+    const publicPair = publicAfter.scoreboard.find(row => row.contestantId === current.contestantId)!
+    expect(publicPair.performers).toEqual([
+      expect.objectContaining({ performerKind: 'pokemon', displayName: pokemon.displayName, activePerformer: true, voltage: 0 }),
+      expect.objectContaining({ performerKind: 'trainer', displayName: trainer.displayName, activePerformer: true, voltage: 2 }),
+    ])
+    expect(JSON.stringify(publicPair)).not.toContain('providerIds')
+    expect(JSON.stringify(publicPair)).not.toContain('performerId')
     const ownerAfterDocument = structuredClone(document) as any; ownerAfterDocument.contestants.find((row: any) => row.contestantId === current.contestantId).controller = { kind: 'profile', profileId: 'profile_voltage01' }
-    expect(projectContestOwner(parseContestDocument(ownerAfterDocument), 'profile_voltage01')).toMatchObject({ ownCurrentPerformerId: pokemon.performerId, ownLegalPerformerIds: [pokemon.performerId] })
+    const ownerAfter = projectContestOwner(parseContestDocument(ownerAfterDocument), 'profile_voltage01')!
+    expect(ownerAfter).toMatchObject({ ownCurrentPerformerId: pokemon.performerId, ownLegalPerformerIds: [pokemon.performerId] })
+    expect(ownerAfter.ownContestant.performerVoltages).toMatchObject({ [trainer.performerId]: 2, [pokemon.performerId]: 0 })
     const forgedVoltage = structuredClone(document) as any
     forgedVoltage.contestants.find((row: any) => row.contestantId === current.contestantId).performerVoltages[pokemon.performerId] = 1
     expect(() => parseContestDocument(forgedVoltage)).toThrow(/does not reconcile with accepted performer appeal/)
@@ -164,6 +174,71 @@ describe('Trainer Participant paired Voltage runtime', () => {
     expect(() => executeContestCommandUseCase(correction, { role: 'gm' }, context.deps)).toThrow(/exact performer identity/)
     expect(createSqliteContestRepository(context.database).get(document.contestId)!.revision).toBe(document.revision)
     expect(createSqliteContestRepository(context.database).findOperation(operationId('ambiguous-voltage'))).toBeNull()
+  })
+
+  it('previews and atomically commits ordinary placement XP, Ribbon, and result receipts for paired entries', () => {
+    const context = setup()
+    let document = preparePerformance(context), sequence = 0
+    while (document.stage === 'performance') {
+      const current = contestCurrentContestant(document)!, accepted = acceptedAtCurrentTurn(document)
+      const trainer = current.performers.find(contestPerformerIsTrainer)!, pokemon = current.performers.find(contestPerformerIsPokemon)!
+      const performer = accepted.length ? (accepted[0]!.performerId === trainer.performerId ? pokemon : trainer) : sequence % 2 === 0 ? trainer : pokemon
+      const previous = [...document.appealLedger].reverse().find(row => row.contestantId === current.contestantId && row.performerId === performer.performerId)
+      const option = performer.moves.find(row => row.available && row.optionId !== previous?.moveOptionId)!
+      executeContestCommandUseCase(appeal(document, `settle-${sequence++}`, performer.performerId, option.optionId), { role: 'gm' }, context.deps)
+      document = createSqliteContestRepository(context.database).get(document.contestId)!.document
+    }
+    const prepare = base(document.contestId, 'prepare-settlement', 'prepare-paired', document.revision)
+    let response = executeContestCommandUseCase(prepare, { role: 'gm' }, context.deps)
+    document = createSqliteContestRepository(context.database).get(document.contestId)!.document
+    expect(document).toMatchObject({ stage: 'settling', settlement: { status: 'preview' } })
+    expect(document.settlement!.entries).toHaveLength(3)
+    for (const entry of document.settlement!.entries) {
+      const contestant = document.contestants.find(row => row.contestantId === entry.contestantId)!
+      expect(entry.experienceByPokemon).toHaveLength(1)
+      expect(entry.experienceByPokemon[0]!.pokemonSheetSlug).toBe(contestant.performers.find(contestPerformerIsPokemon)!.pokemonSheetSlug)
+      expect(entry.experienceByPokemon[0]!.experience).toBe(10 * Math.ceil((3 - entry.placement + 1) / 2))
+    }
+    const commit = base(document.contestId, 'commit-settlement', 'commit-paired', response.result.revision)
+    response = executeContestCommandUseCase(commit, { role: 'gm' }, context.deps)
+    document = createSqliteContestRepository(context.database).get(document.contestId)!.document
+    expect(document).toMatchObject({ stage: 'completed', settlement: { status: 'committed', committedOperationId: commit.operationId } })
+    const winner = document.contestants.find(row => row.finalPlacement === 1)!
+    for (const contestant of document.contestants) {
+      const trainerSheet = context.database.connection.prepare("SELECT document_json FROM sheets WHERE kind = 'trainer' AND slug = ?").get(contestant.trainerSheetSlug) as { document_json: string }
+      const result = JSON.parse(trainerSheet.document_json).contestResults.at(-1)
+      expect(result).toMatchObject({ contestId: document.contestId, placement: contestant.finalPlacement, pokemonSheetSlugs: [contestant.performers.find(contestPerformerIsPokemon)!.pokemonSheetSlug] })
+    }
+    const winningPokemon = winner.performers.find(contestPerformerIsPokemon)!
+    const pokemonSheet = JSON.parse((context.database.connection.prepare("SELECT document_json FROM sheets WHERE kind = 'pokemon' AND slug = ?").get(winningPokemon.pokemonSheetSlug) as { document_json: string }).document_json)
+    expect(pokemonSheet.contestRibbons).toContainEqual(expect.objectContaining({ contestId: document.contestId, placement: 1, pokemonSheetSlug: winningPokemon.pokemonSheetSlug }))
+    const revisionAfterCommit = context.sheets.getByRef('pokemon', winningPokemon.pokemonSheetSlug)!.revision
+    expect(executeContestCommandUseCase(commit, { role: 'gm' }, context.deps).result.exactRetry).toBe(true)
+    expect(context.sheets.getByRef('pokemon', winningPokemon.pokemonSheetSlug)!.revision).toBe(revisionAfterCommit)
+  })
+
+  it('rolls back every paired reward write when one sheet commit conflicts', () => {
+    const context = setup()
+    let document = preparePerformance(context), sequence = 0
+    while (document.stage === 'performance') {
+      const current = contestCurrentContestant(document)!, accepted = acceptedAtCurrentTurn(document)
+      const trainer = current.performers.find(contestPerformerIsTrainer)!, pokemon = current.performers.find(contestPerformerIsPokemon)!
+      const performer = accepted.length ? (accepted[0]!.performerId === trainer.performerId ? pokemon : trainer) : trainer
+      const previous = [...document.appealLedger].reverse().find(row => row.contestantId === current.contestantId && row.performerId === performer.performerId)
+      const option = performer.moves.find(row => row.available && row.optionId !== previous?.moveOptionId)!
+      executeContestCommandUseCase(appeal(document, `conflict-${sequence++}`, performer.performerId, option.optionId), { role: 'gm' }, context.deps)
+      document = createSqliteContestRepository(context.database).get(document.contestId)!.document
+    }
+    executeContestCommandUseCase(base(document.contestId, 'prepare-settlement', 'prepare-conflict', document.revision), { role: 'gm' }, context.deps)
+    document = createSqliteContestRepository(context.database).get(document.contestId)!.document
+    const original = context.sheets.applyLivePlayUpdate.bind(context.sheets)
+    let writes = 0
+    ;(context.sheets as any).applyLivePlayUpdate = (input: unknown) => ++writes === 2 ? 'conflict' : original(input as never)
+    const commit = base(document.contestId, 'commit-settlement', 'commit-conflict', document.revision)
+    expect(() => executeContestCommandUseCase(commit, { role: 'gm' }, { ...context.deps, sheets: context.sheets })).toThrow(/changed during settlement/)
+    expect(createSqliteContestRepository(context.database).get(document.contestId)!.document).toMatchObject({ revision: document.revision, stage: 'settling', settlement: { status: 'preview' } })
+    expect(createSqliteContestRepository(context.database).findOperation(commit.operationId)).toBeNull()
+    for (const suffix of ['a', 'b', 'c']) expect((context.sheets.getByRef('trainer', `trainer-${suffix}`)!.sheet as any).contestResults).toBeUndefined()
   })
 
   it('applies adjacent Voltage effects to both paired members and assembles both values without duplicating chart position', () => {

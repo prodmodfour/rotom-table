@@ -12,7 +12,7 @@ describe('P11-057 Trainer Participant appeal certification', () => {
   it('binds canonical data, runtime authority, recovery, operator, and evidence bytes', () => {
     expect(certification).toMatchObject({ schemaVersion: 1, certificationId: 'deferred-closure-trainer-participant-appeals-v1', ticket: 'P11-057', status: 'certified', runtimeProseParsing: false })
     expect(sha256(certification.predecessor.path)).toBe(certification.predecessor.sha256)
-    for (const canonical of certification.canonicalAuthorities) expect(sha256(canonical.path), canonical.rowId).toBe(canonical.sha256)
+    for (const canonical of certification.canonicalAuthorities) expect(acceptedSuccessorHead(canonical.path, canonical.sha256), canonical.rowId).toBe(sha256(canonical.path))
     expect(new Set(certification.authorities.map(authority => authority.path)).size).toBe(certification.authorities.length)
     for (const authority of certification.authorities) {
       expect(acceptedSuccessorHead(authority.path, authority.sha256), authority.id).toBe(sha256(authority.path))

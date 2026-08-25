@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "deferred-closure:battle-contest-effects:v1",
+  "ticket": "P11-070",
+  "status": "reviewed",
+  "reviewedAt": "2026-08-24",
+  "target": {
+    "path": "data/reference/contests.json",
+    "beforeSha256": "7f09db8c157af6bdc96e0f5931c0b8396e104e10dba4a51593bee2de5ce673d4",
+    "afterSha256": "f084b844598e352f20fdc9a7c9d890d085604fc6bf496dfa3c8c980e8c3953d7",
+    "afterBytes": 31182,
+    "afterGitBlob": "bbf03ae58693a74a46d6180c087de0a71f336b82"
+  },
+  "sources": [
+    {
+      "path": "books/markdown/core/08-pokemon-contests.md",
+      "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+      "subjects": [
+        "Contest Effects",
+        "Battle Contest opposing-Pokemon adjacency",
+        "encounter-round timing"
+      ]
+    }
+  ],
+  "contestEffectPolicy": {
+    "semantics": "canonical-contest-effect-handler",
+    "supportedEffectIds": [
+      "attention-grabber",
+      "big-show",
+      "catching-up",
+      "desperation",
+      "double-time",
+      "excitement",
+      "exhausting-act",
+      "gamble",
+      "get-ready",
+      "good-show",
+      "incentives",
+      "inversed-appeal",
+      "reflective-appeal",
+      "reliable",
+      "sabotage",
+      "safe-option",
+      "saving-grace",
+      "seen-nothing-yet",
+      "special-attention",
+      "steady-performance",
+      "tease",
+      "unsettling"
+    ],
+    "unknownEffectPolicy": "reject",
+    "actorVoltageTarget": "acting-pokemon",
+    "adjacentVoltageTargets": "all-opposing-pokemon-on-field",
+    "indirectFumbleTarget": "opposing-trainer-team",
+    "onFieldPokemonMinimumPerTrainer": 1,
+    "onFieldPokemonMaximumPerTrainer": 6,
+    "onFieldPokemonAuthority": "linked-map-placements",
+    "roundIdentity": "encounter-round",
+    "getReadyTarget": "same-pokemon-next-encounter-round",
+    "savingGraceProtection": "same-active-pokemon-through-encounter-round",
+    "reliableHistory": "same-pokemon-previous-accepted-move"
+  },
+  "review": {
+    "runtimeProseParsing": false,
+    "effectInventoryComplete": true,
+    "unknownEffectsFailClosed": true,
+    "ordinaryHandlerAuthorityReused": true,
+    "battleOverrides": [
+      "adjacent means every opposing on-field Pokémon",
+      "actor Voltage belongs to the acting Pokémon",
+      "adjacent Voltage belongs to each opposing on-field Pokémon",
+      "indirect Fumble belongs to the opposing Trainer-team score",
+      "round-relative effects use the accepted Encounter round"
+    ]
+  }
+}

@@ -12,6 +12,7 @@ import type {
   LivePlayMovePresentationPassGeometry,
   LivePlayMovePresentationSummary,
 } from '#shared/livePlayMovePresentation'
+import type { MoveHistoryBranchSelection } from '#shared/moveAutomation/moveHistoryMetadata'
 import type {
   MoveResolutionAuditTrace,
   MoveResolutionTraceJsonValue,
@@ -87,6 +88,11 @@ export interface ReduceMoveMapOperationsInput {
   readonly initialMap?: TabletopMap
   /** Exact server-emitted operations, retained in canonical phase/operation order. */
   readonly operations: readonly MoveResolvedMapEffectOperation[]
+  /** True only for a terminal accepted primary resolveMove, never follow-up reducers. */
+  readonly recordAcceptedMoveHistory?: boolean
+  /** Placement IDs whose authoritative sheets crossed from positive HP to zero HP in this primary Move. */
+  readonly acceptedMoveKnockoutTargetIds?: readonly string[]
+  readonly acceptedMoveBranchSelections?: readonly MoveHistoryBranchSelection[]
   readonly dynamicRecipients: MoveEffectDynamicRecipientSets
   /** Preserve an ancestry-linked child's explicit actor/source context. */
   readonly contextForOperation?: (

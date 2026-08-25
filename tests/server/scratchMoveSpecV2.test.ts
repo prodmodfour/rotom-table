@@ -53,6 +53,18 @@ const plan = (kind: 'legacy-v1' | 'movespec-v2') => {
 const mechanicsMap = (value: ReturnType<typeof plan>['nextMap']) => {
   const clone = structuredClone(value)
   delete clone.metadata
+  const history = clone.encounterState?.history
+  for (const entry of history?.lastDeclaredMoves ?? []) Reflect.deleteProperty(entry, 'specVersion')
+  for (const entry of history?.lastDamagingMovesReceived ?? []) Reflect.deleteProperty(entry, 'specVersion')
+  for (const entry of history?.knockouts ?? []) Reflect.deleteProperty(entry, 'specVersion')
+  for (const entry of history?.lastCompletedMoves ?? []) {
+    Reflect.deleteProperty(entry, 'specVersion')
+    Reflect.deleteProperty(entry, 'branches')
+  }
+  for (const entry of history?.moveUses ?? []) {
+    Reflect.deleteProperty(entry, 'specVersion')
+    if (entry.completion) Reflect.deleteProperty(entry.completion, 'branches')
+  }
   return clone
 }
 

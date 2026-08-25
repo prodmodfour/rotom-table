@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-voltage-lifecycle-v1",
+  "ticket": "P11-072",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-pokemon-voltage-certification.v1.json",
+    "sha256": "5d46a590275b5c8b4ea568c75cab75bca2c2a538a153892ca9fa7ed487d20661"
+  },
+  "reviewedMigration": {
+    "path": "scripts/reviewed-data/deferred-closure-battle-contest-voltage-lifecycle.v1.json",
+    "sha256": "b9866d938974370d2086d8f3c54a39cc89662c2ce2a618a3a09936ed25577065"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "eba1cce2536912c7b9fd6cc8662949a950671505c7282364b6c776b6fe73d65c",
+    "rowId": "battle",
+    "completionState": "structured",
+    "voltageScope": "per-pokemon"
+  },
+  "authorities": [
+    {
+      "id": "reviewed-voltage-policy",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "b8f42f698bc8da28f709071c01f054d7f29fb2672c0b7cb9c8456af89784442f",
+      "guarantees": ["attack-ko-plus-two", "damage-over-time-opposing-active-redirection", "recall-minus-two", "exact-reviewed-recall-exceptions", "unknown-provider-fail-closed"]
+    },
+    {
+      "id": "typed-blend-lifecycle-facts",
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "d10f0034240bc4e26dda284d10c548020782833f086af005d1eea9fed09ab484",
+      "guarantees": ["canonical-move-ancestry", "typed-ko-cause", "typed-switch-provider", "fact-hashing", "at-most-once-receipts"]
+    },
+    {
+      "id": "encounter-event-authority",
+      "path": "shared/moveAutomation/events.ts",
+      "sha256": "a6c41da9f8920636689a88b157b8d728a1384d7f2ee64ad0ecaf35e021445c7c",
+      "guarantees": ["typed-lifecycle-ko", "exact-causal-round", "typed-switch-provider", "legacy-provider-null-normalization"]
+    },
+    {
+      "id": "encounter-history-authority",
+      "path": "shared/moveAutomation/encounterHistory.ts",
+      "sha256": "f3655b4b80c38d7591083d7965bbfa696e62ca3788bed56e154f3671ec3aea36",
+      "guarantees": ["bounded-attack-knockout-index", "bounded-lifecycle-knockout-index", "bounded-switch-index", "source-operation-and-effect-ancestry"]
+    },
+    {
+      "id": "accepted-primary-move-ko-recording",
+      "path": "server/domain/moveAutomation/recordAcceptedMoveHistory.ts",
+      "sha256": "3f6c9a6ad0444d77f23d2618a755ea3b00453ea67164e01a240f4786eef33b03",
+      "guarantees": ["primary-only", "server-observed-hp-crossing", "native-and-legacy-callers", "no-action-or-consecutive-replay"]
+    },
+    {
+      "id": "lifecycle-ko-emission",
+      "path": "server/domain/moveAutomation/planInitiativeLifecycle.ts",
+      "sha256": "2a937a334991d65b683ba853ea7b07e318535a44224c6222443fc99e0dd1e47b",
+      "guarantees": ["positive-to-zero-hp-crossing", "direct-hp-source-effect", "root-boundary-identity", "causal-round-before-next-round", "no-primary-ko-duplication"]
+    },
+    {
+      "id": "switch-provider-propagation",
+      "path": "server/domain/moveAutomation/planMoveSwitch.ts",
+      "sha256": "15a717eec6bed863255d8575952a3621744063fceabfb2cf26a0ee8307ec878a",
+      "guarantees": ["server-only-provider", "switch-and-recall-history", "deterministic-switch-event", "historical-null-provider"]
+    },
+    {
+      "id": "source-authoritative-lifecycle-derivation",
+      "path": "server/domain/contests/battleLifecycle.ts",
+      "sha256": "af80581599032ff523e2a0756460ad47ce936206e7d065867a4257a2d1066399",
+      "guarantees": ["accepted-operation-reconstruction", "accepted-patch-current-history-equality", "immutable-link-and-scene", "move-ko-source-attribution", "dot-active-opponent-derivation", "typed-recall-exception-provider"]
+    },
+    {
+      "id": "contest-owned-voltage-consequences",
+      "path": "server/domain/contests/battleVoltageLifecycle.ts",
+      "sha256": "1feb1aa0967fa09798968e1d0b108659a15c35c24e34c93cceeef26736b88a6a",
+      "guarantees": ["zero-through-five-caps", "per-pokemon-transitions", "exact-retry", "changed-material-conflict", "zero-encounter-writes"]
+    },
+    {
+      "id": "ordered-document-reconciliation",
+      "path": "shared/contests/document.ts",
+      "sha256": "fdf4b14740ad0d04bdf8cdd65d05cfa89580834013662ac2c0181c455147c339",
+      "guarantees": ["ordered-appeal-and-lifecycle-replay", "canonical-delta-validation", "exception-validation", "receipt-ledger-bijection", "forgery-rejection"]
+    },
+    {
+      "id": "atomic-server-coordinator",
+      "path": "server/useCases/contests.ts",
+      "sha256": "b592944a004ab903005852387147183b8c5d02633999fbc0094b5c28e1caf6f2",
+      "guarantees": ["server-only-ingress", "exact-authority-reread", "contest-only-transaction", "rollback-on-persistence-failure", "deterministic-operation-id"]
+    },
+    {
+      "id": "role-safe-projections",
+      "path": "shared/contests/projections.ts",
+      "sha256": "75128e0cf32674d6f502d8e2fee3bb51e310a0cd7639d4099f2ad76ecfc0b4f4",
+      "guarantees": ["public-no-source-evidence", "owner-no-opponent-authority", "gm-no-diagnostic-hashes", "diagnostic-only-lifecycle-ledger"]
+    },
+    {
+      "id": "voltage-realtime",
+      "path": "server/realtime/contestRealtime.ts",
+      "sha256": "0b25985297289ef855670779fdc8493a4d03959115019e213712ec5fe7178b81",
+      "guarantees": ["contest-voltage-changed", "public-gm-owner-channels", "operation-deduplication"]
+    },
+    {
+      "id": "operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "692daefd18319b403426acaf049b723fb6a53879c2acd27d933697ac2910f4f2",
+      "guarantees": ["source-fact-boundary", "all-voltage-rules", "privacy", "retry-and-write-ownership"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "755aeedf07a10630d937d695ed0f312e1137f43cca0f4ff270d3d1fb9e2ac622",
+      "scenarioIds": ["accepted-attack-ko", "accepted-hail-dot-ko", "opposing-active-redirection", "ordinary-recall-loss", "baton-pass-exception", "u-turn-exception", "volt-switch-exception", "quick-switch-provider-exception", "unknown-provider-loss", "zero-floor", "five-cap", "exact-retry", "changed-material-conflict", "ledger-forgery-rejection", "server-only-ingress", "projection-sanitization"]
+    },
+    {
+      "path": "tests/server/moveSwitchPlanning.test.ts",
+      "sha256": "e082aa9a372ba76329ee1a80fb3e0ed3b1a48435da37920c75b8ce50929a4c91",
+      "scenarioIds": ["typed-round-trip-provider-propagation", "deterministic-switch-history", "atomic-recall-and-send-out"]
+    },
+    {
+      "path": "tests/shared/moveAutomationEvents.test.ts",
+      "sha256": "48050c90bbea3e429318c6e4a0119ea00058e467bc2b487a1d3ab8fad14f209e",
+      "scenarioIds": ["strict-lifecycle-ko-event", "causal-round", "legacy-switch-provider-normalization", "strict-event-shapes"]
+    }
+  ],
+  "validation": {
+    "contestRuntimeAndContractTests": 185,
+    "focusedEncounterAndSwitchTests": 41,
+    "nuxtTypecheck": "passed",
+    "contestMigrationCheck": "passed",
+    "productionBuild": "passed"
+  },
+  "acceptance": {
+    "attackKoDelta": 2,
+    "damageOverTimeKoRecipient": "single-opposing-active-pokemon",
+    "recallDelta": -2,
+    "minimumVoltage": 0,
+    "maximumVoltage": 5,
+    "canonicalMoveExceptionCount": 3,
+    "reviewedJugglerProviderCount": 2,
+    "clientAuthoredConsequenceFields": 0,
+    "encounterDocumentWrites": 0,
+    "encounterMapWrites": 0,
+    "publicLifecycleAuthorityFields": 0,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-073"
+  }
+}

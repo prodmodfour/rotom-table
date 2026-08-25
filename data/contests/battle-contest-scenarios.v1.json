@@ -1,0 +1,1722 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "battle-contest-deterministic-scenarios-v1",
+  "ticket": "P11-079",
+  "sources": [
+    {
+      "path": "data/reference/contests.json",
+      "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497"
+    },
+    {
+      "path": "data/reference/moves.json",
+      "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821"
+    },
+    {
+      "path": "data/deferred-closure/battle-contest-liveplay-certification.v1.json",
+      "sha256": "9a248ec19536a856495241e610cacf51226fb1ac3c0cc6657c9350ea9c0dda0b"
+    }
+  ],
+  "policy": {
+    "rosterSizes": [
+      3,
+      6
+    ],
+    "roundBudgetFormula": "twice-pokemon-per-trainer",
+    "endConditions": [
+      "round-budget-exhausted",
+      "one-trainer-all-pokemon-knocked-out"
+    ],
+    "scorePolicy": "appeal-points",
+    "voltageRules": [
+      "appeal",
+      "attack-knockout",
+      "damage-over-time-knockout",
+      "recall",
+      "recall-exception"
+    ],
+    "switchingRules": [
+      "ordinary-recall-minus-two",
+      "Baton Pass",
+      "U-Turn"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "minimum-three-round-budget",
+      "seed": 79031,
+      "rosterSize": 3,
+      "roundBudget": 6,
+      "script": [
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 0,
+          "move": "Agility",
+          "round": 1,
+          "spendStat": "cool"
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 0,
+          "move": "Tackle",
+          "round": 1,
+          "spendStat": "cute"
+        },
+        {
+          "kind": "switch",
+          "side": "north",
+          "recalledIndex": 0,
+          "sentOutIndex": 1,
+          "round": 2,
+          "exception": null
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 1,
+          "move": "Tackle",
+          "round": 2,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 1,
+          "targetSide": "south",
+          "targetPokemonIndex": 0,
+          "round": 2,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "south",
+          "pokemonIndex": 1,
+          "round": 3
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 1,
+          "move": "Agility",
+          "round": 3,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "damage-over-time",
+          "sourceSide": "south",
+          "sourcePokemonIndex": 1,
+          "targetSide": "north",
+          "targetPokemonIndex": 1,
+          "round": 4,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "north",
+          "pokemonIndex": 2,
+          "round": 5
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 2,
+          "move": "Tackle",
+          "round": 5,
+          "spendStat": null
+        },
+        {
+          "kind": "end",
+          "condition": "round-budget-exhausted",
+          "round": 6,
+          "knockedOutSide": null
+        }
+      ],
+      "expected": {
+        "terminalCondition": "round-budget-exhausted",
+        "terminalRound": 6,
+        "scorePolicy": "appeal-points",
+        "winnerContestantId": "contestant:minimum-three-round-budget-north",
+        "teams": {
+          "north": {
+            "contestantId": "contestant:minimum-three-round-budget-north",
+            "appeal": 13,
+            "fumble": 0,
+            "finalScore": 13,
+            "placement": 1,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 3
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 1
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 5,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            }
+          },
+          "south": {
+            "contestantId": "contestant:minimum-three-round-budget-south",
+            "appeal": 7,
+            "fumble": 0,
+            "finalScore": 7,
+            "placement": 2,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 3
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 0
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 5,
+              "smart": 0,
+              "tough": 0
+            }
+          }
+        },
+        "appeals": [
+          {
+            "side": "north",
+            "pokemonIndex": 0,
+            "move": "Agility",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 1,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 3,
+            "acceptedResults": [
+              5,
+              5,
+              4
+            ],
+            "appealDelta": 3,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 0,
+            "move": "Tackle",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 1,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 6,
+            "acceptedResults": [
+              1,
+              2,
+              5,
+              5,
+              6,
+              5
+            ],
+            "appealDelta": 6,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 1,
+            "move": "Tackle",
+            "round": 2,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 5,
+            "acceptedResults": [
+              6,
+              1,
+              2,
+              6,
+              1
+            ],
+            "appealDelta": 5,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 1,
+            "move": "Agility",
+            "round": 3,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 2,
+            "acceptedResults": [
+              1,
+              5
+            ],
+            "appealDelta": 1,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 2,
+            "move": "Tackle",
+            "round": 5,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 5,
+            "acceptedResults": [
+              1,
+              6,
+              5,
+              4,
+              2
+            ],
+            "appealDelta": 5,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          }
+        ],
+        "lifecycle": [
+          {
+            "kind": "switch",
+            "side": "north",
+            "round": 2,
+            "rule": "recall",
+            "recallExceptionId": null,
+            "transitions": [
+              {
+                "contestantId": "contestant:minimum-three-round-budget-north",
+                "performerId": "performer:minimum-three-round-budget-north-1",
+                "ruleDelta": -2,
+                "voltageBefore": 1,
+                "voltageAfter": 0
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "north",
+            "targetSide": "south",
+            "round": 2,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:minimum-three-round-budget-north",
+                "performerId": "performer:minimum-three-round-budget-north-2",
+                "ruleDelta": 2,
+                "voltageBefore": 1,
+                "voltageAfter": 3
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "damage-over-time",
+            "sourceSide": "south",
+            "targetSide": "north",
+            "round": 4,
+            "rule": "damage-over-time-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:minimum-three-round-budget-south",
+                "performerId": "performer:minimum-three-round-budget-south-2",
+                "ruleDelta": 2,
+                "voltageBefore": 1,
+                "voltageAfter": 3
+              }
+            ]
+          }
+        ],
+        "knockedOutPokemonIndices": {
+          "north": [
+            1
+          ],
+          "south": [
+            0
+          ]
+        },
+        "sendOuts": 2,
+        "receiptsByOutcome": {
+          "scored-appeal": 5,
+          "canonical-exclusion": 0,
+          "lifecycle-applied": 3,
+          "contest-ended": 1
+        },
+        "documentRevision": 15,
+        "evidenceSha256": "89cc61e5e8d08e78a7c8def504ac845a1b42184efd748fbce90af93b286c97cb"
+      }
+    },
+    {
+      "id": "minimum-three-all-pokemon-ko",
+      "seed": 79032,
+      "rosterSize": 3,
+      "roundBudget": 6,
+      "script": [
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 0,
+          "move": "Tackle",
+          "round": 1,
+          "spendStat": "cool"
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 0,
+          "move": "Agility",
+          "round": 1,
+          "spendStat": "cute"
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "south",
+          "sourcePokemonIndex": 0,
+          "targetSide": "north",
+          "targetPokemonIndex": 0,
+          "round": 1,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "north",
+          "pokemonIndex": 1,
+          "round": 2
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 1,
+          "move": "Agility",
+          "round": 2,
+          "spendStat": null
+        },
+        {
+          "kind": "switch",
+          "side": "south",
+          "recalledIndex": 0,
+          "sentOutIndex": 1,
+          "round": 2,
+          "exception": "Baton Pass"
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "south",
+          "sourcePokemonIndex": 1,
+          "targetSide": "north",
+          "targetPokemonIndex": 1,
+          "round": 2,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "north",
+          "pokemonIndex": 2,
+          "round": 3
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 2,
+          "move": "Tackle",
+          "round": 3,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "south",
+          "sourcePokemonIndex": 1,
+          "targetSide": "north",
+          "targetPokemonIndex": 2,
+          "round": 4,
+          "terminal": true
+        },
+        {
+          "kind": "end",
+          "condition": "one-trainer-all-pokemon-knocked-out",
+          "round": 4,
+          "knockedOutSide": "north"
+        }
+      ],
+      "expected": {
+        "terminalCondition": "one-trainer-all-pokemon-knocked-out",
+        "terminalRound": 4,
+        "scorePolicy": "appeal-points",
+        "winnerContestantId": "contestant:minimum-three-all-pokemon-ko-north",
+        "teams": {
+          "north": {
+            "contestantId": "contestant:minimum-three-all-pokemon-ko-north",
+            "appeal": 13,
+            "fumble": 0,
+            "finalScore": 13,
+            "placement": 1,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 1
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 5,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            }
+          },
+          "south": {
+            "contestantId": "contestant:minimum-three-all-pokemon-ko-south",
+            "appeal": 2,
+            "fumble": 0,
+            "finalScore": 2,
+            "placement": 2,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 3
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 2
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 0
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 5,
+              "smart": 0,
+              "tough": 0
+            }
+          }
+        },
+        "appeals": [
+          {
+            "side": "north",
+            "pokemonIndex": 0,
+            "move": "Tackle",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 1,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 6,
+            "acceptedResults": [
+              4,
+              2,
+              6,
+              2,
+              5,
+              5
+            ],
+            "appealDelta": 7,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 0,
+            "move": "Agility",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 1,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 3,
+            "acceptedResults": [
+              1,
+              4,
+              4
+            ],
+            "appealDelta": 2,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 1,
+            "move": "Agility",
+            "round": 2,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 2,
+            "acceptedResults": [
+              1,
+              4
+            ],
+            "appealDelta": 1,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 2,
+            "move": "Tackle",
+            "round": 3,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 5,
+            "acceptedResults": [
+              3,
+              6,
+              1,
+              5,
+              5
+            ],
+            "appealDelta": 5,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          }
+        ],
+        "lifecycle": [
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "south",
+            "targetSide": "north",
+            "round": 1,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:minimum-three-all-pokemon-ko-south",
+                "performerId": "performer:minimum-three-all-pokemon-ko-south-1",
+                "ruleDelta": 2,
+                "voltageBefore": 1,
+                "voltageAfter": 3
+              }
+            ]
+          },
+          {
+            "kind": "switch",
+            "side": "south",
+            "round": 2,
+            "rule": "recall-exception",
+            "recallExceptionId": "Baton Pass",
+            "transitions": [
+              {
+                "contestantId": "contestant:minimum-three-all-pokemon-ko-south",
+                "performerId": "performer:minimum-three-all-pokemon-ko-south-1",
+                "ruleDelta": 0,
+                "voltageBefore": 3,
+                "voltageAfter": 3
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "south",
+            "targetSide": "north",
+            "round": 2,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:minimum-three-all-pokemon-ko-south",
+                "performerId": "performer:minimum-three-all-pokemon-ko-south-2",
+                "ruleDelta": 2,
+                "voltageBefore": 0,
+                "voltageAfter": 2
+              }
+            ]
+          }
+        ],
+        "knockedOutPokemonIndices": {
+          "north": [
+            0,
+            1,
+            2
+          ],
+          "south": []
+        },
+        "sendOuts": 2,
+        "receiptsByOutcome": {
+          "scored-appeal": 4,
+          "canonical-exclusion": 0,
+          "lifecycle-applied": 3,
+          "contest-ended": 1
+        },
+        "documentRevision": 14,
+        "evidenceSha256": "31f0406d50a9d74da582d093001eb3f446276e3559d1c520af74ef8da8176636"
+      }
+    },
+    {
+      "id": "maximum-six-round-budget",
+      "seed": 79061,
+      "rosterSize": 6,
+      "roundBudget": 12,
+      "script": [
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 0,
+          "move": "Agility",
+          "round": 1,
+          "spendStat": "cool"
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 0,
+          "move": "Tackle",
+          "round": 1,
+          "spendStat": "cute"
+        },
+        {
+          "kind": "switch",
+          "side": "north",
+          "recalledIndex": 0,
+          "sentOutIndex": 1,
+          "round": 2,
+          "exception": null
+        },
+        {
+          "kind": "switch",
+          "side": "south",
+          "recalledIndex": 0,
+          "sentOutIndex": 1,
+          "round": 2,
+          "exception": "U-Turn"
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 1,
+          "move": "Tackle",
+          "round": 3,
+          "spendStat": null
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 1,
+          "move": "Agility",
+          "round": 3,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 1,
+          "targetSide": "south",
+          "targetPokemonIndex": 1,
+          "round": 4,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "south",
+          "pokemonIndex": 2,
+          "round": 5
+        },
+        {
+          "kind": "knockout",
+          "cause": "damage-over-time",
+          "sourceSide": "south",
+          "sourcePokemonIndex": 2,
+          "targetSide": "north",
+          "targetPokemonIndex": 1,
+          "round": 5,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "north",
+          "pokemonIndex": 2,
+          "round": 6
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 2,
+          "move": "Agility",
+          "round": 7,
+          "spendStat": null
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 2,
+          "move": "Tackle",
+          "round": 8,
+          "spendStat": null
+        },
+        {
+          "kind": "end",
+          "condition": "round-budget-exhausted",
+          "round": 12,
+          "knockedOutSide": null
+        }
+      ],
+      "expected": {
+        "terminalCondition": "round-budget-exhausted",
+        "terminalRound": 12,
+        "scorePolicy": "appeal-points",
+        "winnerContestantId": "contestant:maximum-six-round-budget-south",
+        "teams": {
+          "north": {
+            "contestantId": "contestant:maximum-six-round-budget-north",
+            "appeal": 9,
+            "fumble": 0,
+            "finalScore": 9,
+            "placement": 2,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 3
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 3,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 4,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 5,
+                "value": 0
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 5,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            }
+          },
+          "south": {
+            "contestantId": "contestant:maximum-six-round-budget-south",
+            "appeal": 15,
+            "fumble": 0,
+            "finalScore": 15,
+            "placement": 1,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 3
+              },
+              {
+                "pokemonIndex": 3,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 4,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 5,
+                "value": 0
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 5,
+              "smart": 0,
+              "tough": 0
+            }
+          }
+        },
+        "appeals": [
+          {
+            "side": "north",
+            "pokemonIndex": 0,
+            "move": "Agility",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 1,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 3,
+            "acceptedResults": [
+              5,
+              1,
+              6
+            ],
+            "appealDelta": 3,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 0,
+            "move": "Tackle",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 1,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 6,
+            "acceptedResults": [
+              2,
+              6,
+              3,
+              4,
+              6,
+              1
+            ],
+            "appealDelta": 7,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 1,
+            "move": "Tackle",
+            "round": 3,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 5,
+            "acceptedResults": [
+              4,
+              1,
+              2,
+              3,
+              3
+            ],
+            "appealDelta": 4,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 1,
+            "move": "Agility",
+            "round": 3,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 2,
+            "acceptedResults": [
+              3,
+              5
+            ],
+            "appealDelta": 2,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 2,
+            "move": "Agility",
+            "round": 7,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 2,
+            "acceptedResults": [
+              4,
+              5
+            ],
+            "appealDelta": 2,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 2,
+            "move": "Tackle",
+            "round": 8,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 7,
+            "acceptedResults": [
+              4,
+              3,
+              2,
+              5,
+              3,
+              1,
+              4
+            ],
+            "appealDelta": 6,
+            "fumbleDelta": 0,
+            "voltageBefore": 2,
+            "voltageAfter": 3
+          }
+        ],
+        "lifecycle": [
+          {
+            "kind": "switch",
+            "side": "north",
+            "round": 2,
+            "rule": "recall",
+            "recallExceptionId": null,
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-round-budget-north",
+                "performerId": "performer:maximum-six-round-budget-north-1",
+                "ruleDelta": -2,
+                "voltageBefore": 1,
+                "voltageAfter": 0
+              }
+            ]
+          },
+          {
+            "kind": "switch",
+            "side": "south",
+            "round": 2,
+            "rule": "recall-exception",
+            "recallExceptionId": "U-Turn",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-round-budget-south",
+                "performerId": "performer:maximum-six-round-budget-south-1",
+                "ruleDelta": 0,
+                "voltageBefore": 1,
+                "voltageAfter": 1
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "north",
+            "targetSide": "south",
+            "round": 4,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-round-budget-north",
+                "performerId": "performer:maximum-six-round-budget-north-2",
+                "ruleDelta": 2,
+                "voltageBefore": 1,
+                "voltageAfter": 3
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "damage-over-time",
+            "sourceSide": "south",
+            "targetSide": "north",
+            "round": 5,
+            "rule": "damage-over-time-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-round-budget-south",
+                "performerId": "performer:maximum-six-round-budget-south-3",
+                "ruleDelta": 2,
+                "voltageBefore": 0,
+                "voltageAfter": 2
+              }
+            ]
+          }
+        ],
+        "knockedOutPokemonIndices": {
+          "north": [
+            1
+          ],
+          "south": [
+            1
+          ]
+        },
+        "sendOuts": 2,
+        "receiptsByOutcome": {
+          "scored-appeal": 6,
+          "canonical-exclusion": 0,
+          "lifecycle-applied": 4,
+          "contest-ended": 1
+        },
+        "documentRevision": 17,
+        "evidenceSha256": "350cbc10637520d166e2f6292a690a522e1efcdbca0f4f0ff520ba3d654f7694"
+      }
+    },
+    {
+      "id": "maximum-six-all-pokemon-ko",
+      "seed": 79062,
+      "rosterSize": 6,
+      "roundBudget": 12,
+      "script": [
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 0,
+          "move": "Agility",
+          "round": 1,
+          "spendStat": "cool"
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 0,
+          "move": "Tackle",
+          "round": 1,
+          "spendStat": "cute"
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 0,
+          "targetSide": "south",
+          "targetPokemonIndex": 0,
+          "round": 1,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "south",
+          "pokemonIndex": 1,
+          "round": 2
+        },
+        {
+          "kind": "switch",
+          "side": "north",
+          "recalledIndex": 0,
+          "sentOutIndex": 1,
+          "round": 2,
+          "exception": null
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 1,
+          "move": "Tackle",
+          "round": 2,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 1,
+          "targetSide": "south",
+          "targetPokemonIndex": 1,
+          "round": 2,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "south",
+          "pokemonIndex": 2,
+          "round": 3
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 2,
+          "move": "Agility",
+          "round": 3,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "damage-over-time",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 1,
+          "targetSide": "south",
+          "targetPokemonIndex": 2,
+          "round": 3,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "south",
+          "pokemonIndex": 3,
+          "round": 4
+        },
+        {
+          "kind": "switch",
+          "side": "north",
+          "recalledIndex": 1,
+          "sentOutIndex": 2,
+          "round": 4,
+          "exception": "Baton Pass"
+        },
+        {
+          "kind": "appeal",
+          "side": "north",
+          "pokemonIndex": 2,
+          "move": "Agility",
+          "round": 4,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 2,
+          "targetSide": "south",
+          "targetPokemonIndex": 3,
+          "round": 4,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "south",
+          "pokemonIndex": 4,
+          "round": 5
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 4,
+          "move": "Tackle",
+          "round": 5,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 2,
+          "targetSide": "south",
+          "targetPokemonIndex": 4,
+          "round": 5,
+          "terminal": false
+        },
+        {
+          "kind": "send-out",
+          "side": "south",
+          "pokemonIndex": 5,
+          "round": 6
+        },
+        {
+          "kind": "appeal",
+          "side": "south",
+          "pokemonIndex": 5,
+          "move": "Agility",
+          "round": 6,
+          "spendStat": null
+        },
+        {
+          "kind": "knockout",
+          "cause": "attack",
+          "sourceSide": "north",
+          "sourcePokemonIndex": 2,
+          "targetSide": "south",
+          "targetPokemonIndex": 5,
+          "round": 8,
+          "terminal": true
+        },
+        {
+          "kind": "end",
+          "condition": "one-trainer-all-pokemon-knocked-out",
+          "round": 8,
+          "knockedOutSide": "south"
+        }
+      ],
+      "expected": {
+        "terminalCondition": "one-trainer-all-pokemon-knocked-out",
+        "terminalRound": 8,
+        "scorePolicy": "appeal-points",
+        "winnerContestantId": "contestant:maximum-six-all-pokemon-ko-south",
+        "teams": {
+          "north": {
+            "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+            "appeal": 8,
+            "fumble": 0,
+            "finalScore": 8,
+            "placement": 2,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 5
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 5
+              },
+              {
+                "pokemonIndex": 3,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 4,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 5,
+                "value": 0
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 5,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            }
+          },
+          "south": {
+            "contestantId": "contestant:maximum-six-all-pokemon-ko-south",
+            "appeal": 14,
+            "fumble": 0,
+            "finalScore": 14,
+            "placement": 1,
+            "pokemonVoltage": [
+              {
+                "pokemonIndex": 0,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 1,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 2,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 3,
+                "value": 0
+              },
+              {
+                "pokemonIndex": 4,
+                "value": 1
+              },
+              {
+                "pokemonIndex": 5,
+                "value": 1
+              }
+            ],
+            "teamDiceRemaining": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 5,
+              "smart": 0,
+              "tough": 0
+            }
+          }
+        },
+        "appeals": [
+          {
+            "side": "north",
+            "pokemonIndex": 0,
+            "move": "Agility",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 1,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 3,
+            "acceptedResults": [
+              4,
+              2,
+              1
+            ],
+            "appealDelta": 2,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 0,
+            "move": "Tackle",
+            "round": 1,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 1,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 6,
+            "acceptedResults": [
+              1,
+              3,
+              2,
+              1,
+              6,
+              4
+            ],
+            "appealDelta": 5,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 1,
+            "move": "Tackle",
+            "round": 2,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 5,
+            "acceptedResults": [
+              1,
+              2,
+              4,
+              6,
+              1
+            ],
+            "appealDelta": 4,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 2,
+            "move": "Agility",
+            "round": 3,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 2,
+            "acceptedResults": [
+              2,
+              2
+            ],
+            "appealDelta": 2,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "north",
+            "pokemonIndex": 2,
+            "move": "Agility",
+            "round": 4,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 2,
+            "acceptedResults": [
+              1,
+              6
+            ],
+            "appealDelta": 2,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 4,
+            "move": "Tackle",
+            "round": 5,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 5,
+            "acceptedResults": [
+              4,
+              5,
+              3,
+              2,
+              4
+            ],
+            "appealDelta": 5,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          },
+          {
+            "side": "south",
+            "pokemonIndex": 5,
+            "move": "Agility",
+            "round": 6,
+            "spentDice": {
+              "beauty": 0,
+              "cool": 0,
+              "cute": 0,
+              "smart": 0,
+              "tough": 0
+            },
+            "assembledDice": 2,
+            "acceptedResults": [
+              5,
+              5
+            ],
+            "appealDelta": 2,
+            "fumbleDelta": 0,
+            "voltageBefore": 0,
+            "voltageAfter": 1
+          }
+        ],
+        "lifecycle": [
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "north",
+            "targetSide": "south",
+            "round": 1,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+                "performerId": "performer:maximum-six-all-pokemon-ko-north-1",
+                "ruleDelta": 2,
+                "voltageBefore": 1,
+                "voltageAfter": 3
+              }
+            ]
+          },
+          {
+            "kind": "switch",
+            "side": "north",
+            "round": 2,
+            "rule": "recall",
+            "recallExceptionId": null,
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+                "performerId": "performer:maximum-six-all-pokemon-ko-north-1",
+                "ruleDelta": -2,
+                "voltageBefore": 3,
+                "voltageAfter": 1
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "north",
+            "targetSide": "south",
+            "round": 2,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+                "performerId": "performer:maximum-six-all-pokemon-ko-north-2",
+                "ruleDelta": 2,
+                "voltageBefore": 1,
+                "voltageAfter": 3
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "damage-over-time",
+            "sourceSide": "north",
+            "targetSide": "south",
+            "round": 3,
+            "rule": "damage-over-time-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+                "performerId": "performer:maximum-six-all-pokemon-ko-north-2",
+                "ruleDelta": 2,
+                "voltageBefore": 3,
+                "voltageAfter": 5
+              }
+            ]
+          },
+          {
+            "kind": "switch",
+            "side": "north",
+            "round": 4,
+            "rule": "recall-exception",
+            "recallExceptionId": "Baton Pass",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+                "performerId": "performer:maximum-six-all-pokemon-ko-north-2",
+                "ruleDelta": 0,
+                "voltageBefore": 5,
+                "voltageAfter": 5
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "north",
+            "targetSide": "south",
+            "round": 4,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+                "performerId": "performer:maximum-six-all-pokemon-ko-north-3",
+                "ruleDelta": 2,
+                "voltageBefore": 1,
+                "voltageAfter": 3
+              }
+            ]
+          },
+          {
+            "kind": "knockout",
+            "cause": "attack",
+            "sourceSide": "north",
+            "targetSide": "south",
+            "round": 5,
+            "rule": "attack-knockout",
+            "transitions": [
+              {
+                "contestantId": "contestant:maximum-six-all-pokemon-ko-north",
+                "performerId": "performer:maximum-six-all-pokemon-ko-north-3",
+                "ruleDelta": 2,
+                "voltageBefore": 3,
+                "voltageAfter": 5
+              }
+            ]
+          }
+        ],
+        "knockedOutPokemonIndices": {
+          "north": [],
+          "south": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        "sendOuts": 5,
+        "receiptsByOutcome": {
+          "scored-appeal": 7,
+          "canonical-exclusion": 0,
+          "lifecycle-applied": 7,
+          "contest-ended": 1
+        },
+        "documentRevision": 21,
+        "evidenceSha256": "fab8a8f6af597234c157c6918e852e3850c363d2085992c698c0adea8a9f23a3"
+      }
+    }
+  ]
+}

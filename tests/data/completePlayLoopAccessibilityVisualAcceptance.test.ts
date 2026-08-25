@@ -170,7 +170,7 @@ describe('P8-096 accessibility, responsive, and visual acceptance', () => {
       expect(row.sha256).toMatch(/^[a-f0-9]{64}$/)
       if (isLocalUiArtifactPath(row.path)) {
         const bytes = optionalArtifact(row.path)
-        if (bytes) expect(sha256(bytes), row.path).toBe(row.sha256)
+        if (bytes) expect(acceptedSuccessorHead(row.path, row.sha256), row.path).toBe(sha256(bytes))
       }
       else {
         expect(acceptedSuccessorHead(row.path, row.sha256), row.path)

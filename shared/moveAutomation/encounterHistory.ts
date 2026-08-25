@@ -1,4 +1,5 @@
 import type { EncounterActionType } from './encounterResources'
+import type { EncounterEventLifecycleKoCause } from './events'
 import {
   MOVE_HISTORY_METADATA_LIMITS,
   MoveHistoryMetadataValidationError,
@@ -43,6 +44,9 @@ export const ENCOUNTER_HISTORY_LIMITS = Object.freeze({
   damageSourcesPerWindow: 512,
   switchesPerScene: 512,
   knockoutsPerScene: 512,
+  lifecycleKnockoutsPerScene: 512,
+  replacementsPerScene: 256,
+  roundBoundariesPerScene: 128,
   moveAncestryPerScene: 512,
   moveUsesPerScene: 512,
   eventMoveLinksPerScene: 1_024,
@@ -167,12 +171,48 @@ export interface EncounterSwitchHistory {
   readonly kind: EncounterHistorySwitchKind
   readonly recalledPlacementId: string | null
   readonly sentOutPlacementId: string | null
+  readonly sideId: string | null
+  readonly round: number | null
+  /** Typed server-authored Feature provider, normalized to null for legacy rows. */
+  readonly causalProviderId: string | null
+}
+
+/** One exact send-out that replaced a knocked-out placement on the same side. */
+export interface EncounterKnockoutReplacementHistory {
+  readonly replacementEventId: string
+  readonly sourceOperationId: string
+  readonly knockoutEventId: string
+  readonly knockedOutPlacementId: string
+  readonly replacementPlacementId: string
+  readonly sideId: string
+  readonly sentOutRound: number | null
+  readonly firstTurnEventId: string | null
+  readonly firstActingRound: number | null
+  readonly firstActingTurn: number | null
+}
+
+export interface EncounterRoundBoundaryHistory {
+  readonly eventId: string
+  readonly sourceOperationId: string
+  readonly completedRound: number
+  readonly nextRound: number | null
+  readonly nextRoundEventId: string | null
 }
 
 export interface EncounterKnockoutHistory extends EncounterHistoryMoveRecord {
   readonly round?: number | null
   readonly targetPlacementId: string
   readonly hitIndex: number | null
+}
+
+/** Non-Move knockout evidence emitted after one authoritative lifecycle HP reduction. */
+export interface EncounterLifecycleKnockoutHistory {
+  readonly eventId: string
+  readonly sourceOperationId: string
+  readonly sourceEffectOperationId: string
+  readonly round: number | null
+  readonly targetPlacementId: string
+  readonly cause: EncounterEventLifecycleKoCause
 }
 
 export interface EncounterMoveAncestryHistory {
@@ -206,6 +246,9 @@ export interface EncounterHistory {
   readonly faintedPlacementIds: readonly string[]
   readonly switches: readonly EncounterSwitchHistory[]
   readonly knockouts: readonly EncounterKnockoutHistory[]
+  readonly lifecycleKnockouts: readonly EncounterLifecycleKnockoutHistory[]
+  readonly knockoutReplacements: readonly EncounterKnockoutReplacementHistory[]
+  readonly roundBoundaries: readonly EncounterRoundBoundaryHistory[]
   readonly moveAncestry: readonly EncounterMoveAncestryHistory[]
   readonly moveUses: readonly EncounterMoveUseHistory[]
   readonly eventMoveLinks: readonly EncounterEventMoveLink[]
@@ -255,7 +298,10 @@ const LEGACY_HISTORY_FIELDS = [
   'moveAncestry',
   'eventMoveLinks',
 ] as const
-const HISTORY_FIELDS = [...LEGACY_HISTORY_FIELDS, 'moveUses'] as const
+const PRE_LIFECYCLE_KO_HISTORY_FIELDS = [...LEGACY_HISTORY_FIELDS, 'moveUses'] as const
+const PRE_REPLACEMENT_HISTORY_FIELDS = [...PRE_LIFECYCLE_KO_HISTORY_FIELDS, 'lifecycleKnockouts'] as const
+const PRE_ROUND_BOUNDARY_HISTORY_FIELDS = [...PRE_REPLACEMENT_HISTORY_FIELDS, 'knockoutReplacements'] as const
+const HISTORY_FIELDS = [...PRE_ROUND_BOUNDARY_HISTORY_FIELDS, 'roundBoundaries'] as const
 const TURN_FIELDS = ['round', 'turn', 'placementId'] as const
 const LEGACY_MOVE_FIELDS = [
   'eventId',
@@ -326,19 +372,42 @@ const CONSECUTIVE_MOVE_FIELDS = [
   'count',
   'lastResolutionId',
 ] as const
-const SWITCH_FIELDS = [
+const LEGACY_SWITCH_FIELDS = [
   'eventId',
   'sourceOperationId',
   'kind',
   'recalledPlacementId',
   'sentOutPlacementId',
 ] as const
+const PROVIDER_SWITCH_FIELDS = [...LEGACY_SWITCH_FIELDS, 'causalProviderId'] as const
+const SWITCH_FIELDS = [...PROVIDER_SWITCH_FIELDS, 'sideId', 'round'] as const
 const LEGACY_KNOCKOUT_FIELDS = [
   ...LEGACY_MOVE_FIELDS,
   'targetPlacementId',
   'hitIndex',
 ] as const
 const KNOCKOUT_FIELDS = [...MOVE_FIELDS, 'targetPlacementId', 'hitIndex'] as const
+const KNOCKOUT_REPLACEMENT_FIELDS = [
+  'replacementEventId',
+  'sourceOperationId',
+  'knockoutEventId',
+  'knockedOutPlacementId',
+  'replacementPlacementId',
+  'sideId',
+  'sentOutRound',
+  'firstTurnEventId',
+  'firstActingRound',
+  'firstActingTurn',
+] as const
+const ROUND_BOUNDARY_FIELDS = ['eventId', 'sourceOperationId', 'completedRound', 'nextRound', 'nextRoundEventId'] as const
+const LIFECYCLE_KNOCKOUT_FIELDS = [
+  'eventId',
+  'sourceOperationId',
+  'sourceEffectOperationId',
+  'round',
+  'targetPlacementId',
+  'cause',
+] as const
 const MOVE_USE_FIELDS = [
   'resolutionId',
   'canonicalId',
@@ -374,9 +443,11 @@ const ANCESTRY_FIELDS = [
 const EVENT_MOVE_LINK_FIELDS = ['eventId', 'resolutionId'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
+const LIVE_PLAY_OPERATION_ID_PATTERN = /^op_[A-Za-z0-9_-]{8,96}$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 const SWITCH_KIND_SET = new Set<string>(ENCOUNTER_HISTORY_SWITCH_KINDS)
 const MOVE_OUTCOME_SET = new Set<string>(ENCOUNTER_HISTORY_MOVE_OUTCOMES)
+const LIFECYCLE_KNOCKOUT_CAUSE_SET = new Set<string>(['damage-over-time', 'other'])
 const DAMAGE_CLASS_SET = new Set<string>(ENCOUNTER_HISTORY_DAMAGE_CLASSES)
 
 const fail = (
@@ -549,6 +620,14 @@ const parseStableId = (value: unknown, path: string): string => {
   return id
 }
 
+const parseSourceOperationId = (value: unknown, path: string): string => {
+  const id = parseBoundedText(value, path)
+  if (!STABLE_ID_PATTERN.test(id) && !LIVE_PLAY_OPERATION_ID_PATTERN.test(id)) {
+    fail('invalid-encounter-history', path, 'must be a stable identifier or live-play operation ID.')
+  }
+  return id
+}
+
 const parseNullableStableId = (value: unknown, path: string): string | null => (
   value === null ? null : parseStableId(value, path)
 )
@@ -559,6 +638,10 @@ const parsePlacementId = (value: unknown, path: string): string => (
 
 const parseNullablePlacementId = (value: unknown, path: string): string | null => (
   value === null ? null : parsePlacementId(value, path)
+)
+
+const parseNullableSideId = (value: unknown, path: string): string | null => (
+  value === null ? null : parseStableId(value, path)
 )
 
 const parseInteger = (
@@ -681,7 +764,7 @@ const parseMoveCommon = (
   const identity = normalizedLegacy ? null : parseMoveIdentity(record, path)
   return {
     eventId: parseStableId(record.eventId, `${path}.eventId`),
-    sourceOperationId: parseStableId(record.sourceOperationId, `${path}.sourceOperationId`),
+    sourceOperationId: parseSourceOperationId(record.sourceOperationId, `${path}.sourceOperationId`),
     resolutionId: identity?.resolutionId ?? legacyIdentity.resolutionId,
     canonicalId: identity?.canonicalId ?? legacyIdentity.canonicalId,
     specVersion: identity?.specVersion ?? null,
@@ -881,7 +964,11 @@ const parseConsecutiveMove = (
 }
 
 const parseSwitch = (value: unknown, path: string): EncounterSwitchHistory => {
-  const record = parseExactRecord(value, SWITCH_FIELDS, path)
+  const candidate = parseRecord(value, path)
+  const hasCausalProvider = Object.prototype.hasOwnProperty.call(candidate, 'causalProviderId')
+  const hasSideAndRound = Object.prototype.hasOwnProperty.call(candidate, 'sideId')
+    || Object.prototype.hasOwnProperty.call(candidate, 'round')
+  const record = parseExactRecord(value, hasSideAndRound ? SWITCH_FIELDS : hasCausalProvider ? PROVIDER_SWITCH_FIELDS : LEGACY_SWITCH_FIELDS, path)
   const kind = parseEnum<EncounterHistorySwitchKind>(
     record.kind,
     SWITCH_KIND_SET,
@@ -909,10 +996,15 @@ const parseSwitch = (value: unknown, path: string): EncounterSwitchHistory => {
   }
   return {
     eventId: parseStableId(record.eventId, `${path}.eventId`),
-    sourceOperationId: parseStableId(record.sourceOperationId, `${path}.sourceOperationId`),
+    sourceOperationId: parseSourceOperationId(record.sourceOperationId, `${path}.sourceOperationId`),
     kind,
     recalledPlacementId,
     sentOutPlacementId,
+    sideId: hasSideAndRound ? parseNullableSideId(record.sideId, `${path}.sideId`) : null,
+    round: hasSideAndRound ? parseNullableInteger(record.round, `${path}.round`, 1, ENCOUNTER_HISTORY_LIMITS.round) : null,
+    causalProviderId: hasCausalProvider && record.causalProviderId !== null
+      ? parseBoundedText(record.causalProviderId, `${path}.causalProviderId`)
+      : null,
   }
 }
 
@@ -938,6 +1030,68 @@ const parseKnockout = (value: unknown, path: string): EncounterKnockoutHistory =
   }
 }
 
+const parseRoundBoundary = (value: unknown, path: string): EncounterRoundBoundaryHistory => {
+  const row = parseExactRecord(value, ROUND_BOUNDARY_FIELDS, path)
+  const completedRound = parseInteger(row.completedRound, `${path}.completedRound`, 1, ENCOUNTER_HISTORY_LIMITS.round)
+  const nextRound = parseNullableInteger(row.nextRound, `${path}.nextRound`, 1, ENCOUNTER_HISTORY_LIMITS.round)
+  const nextRoundEventId = parseNullableStableId(row.nextRoundEventId, `${path}.nextRoundEventId`)
+  if ((nextRound === null) !== (nextRoundEventId === null) || nextRound !== null && nextRound !== completedRound + 1) {
+    fail('invalid-encounter-history', path, 'next-round identity must be absent or identify the next sequential round.')
+  }
+  return {
+    eventId: parseStableId(row.eventId, `${path}.eventId`),
+    sourceOperationId: parseSourceOperationId(row.sourceOperationId, `${path}.sourceOperationId`),
+    completedRound,
+    nextRound,
+    nextRoundEventId,
+  }
+}
+
+const parseLifecycleKnockout = (
+  value: unknown,
+  path: string,
+): EncounterLifecycleKnockoutHistory => {
+  const record = parseExactRecord(value, LIFECYCLE_KNOCKOUT_FIELDS, path)
+  return {
+    eventId: parseStableId(record.eventId, `${path}.eventId`),
+    sourceOperationId: parseSourceOperationId(record.sourceOperationId, `${path}.sourceOperationId`),
+    sourceEffectOperationId: parseStableId(record.sourceEffectOperationId, `${path}.sourceEffectOperationId`),
+    round: parseNullableInteger(record.round, `${path}.round`, 1, ENCOUNTER_HISTORY_LIMITS.round),
+    targetPlacementId: parsePlacementId(record.targetPlacementId, `${path}.targetPlacementId`),
+    cause: parseEnum<EncounterEventLifecycleKoCause>(
+      record.cause,
+      LIFECYCLE_KNOCKOUT_CAUSE_SET,
+      `${path}.cause`,
+      'damage-over-time or other',
+    ),
+  }
+}
+
+const parseKnockoutReplacement = (
+  value: unknown,
+  path: string,
+): EncounterKnockoutReplacementHistory => {
+  const record = parseExactRecord(value, KNOCKOUT_REPLACEMENT_FIELDS, path)
+  const firstTurnEventId = parseNullableStableId(record.firstTurnEventId, `${path}.firstTurnEventId`)
+  const firstActingRound = parseNullableInteger(record.firstActingRound, `${path}.firstActingRound`, 1, ENCOUNTER_HISTORY_LIMITS.round)
+  const firstActingTurn = parseNullableInteger(record.firstActingTurn, `${path}.firstActingTurn`, 0, ENCOUNTER_HISTORY_LIMITS.turn)
+  if ((firstTurnEventId === null) !== (firstActingRound === null) || (firstTurnEventId === null) !== (firstActingTurn === null)) {
+    fail('invalid-encounter-history', path, 'first-turn identity, round, and turn must be all null or all present.')
+  }
+  return {
+    replacementEventId: parseStableId(record.replacementEventId, `${path}.replacementEventId`),
+    sourceOperationId: parseSourceOperationId(record.sourceOperationId, `${path}.sourceOperationId`),
+    knockoutEventId: parseStableId(record.knockoutEventId, `${path}.knockoutEventId`),
+    knockedOutPlacementId: parsePlacementId(record.knockedOutPlacementId, `${path}.knockedOutPlacementId`),
+    replacementPlacementId: parsePlacementId(record.replacementPlacementId, `${path}.replacementPlacementId`),
+    sideId: parseStableId(record.sideId, `${path}.sideId`),
+    sentOutRound: parseNullableInteger(record.sentOutRound, `${path}.sentOutRound`, 1, ENCOUNTER_HISTORY_LIMITS.round),
+    firstTurnEventId,
+    firstActingRound,
+    firstActingTurn,
+  }
+}
+
 const parseMoveUse = (
   value: unknown,
   path: string,
@@ -955,7 +1109,7 @@ const parseMoveUse = (
         )
         return {
           eventId: parseStableId(input.eventId, `${declarationPath}.eventId`),
-          sourceOperationId: parseStableId(
+          sourceOperationId: parseSourceOperationId(
             input.sourceOperationId,
             `${declarationPath}.sourceOperationId`,
           ),
@@ -1024,7 +1178,7 @@ const parseMoveUse = (
         }
         return {
           eventId: parseStableId(input.eventId, `${completionPath}.eventId`),
-          sourceOperationId: parseStableId(
+          sourceOperationId: parseSourceOperationId(
             input.sourceOperationId,
             `${completionPath}.sourceOperationId`,
           ),
@@ -1137,6 +1291,9 @@ export const createEmptyEncounterHistory = (): EncounterHistory => ({
   faintedPlacementIds: [],
   switches: [],
   knockouts: [],
+  lifecycleKnockouts: [],
+  knockoutReplacements: [],
+  roundBoundaries: [],
   moveAncestry: [],
   moveUses: [],
   eventMoveLinks: [],
@@ -1155,7 +1312,10 @@ export const parseEncounterHistory = (
   const history = parseRecord(value, path)
   if (Object.keys(history).length === 0) return createEmptyEncounterHistory()
   const legacyShape = hasExactFields(history, LEGACY_HISTORY_FIELDS)
-  if (!legacyShape) assertExactFields(history, HISTORY_FIELDS, path)
+  const preLifecycleKoShape = hasExactFields(history, PRE_LIFECYCLE_KO_HISTORY_FIELDS)
+  const preReplacementShape = hasExactFields(history, PRE_REPLACEMENT_HISTORY_FIELDS)
+  const preRoundBoundaryShape = hasExactFields(history, PRE_ROUND_BOUNDARY_HISTORY_FIELDS)
+  if (!legacyShape && !preLifecycleKoShape && !preReplacementShape && !preRoundBoundaryShape) assertExactFields(history, HISTORY_FIELDS, path)
 
   const currentRound = parseNullableInteger(
     history.currentRound,
@@ -1254,6 +1414,27 @@ export const parseEncounterHistory = (
     `${path}.knockouts`,
     ENCOUNTER_HISTORY_LIMITS.knockoutsPerScene,
   ).map((entry, index) => parseKnockout(entry, `${path}.knockouts[${index}]`))
+  const lifecycleKnockouts = legacyShape || preLifecycleKoShape
+    ? []
+    : parseArray(
+        history.lifecycleKnockouts,
+        `${path}.lifecycleKnockouts`,
+        ENCOUNTER_HISTORY_LIMITS.lifecycleKnockoutsPerScene,
+      ).map((entry, index) => parseLifecycleKnockout(entry, `${path}.lifecycleKnockouts[${index}]`))
+  const knockoutReplacements = legacyShape || preLifecycleKoShape || preReplacementShape
+    ? []
+    : parseArray(
+        history.knockoutReplacements,
+        `${path}.knockoutReplacements`,
+        ENCOUNTER_HISTORY_LIMITS.replacementsPerScene,
+      ).map((entry, index) => parseKnockoutReplacement(entry, `${path}.knockoutReplacements[${index}]`))
+  const roundBoundaries = legacyShape || preLifecycleKoShape || preReplacementShape || preRoundBoundaryShape
+    ? []
+    : parseArray(
+        history.roundBoundaries,
+        `${path}.roundBoundaries`,
+        ENCOUNTER_HISTORY_LIMITS.roundBoundariesPerScene,
+      ).map((entry, index) => parseRoundBoundary(entry, `${path}.roundBoundaries[${index}]`))
   const moveAncestry = parseArray(
     history.moveAncestry,
     `${path}.moveAncestry`,
@@ -1286,6 +1467,26 @@ export const parseEncounterHistory = (
   assertUnique(consecutiveMoves.map(entry => entry.placementId), `${path}.consecutiveMoves.placementId`)
   assertUnique(switches.map(entry => entry.eventId), `${path}.switches.eventId`)
   assertUnique(knockouts.map(entry => entry.eventId), `${path}.knockouts.eventId`)
+  assertUnique(lifecycleKnockouts.map(entry => entry.eventId), `${path}.lifecycleKnockouts.eventId`)
+  assertUnique(lifecycleKnockouts.map(entry => entry.sourceEffectOperationId), `${path}.lifecycleKnockouts.sourceEffectOperationId`)
+  assertUnique(knockoutReplacements.map(entry => entry.replacementEventId), `${path}.knockoutReplacements.replacementEventId`)
+  assertUnique(knockoutReplacements.map(entry => entry.knockoutEventId), `${path}.knockoutReplacements.knockoutEventId`)
+  assertUnique(knockoutReplacements.map(entry => entry.replacementPlacementId), `${path}.knockoutReplacements.replacementPlacementId`)
+  assertUnique(roundBoundaries.map(entry => entry.eventId), `${path}.roundBoundaries.eventId`)
+  assertUnique(roundBoundaries.map(entry => entry.sourceOperationId), `${path}.roundBoundaries.sourceOperationId`)
+  for (const replacement of knockoutReplacements) {
+    const knockout = [...knockouts, ...lifecycleKnockouts].find(entry => entry.eventId === replacement.knockoutEventId)
+    const switchEntry = switches.find(entry => entry.eventId === replacement.replacementEventId)
+    if (!knockout || knockout.targetPlacementId !== replacement.knockedOutPlacementId) {
+      fail('invalid-encounter-history', `${path}.knockoutReplacements`, `replacement ${replacement.replacementEventId} has no exact knockout target.`)
+    }
+    if (!switchEntry || switchEntry.sentOutPlacementId !== replacement.replacementPlacementId || switchEntry.sideId !== replacement.sideId) {
+      fail('invalid-encounter-history', `${path}.knockoutReplacements`, `replacement ${replacement.replacementEventId} has no exact same-side send-out.`)
+    }
+    if (replacement.firstActingRound !== null && replacement.sentOutRound !== null && replacement.firstActingRound < replacement.sentOutRound) {
+      fail('invalid-encounter-history', `${path}.knockoutReplacements`, `replacement ${replacement.replacementEventId} acts before its send-out round.`)
+    }
+  }
   assertUnique(moveAncestry.map(entry => entry.resolutionId), `${path}.moveAncestry.resolutionId`)
   assertUnique(moveUses.map(entry => entry.resolutionId), `${path}.moveUses.resolutionId`)
   const declarationOrders = moveUses.flatMap(use => (
@@ -1449,6 +1650,9 @@ export const parseEncounterHistory = (
     faintedPlacementIds,
     switches,
     knockouts,
+    lifecycleKnockouts,
+    knockoutReplacements,
+    roundBoundaries,
     moveAncestry,
     moveUses,
     eventMoveLinks,

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-blend-v1",
+  "ticket": "P11-065",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-activation-certification.v1.json",
+    "sha256": "72c61c71328d5a820bc510f219cfa7b6f73b32de035dbc9b4f5133bf9cc71f1c"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "c6c9274eedb5319db840336d20a1d82568b2cc857058a73c1542e3b2d10e1b14",
+    "rowId": "battle",
+    "completionState": "structured",
+    "structuredSemanticsVersion": 1,
+    "blendContractId": "battle-contest-blend:v1"
+  },
+  "authorities": [
+    {
+      "id": "strict-shared-blend-contract",
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "914e4aef20cc7bb67adc34817296476ff85a3885204c1dc9ff894f63f1947461",
+      "guarantees": ["immutable-link", "six-typed-server-derived-handoffs", "canonical-fact-hash", "three-revision-plus-scene-read-set", "at-most-once-receipt", "cross-document-write-rejection"]
+    },
+    {
+      "id": "source-bound-catalog-gate",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "2de63cc2b3daef619606d579734257df93d7fca0336438a212a5d6507712d8b7",
+      "guarantees": ["exact-structured-battle-row", "exact-blend-policy", "existing-scale-voltage-and-end-policy-preserved", "native-activation-not-premature"]
+    },
+    {
+      "id": "reviewed-machine-policy",
+      "path": "data/deferred-closure/battle-contest-blend-contract.v1.json",
+      "sha256": "9c2671c9818054722b6bdca497083226c4c17c499bfca8fa938eb7e0e87897d9",
+      "guarantees": ["existing-authority-ownership", "causal-move-to-appeal-policy", "combined-transition-all-or-none-policy", "privacy-boundary", "dual-engine-fixture-binding"]
+    },
+    {
+      "id": "operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "636b423986a761c4e8d10fef1f53eac98a5156d9108a28221d9e85ba10e358ec",
+      "guarantees": ["structured-not-native-status", "authority-boundary", "retry-and-recovery-policy", "no-runtime-documentary-authority"]
+    },
+    {
+      "id": "focused-executable-acceptance",
+      "path": "tests/shared/contestBattleBlendContract.test.ts",
+      "sha256": "3b38bd9b7f6968ac8883281490915baf88d4d8815e9760a3f9545feea1d4f725",
+      "guarantees": ["strict-link-shape", "all-handoff-kinds", "hash-verification", "stale-side-codes", "exact-retry-and-conflict", "owned-write-only"]
+    }
+  ],
+  "acceptance": {
+    "linkAuthority": "coordination-ledger-only",
+    "handoffKinds": 6,
+    "clientAuthoredHandoffs": false,
+    "exactReadAuthorities": ["contest-document", "encounter-document", "encounter-map", "encounter-scene"],
+    "crossDocumentEngineWrites": 0,
+    "parallelCombatEngines": 0,
+    "parallelContestDiceEngines": 0,
+    "fixtureScenarios": 4,
+    "focusedTests": 7,
+    "typecheck": "passed",
+    "completionState": "structured",
+    "nextTicket": "P11-066"
+  }
+}

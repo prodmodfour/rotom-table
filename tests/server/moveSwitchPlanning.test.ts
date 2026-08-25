@@ -116,7 +116,12 @@ describe('move-driven switch planning', () => {
       chosenBy: { kind: 'gm', id: null },
       map: declaration.nextMap,
       ...resources,
-      execution,
+      execution: {
+        ...execution,
+        switchTransition: execution.switchTransition
+          ? { ...execution.switchTransition, causalProviderId: 'feature:Round Trip' }
+          : undefined,
+      },
       plannedAt: 2_000,
       runtimeRegistry: createSwitchChoiceRuntimeRegistry(),
     })
@@ -150,6 +155,7 @@ describe('move-driven switch planning', () => {
         kind: 'switch',
         recalledPlacementId: SWITCH_ACTOR_PLACEMENT_ID,
         sentOutPlacementId: replacement.id,
+        causalProviderId: 'feature:Round Trip',
       }),
     ])
     expect(completed.nextMap.encounterState?.pendingResolutionSummaries).toEqual([])

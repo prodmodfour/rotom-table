@@ -17,6 +17,9 @@ import EncounterDirectorPanel from '~/components/encounter/workspace/EncounterDi
 import EncounterFinishExperience from '~/components/encounter/workspace/EncounterFinishExperience.vue'
 import EncounterWorkspaceAnnouncements from '~/components/encounter/workspace/EncounterWorkspaceAnnouncements.vue'
 import EncounterWorkspaceSettings from '~/components/encounter/workspace/EncounterWorkspaceSettings.vue'
+import EncounterBattleContestPanel from '~/components/encounter/workspace/EncounterBattleContestPanel.vue'
+import EncounterBattleContestDecision from '~/components/encounter/workspace/EncounterBattleContestDecision.vue'
+import { useBattleContestLiveplay } from '~/composables/useBattleContestLiveplay'
 import { useEncounterWorkspaceFeaturePolicy } from '~/composables/encounter/useEncounterWorkspaceFeaturePolicy'
 import { useEncounterWorkspaceLoader } from '~/composables/encounter/useEncounterWorkspaceLoader'
 import { useEncounterWorkspaceMetrics } from '~/composables/encounter/useEncounterWorkspaceMetrics'
@@ -123,8 +126,25 @@ watch(requestedTacticalMode, (mode) => {
 const { postJson } = useApiClient()
 const workspace = computed(() => loader.workspace.value)
 const mapRevision = computed(() => workspace.value?.source.mapRevision ?? 0)
+const battleContestLiveplay = useBattleContestLiveplay(loader.selectedProfileId, audience)
+const commandsBlocked = computed(() => (
+  loader.commandsBlocked.value || battleContestLiveplay.battleContest.value?.actionsBlocked === true
+))
+const battleContestDecisionPool = computed(() => {
+  const projection = battleContestLiveplay.battleContest.value
+  const contestantId = projection?.pendingAppeal?.contestantId
+  return contestantId ? projection.visibleTeamPools.find(pool => pool.contestantId === contestantId) ?? null : null
+})
+watch([encounterId, mapRevision, () => workspace.value?.source.encounterRevision], ([id, , encounterRevision]) => {
+  if (!workspace.value) return
+  if (encounterRevision === null) {
+    battleContestLiveplay.clear()
+    return
+  }
+  void battleContestLiveplay.load(id, true, true)
+}, { immediate: true })
 const responseCommandsEnabled = computed(() => (
-  !loader.commandsBlocked.value
+  !commandsBlocked.value
   && (workspace.value?.viewer.audience === 'gm' || workspace.value?.viewer.audience === 'player-owner')
 ))
 const pendingMoveResponses = usePendingMoveResponses({
@@ -160,7 +180,7 @@ const encounterLifecycleCommands = useLivePlayCommands({
   slug: encounterId.value,
   authRole: role,
   mapRevision,
-  livePlayCommandBlocked: loader.commandsBlocked,
+  livePlayCommandBlocked: commandsBlocked,
 })
 const lifecycleRecoveryEntry = computed(() => encounterLifecycleCommands.outboxEntries.value.find(entry => (
   entry.commandType === LIVE_PLAY_COMMAND_TYPES.END_ENCOUNTER
@@ -302,7 +322,7 @@ watch(workspace, (nextWorkspace) => {
       type: 'workspace-adopted',
       mapRevision: nextWorkspace.source.mapRevision,
       currentActorId: nextWorkspace.turn.currentParticipantId,
-      commandsBlocked: loader.commandsBlocked.value,
+      commandsBlocked: commandsBlocked.value,
       replayGap: nextWorkspace.system.replayGap,
       primaryInteractionId: nextWorkspace.pending[0]?.interactionId ?? null,
     })
@@ -312,7 +332,7 @@ watch(workspace, (nextWorkspace) => {
       type: 'workspace-adopted',
       mapRevision: nextWorkspace.source.mapRevision,
       currentActorId: nextWorkspace.turn.currentParticipantId,
-      commandsBlocked: loader.commandsBlocked.value,
+      commandsBlocked: commandsBlocked.value,
       replayGap: nextWorkspace.system.replayGap,
       primaryInteractionId: nextWorkspace.pending[0]?.interactionId ?? null,
     })
@@ -365,7 +385,7 @@ const targetModeForOffer = (offer: EncounterActionOffer): 'participant' | 'relat
   return null
 }
 const canChooseAction = (offer: EncounterActionOffer): boolean => (
-  !loader.commandsBlocked.value
+  !commandsBlocked.value
   && offer.availability.status === 'available'
   && (machine.value.phase === 'observe' || machine.value.phase === 'choose')
 )
@@ -567,7 +587,7 @@ const submitPendingDecision = async (
   interaction: EncounterPendingInteractionAuthorizedView,
   selections: readonly EncounterChoiceSelection[],
 ): Promise<void> => {
-  if (decisionBusy.value || loader.commandsBlocked.value) return
+  if (decisionBusy.value || commandsBlocked.value) return
   decisionBusy.value = true
   pendingBusyInteractionId.value = interaction.interactionId
   decisionError.value = null
@@ -632,7 +652,7 @@ const submitActionDecision = async (
   offer: EncounterActionOffer,
   selections: readonly EncounterChoiceSelection[],
 ): Promise<void> => {
-  if (decisionBusy.value || loader.commandsBlocked.value) return
+  if (decisionBusy.value || commandsBlocked.value) return
   decisionBusy.value = true
   decisionError.value = null
   void uxMetrics.record('resolution-waiting', 1)
@@ -745,7 +765,7 @@ const submitDecision = (selections: readonly EncounterChoiceSelection[]): void =
   else void submitPendingDecision(active.interaction, selections)
 }
 const passPendingDecision = async (interaction: EncounterPendingInteractionAuthorizedView): Promise<void> => {
-  if (decisionBusy.value || loader.commandsBlocked.value) return
+  if (decisionBusy.value || commandsBlocked.value) return
   decisionBusy.value = true
   pendingBusyInteractionId.value = interaction.interactionId
   decisionError.value = null
@@ -762,7 +782,7 @@ const passPendingDecision = async (interaction: EncounterPendingInteractionAutho
   }
 }
 const cancelPendingDecision = async (interaction: EncounterPendingInteractionAuthorizedView): Promise<void> => {
-  if (decisionBusy.value || loader.commandsBlocked.value) return
+  if (decisionBusy.value || commandsBlocked.value) return
   decisionBusy.value = true
   pendingBusyInteractionId.value = interaction.interactionId
   decisionError.value = null
@@ -827,7 +847,7 @@ const abandonItemDecision = async (interaction: EncounterPendingInteractionAutho
   }
 }
 const correctItemOperation = async (operationId: string): Promise<void> => {
-  if (!workspace.value?.viewer.canUseDirector || decisionBusy.value || loader.commandsBlocked.value) return
+  if (!workspace.value?.viewer.canUseDirector || decisionBusy.value || commandsBlocked.value) return
   const accepted = workspace.value.accepted.find(value => value.operationId === operationId
     && value.source.sourceKind === 'item'
     && value.presentationId.startsWith('accepted-item:')
@@ -869,7 +889,7 @@ const recoverPending = async (
   action: EncounterPendingRecoveryAction['action'],
 ): Promise<void> => {
   const interaction = pendingById(interactionId)
-  if (!interaction || decisionBusy.value || loader.commandsBlocked.value) return
+  if (!interaction || decisionBusy.value || commandsBlocked.value) return
   void uxMetrics.record('system-recovery-opened', 1)
   if (action === 'cancel') {
     const isItemDecision = interaction.source?.sourceKind === 'item'
@@ -1015,7 +1035,7 @@ const issueDirectorMapCommand = async (input: {
   lane: 'scene' | 'fieldEffects'
   payload: unknown
 }): Promise<void> => {
-  if (!workspace.value?.viewer.canUseDirector || directorBusy.value || loader.commandsBlocked.value) return
+  if (!workspace.value?.viewer.canUseDirector || directorBusy.value || commandsBlocked.value) return
   directorBusy.value = true
   directorError.value = null
   try {
@@ -1077,7 +1097,7 @@ const issueEncounterLifecycleCommand = async (
   action: () => Promise<{ readonly dispatched: boolean, readonly message?: string, readonly uncertain?: boolean }>,
   fallback: string,
 ): Promise<void> => {
-  if (!workspace.value?.viewer.canUseDirector || directorBusy.value || loader.commandsBlocked.value
+  if (!workspace.value?.viewer.canUseDirector || directorBusy.value || commandsBlocked.value
     || lifecycleRecoveryEntry.value) return
   directorBusy.value = true
   directorError.value = null
@@ -1162,27 +1182,40 @@ const openDirectorWorkshop = async (): Promise<void> => {
 }
 
 const advanceInitiative = async (direction: 'previous' | 'next'): Promise<void> => {
-  if (!workspace.value || !isGm.value || loader.commandsBlocked.value || initiativeBusy.value) return
+  if (!workspace.value || !isGm.value || commandsBlocked.value || initiativeBusy.value) return
   initiativeBusy.value = true
   initiativeError.value = null
   try {
-    const result = await postJson<{ readonly ok?: boolean, readonly message?: string }>(
-      direction === 'next' ? MAP_API_PATHS.nextInitiative : MAP_API_PATHS.previousInitiative,
-      {
-        schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
-        opId: createLivePlayOpId(),
-        mapSlug: workspace.value.source.mapSlug,
-        baseRevision: workspace.value.source.mapRevision,
-        type: direction === 'next' ? LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE : LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
-        scopes: [{ kind: 'map', lane: 'initiative' }, { kind: 'map', lane: 'metadata' }],
-        payload: {
-          orderIds: workspace.value.turn.entries.map(entry => entry.participantId),
-          activeId: workspace.value.turn.currentParticipantId,
-          round: workspace.value.turn.round,
-        },
-        clientId: getClientId(),
-      },
-    )
+    interface AdvanceResult {
+      readonly ok?: boolean
+      readonly message?: string
+      readonly currentState?: {
+        readonly orderIds?: readonly string[]
+        readonly initiative?: { readonly activeId?: string | null, readonly round?: number }
+      }
+    }
+    const endpoint = direction === 'next' ? MAP_API_PATHS.nextInitiative : MAP_API_PATHS.previousInitiative
+    const send = (precondition: { readonly orderIds: readonly string[], readonly activeId: string | null, readonly round: number }) => postJson<AdvanceResult>(endpoint, {
+      schemaVersion: LIVE_PLAY_COMMAND_SCHEMA_VERSION,
+      opId: createLivePlayOpId(),
+      mapSlug: workspace.value!.source.mapSlug,
+      baseRevision: workspace.value!.source.mapRevision,
+      type: direction === 'next' ? LIVE_PLAY_COMMAND_TYPES.NEXT_INITIATIVE : LIVE_PLAY_COMMAND_TYPES.PREVIOUS_INITIATIVE,
+      scopes: [{ kind: 'map', lane: 'initiative' }, { kind: 'map', lane: 'metadata' }],
+      payload: precondition,
+      clientId: getClientId(),
+    })
+    let result = await send({
+      orderIds: workspace.value.turn.entries.map(entry => entry.participantId),
+      activeId: workspace.value.turn.currentParticipantId,
+      round: workspace.value.turn.round,
+    })
+    const refreshed = result.ok === false ? result.currentState : null
+    if (refreshed?.orderIds?.every(id => typeof id === 'string')
+      && typeof refreshed.initiative?.round === 'number'
+      && (typeof refreshed.initiative.activeId === 'string' || refreshed.initiative.activeId === null)) {
+      result = await send({ orderIds: refreshed.orderIds, activeId: refreshed.initiative.activeId, round: refreshed.initiative.round })
+    }
     if (result.ok === false) throw new Error(result.message || 'Initiative command was rejected.')
     await loader.refresh()
   }
@@ -1233,13 +1266,13 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
     <EncounterWorkspaceAnnouncements
       v-if="workspace"
       :workspace="workspace"
-      :error="decisionError || initiativeError || directorError"
+      :error="battleContestLiveplay.error.value || decisionError || initiativeError || directorError"
     />
 
     <EncounterWorkspaceShell
       v-if="workspace"
       :preferences="preferenceState.preferences.value"
-      :primary-decision-active="Boolean(decision || actionInspectorOffer || actionDeclarationNotice || selection.tacticalFocus || finishEncounter.isOpen.value)"
+      :primary-decision-active="Boolean(battleContestLiveplay.battleContest.value?.pendingAppeal || decision || actionInspectorOffer || actionDeclarationNotice || selection.tacticalFocus || finishEncounter.isOpen.value)"
       @update-preferences="preferenceState.update"
     >
       <template #navigation>
@@ -1268,7 +1301,7 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
           :turn="workspace.turn"
           :participants="workspace.participants"
           :can-advance="isGm"
-          :commands-blocked="loader.commandsBlocked.value"
+          :commands-blocked="commandsBlocked"
           :busy="initiativeBusy"
           @inspect="inspectParticipant"
           @previous="advanceInitiative('previous')"
@@ -1322,6 +1355,26 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
             <NuxtLink :to="battlefieldWorkshopPath(workspace.source.mapSlug)">Open Battlefield Workshop</NuxtLink>
           </template>
           <template #tactical>
+            <section
+              v-if="battleContestLiveplay.battleContest.value"
+              class="battle-contest-mobile-score"
+              aria-label="Battle Contest score and Voltage"
+            >
+              <header>
+                <div><span>Joined encounter</span><strong>Battle Contest</strong></div>
+                <span class="rt-numeric">{{ battleContestLiveplay.battleContest.value.contestTypeId }} · {{ battleContestLiveplay.battleContest.value.round }}/{{ battleContestLiveplay.battleContest.value.roundBudget }}</span>
+              </header>
+              <div class="battle-contest-mobile-score__teams">
+                <article v-for="score in battleContestLiveplay.battleContest.value.scores" :key="score.contestantId">
+                  <div><strong>{{ score.displayName }}</strong><span class="rt-numeric">{{ score.appeal }} Appeal</span></div>
+                  <ul>
+                    <li v-for="performer in score.performers" :key="performer.displayName">
+                      <span>{{ performer.displayName }}</span><b class="rt-numeric">V {{ performer.voltage }}</b>
+                    </li>
+                  </ul>
+                </article>
+              </div>
+            </section>
             <EncounterRelationshipView
               v-if="selectedActionOffer && selectedActionSpatiality === 'relationship' && relationshipActor"
               :offer="selectedActionOffer"
@@ -1333,8 +1386,18 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
               @inspect="inspectParticipant"
               @open-tactical="openTacticalFocus(selectedActionOffer.actor.participantId)"
             />
+            <EncounterBattleContestDecision
+              v-if="battleContestLiveplay.battleContest.value?.pendingAppeal"
+              :decision="battleContestLiveplay.battleContest.value.pendingAppeal"
+              :pool="battleContestDecisionPool"
+              :busy="battleContestLiveplay.submitting.value"
+              :error="battleContestLiveplay.error.value"
+              :uncertain="Boolean(battleContestLiveplay.uncertainDecision.value)"
+              @score="battleContestLiveplay.scoreAppeal"
+              @retry="battleContestLiveplay.retryUncertain"
+            />
             <EncounterDecisionLayer
-              v-if="decision"
+              v-else-if="decision"
               :decision="decision"
               :busy="decisionBusy"
               :error="decisionError"
@@ -1348,7 +1411,7 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
               v-else
               :profile-id="loader.selectedProfileId.value"
               :gm="workspace.viewer.audience === 'gm'"
-              :commands-blocked="loader.commandsBlocked.value"
+              :commands-blocked="commandsBlocked"
             />
             <section
               v-if="actionInspectorOffer"
@@ -1435,6 +1498,12 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
 
       <template #events>
         <section class="encounter-events-content">
+          <EncounterBattleContestPanel
+            v-if="battleContestLiveplay.battleContest.value"
+            :projection="battleContestLiveplay.battleContest.value"
+          />
+          <p v-if="battleContestLiveplay.notice.value" class="battle-contest-liveplay-notice" role="status">{{ battleContestLiveplay.notice.value }}</p>
+          <p v-if="battleContestLiveplay.error.value && !battleContestLiveplay.battleContest.value?.pendingAppeal" class="encounter-decision-error" role="alert">{{ battleContestLiveplay.error.value }}</p>
           <EncounterResolutionStack
             :pending="workspace.pending"
             :primary-interaction-id="primaryPriority?.interactionId ?? null"
@@ -1447,7 +1516,7 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
             @recover="recoverPending"
           />
           <p v-if="decisionError && !decision" class="encounter-decision-error" role="alert">{{ decisionError }}</p>
-          <EncounterSkillCheckPublicFeed v-if="!workspace.viewer.canUseDirector" />
+          <EncounterSkillCheckPublicFeed v-if="!workspace.viewer.canUseDirector && !(audience === 'public' && isGm)" />
           <EncounterEventFeed
             :accepted="workspace.accepted"
             :active-presentation-id="activeDeepLink?.presentationId ?? null"
@@ -1467,7 +1536,7 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
           :actor-participant-id="actionActor?.participantId ?? null"
           :actor-label="actionActor?.displayName || 'Select an actor'"
           :selected-offer-id="machine.actionOfferId"
-          :commands-blocked="loader.commandsBlocked.value || (machine.phase !== 'observe' && machine.phase !== 'choose')"
+          :commands-blocked="commandsBlocked || (machine.phase !== 'observe' && machine.phase !== 'choose')"
           @activate="chooseAction"
           @inspect="inspectAction"
           @filter="noteActionFilter"
@@ -1488,7 +1557,7 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
       v-if="workspace?.viewer.canUseDirector"
       :workspace="workspace"
       :open="directorOpen"
-      :commands-blocked="loader.commandsBlocked.value"
+      :commands-blocked="commandsBlocked"
       :busy="directorBusy || initiativeBusy || decisionBusy || lifecycleRecoveryBusy"
       :error="directorError"
       :lifecycle-recovery="lifecycleRecoveryEntry ? {
@@ -1627,6 +1696,8 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
 .encounter-action-declaration-notice > p { margin-top: 0; }
 .encounter-action-declaration-notice > div { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .encounter-action-declaration-notice button { min-height: var(--rt-touch-minimum); border: 1px solid var(--rt-rule); border-radius: var(--rt-radius-small); background: var(--rt-surface-2); color: var(--rt-text-strong); font: inherit; font-weight: 700; }
+.battle-contest-mobile-score { display: none; }
+.battle-contest-liveplay-notice { margin: 0; padding: .65rem .8rem; border-left: 3px solid var(--rt-success); background: color-mix(in srgb, var(--rt-success) 8%, var(--rt-surface-1)); color: var(--rt-success); font-weight: 800; }
 .encounter-decision-error { padding: 0.65rem; border-left: 3px solid var(--rt-danger); background: color-mix(in srgb, var(--rt-danger) 10%, var(--rt-surface-1)); }
 .encounter-event-list a { grid-template-columns: 1fr; }
 .encounter-events-content header { margin: 0.5rem 0 0.75rem; }
@@ -1646,6 +1717,22 @@ useHead(() => ({ title: `${encounterName.value} · Encounter` }))
 [id^='decision-']:focus-visible,
 [id^='history-']:focus-visible { outline: 3px solid var(--rt-focus); outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .encounter-workspace-load-state__pulse { animation: none; } }
+@media (max-width: 48rem) {
+  .battle-contest-mobile-score { max-width: 42rem; display: block; margin: 1rem auto; border: 1px solid var(--rt-rule); border-left: 3px solid var(--rt-focus); background: var(--rt-surface-1); }
+  .battle-contest-mobile-score > header { display: flex; align-items: end; justify-content: space-between; gap: .5rem; margin: 0; padding: .65rem; background: var(--rt-surface-2); }
+  .battle-contest-mobile-score > header div { display: grid; }
+  .battle-contest-mobile-score > header div span { color: var(--rt-focus); font-size: var(--rt-type-meta-xs-size); font-weight: 800; text-transform: uppercase; }
+  .battle-contest-mobile-score > header > span { color: var(--rt-text-muted); font-size: var(--rt-type-meta-xs-size); text-transform: capitalize; }
+  .battle-contest-mobile-score__teams { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .battle-contest-mobile-score__teams article { min-width: 0; padding: .55rem; border-left: 3px solid var(--rt-side-accent, var(--rt-focus)); }
+  .battle-contest-mobile-score__teams article:nth-child(2) { --rt-side-accent: var(--rt-brand); border-left-color: var(--rt-side-accent); }
+  .battle-contest-mobile-score__teams article > div { display: grid; }
+  .battle-contest-mobile-score__teams article > div span { color: var(--rt-text-muted); font-size: var(--rt-type-label-sm-size); }
+  .battle-contest-mobile-score__teams ul { display: grid; gap: .15rem; margin: .4rem 0 0; padding: 0; list-style: none; }
+  .battle-contest-mobile-score__teams li { display: flex; justify-content: space-between; gap: .35rem; min-width: 0; color: var(--rt-text-muted); font-size: var(--rt-type-meta-xs-size); }
+  .battle-contest-mobile-score__teams li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .battle-contest-mobile-score__teams li b { flex: 0 0 auto; color: var(--rt-text-strong); }
+}
 @media (max-width: 42rem) {
   .encounter-inspector-preview { align-items: stretch; flex-direction: column; }
   .encounter-inspector-preview dl { width: 100%; }

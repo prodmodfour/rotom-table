@@ -20,7 +20,7 @@ The Trainer performer does not introduce another sheet record, revision counter,
 
 A selected profile must currently control the enrolled Trainer and every enrolled Pokémon through the existing profile links. Missing sheets, missing profiles, incomplete control, duplicate Trainer/Pokémon identities, mismatched Trainer performer revisions, cross-kind fields, non-Pokémon Rotation order entries, and unknown participant formats fail before a Contest or operation write.
 
-Trainer Moves are snapshotted from the authoritative Trainer movelist. Canonical Moves with defined Contest identity are available; unknown, created, or weapon Moves remain explicitly unavailable with `contest.move-identity-missing`. P11-057 owns Trainer appeal execution and revalidates that fail-closed policy.
+Trainer Moves are snapshotted from the authoritative Trainer movelist. Canonical Moves with defined Contest identity are available; unknown, created, or weapon Moves remain explicitly unavailable with `contest.move-identity-missing`. Trainer appeal execution revalidates that fail-closed policy on every declaration.
 
 ## P11-054 shared Contest dice authority
 
@@ -36,7 +36,7 @@ Every non-zero paired spend appends one immutable `sharedDiceSpendJournal` recei
 
 Receipt IDs derive from operation IDs. Duplicate receipt/operation IDs, changed exact-retry input, an actor outside the pair, overspend, non-shared-first allocation, missing appeal evidence, or an appeal spend without exactly one receipt fails closed. Whole-Contest depletion survives terminal cleanup. Current-sheet provider refresh can deactivate a lost Feature contribution once while retaining its frozen provenance and already accepted spend.
 
-The canonical paired Feature target policy is validated at catalog load. The shared primitive accepts either the Trainer or Pokémon as the active spender, including a pool carrying Style Expert's Poffin-equivalent dice. Coordinator reroll decisions and other intervention execution remain P11-059 scope; P11-054 does not create an alternate Feature resource ledger.
+The canonical paired Feature target policy is validated at catalog load. The shared primitive accepts either the Trainer or Pokémon as the active spender, including a pool carrying Style Expert's Poffin-equivalent dice. Coordinator rerolls and the ordinary intervention runtime consume the same shared authority; no alternate Feature resource ledger exists.
 
 ## P11-055 canonical method policies
 
@@ -47,7 +47,7 @@ The source-bound scheduler implements only the two canonical rows:
 - **Simultaneous:** each entry accepts two appeals per base-Contest round, one Trainer and one Pokémon. With no accepted member, both are legal so the controller chooses the first; after that acceptance, only the paired member is legal. A repeated member or third appeal fails closed. Voltage scope is `per-performer`, adjacency addresses both performers of an adjacent entry, and only the two canonical cross-performer effect policies are admitted.
 - **Alternating:** each entry accepts one appeal per base-Contest round. With no prior accepted turn, either member is legal because no alternation predecessor exists. Every later entry round requires the other member exactly. Voltage and adjacency scope are `shared-entry`, and no cross-performer exception is admitted.
 
-The scheduler returns the exact appeal count, legal next member kinds, round-complete state, Voltage scope, adjacency scope, and cross-performer allowlist. It rejects unknown methods, invalid member kinds, overfilled rounds, duplicate Simultaneous members, and broken Alternating sequences. P11-055 does not infer extra semantics from prose and does not activate Voltage mutation; P11-057 consumes scheduling for appeals and P11-058 consumes the validated Voltage/adjacency scopes.
+The scheduler returns the exact appeal count, legal next member kinds, round-complete state, Voltage scope, adjacency scope, and cross-performer allowlist. It rejects unknown methods, invalid member kinds, overfilled rounds, duplicate Simultaneous members, and broken Alternating sequences. Appeal execution and paired Voltage/adjacency consume those validated scopes directly without inferring extra semantics from prose.
 
 The setup page presents the two methods as 44px semantic buttons in a labelled fieldset, announces the accepted command through the existing live status region, exposes the chosen method in the public header, and disables setup lock while a legacy document has no choice. This was an exact mechanical extension of the existing Workshop primitives with no open visual hierarchy decision, so no generated mockup was required.
 
@@ -83,9 +83,37 @@ The two reviewed cross-performer permissions use the optional `partnerEffectTarg
 
 Center of Attention, turn order, adjacency, Appeal/Fumble scoring, and final placement remain entry-level base-chart authority. Simultaneous pair members therefore share center/adjacent entry identities while retaining separate Voltage. Owner action projections derive both legal initial performers, then only the required partner; no duplicate position is invented. Because the existing shared-entry `voltage-delta` correction has no performer field, it is deliberately unavailable for Simultaneous rather than guessing a recipient; failed correction attempts write no receipt, operation, revision, or event.
 
-## Deliberate progression gate
+## P11-059 normal integration authority
 
-A Trainer Participant document may be in `setup`, `introduction`, `performance`, `settling`, or `cancelled`, and both method rows now have complete scheduling/Voltage/adjacency authority. Participant intervention commands still fail closed for P11-059, and reward preparation fails closed in `settling` for P11-061; each refusal writes no operation, revision, roll, spend, or stage transition. Integrations, paired privacy projections, settlement, UI completion, fixtures, and final activation remain owned by P11-059 through P11-064.
+The complete ordinary 44-row Contest integration inventory applies without a second paired registry. Trainer Features and Edges are snapshotted on the Trainer performer; an appeal or intervention combines only that selected performer's providers with the paired Trainer's Feature providers. Pokémon Abilities and equipped items remain bound to the exact Pokémon provider and cannot be borrowed by its Trainer. Introduction-only providers are combined at entry scope because the canonical Introduction belongs to the Trainer/Pokémon entry.
+
+Every selectable pre-appeal intervention binds `targetPerformerId` to one currently legal member. Post-appeal Coordinator, Style Flourish, and Contest Fashion rerolls bind the exact accepted performer and appeal. Beautiful and Contest Fashion usage is performer-scoped; Trainer Feature usage remains entry-scoped. Fashion Designer charges the exact Pokémon's ordinary campaign-day Ability ledger, while Reliable Performance and Style Flourish charge the ordinary Trainer AP/Feature ledger. Exact retries return the accepted operation without a second roll or charge, and a failed Contest write rolls the ordinary resource write back in the same transaction. Provider withdrawal, wrong-member targets, stale revisions, changed operation input, and unavailable timing fail before mutation.
+
+## P11-060 role-safe paired projections
+
+Public score rows identify the active Trainer plus round-locked Pokémon and expose their separate Simultaneous Voltage values without sheet slugs, provider IDs, pools, controller details, or private Move plans. The pair retains one entry letter, stage position, Appeal, Fumble, and score. Alternating projects the shared entry Voltage on both identity summaries. Rotation never exposes inactive private team planning through the active public pair.
+
+The exact owner receives only its own complete contestant snapshot and current legal performer IDs. Before a Simultaneous first appeal those IDs contain both members; after acceptance they contain only the required partner. GM/diagnostic projections receive the same exact current legal-performer authority plus all enrolled snapshots; only diagnostic projection receives dice journals and contributor indexing. Public, owner, and GM projections therefore share public accepted outcomes while preserving structurally separate planning and authority fields.
+
+## P11-061 placement and settlement
+
+Trainer Participant Performance now advances from `settling` through the ordinary two-step preview/commit settlement. Placement remains entry-level `Appeal - Fumble` with the existing server tie rolls. Standard, Supercontest, and Festival award the entry's paired Pokémon according to the ordinary placement/significance formula. Rotation computes the ordinary team total and distributes it across the enrolled Pokémon exactly as the base variant requires. The Trainer performer never receives Pokémon Experience.
+
+The winner's enrolled Pokémon receive the existing Ribbon provenance when the locked policy enables it; each Trainer receives one ordinary Contest result receipt naming its enrolled Pokémon. Declared money and items use the existing winning/target Trainer policy. The commit updates Contest, Trainer sheets, Pokémon sheets, operation receipt, progression-attention IDs, and realtime events in one database transaction. Exact retry cannot duplicate Experience, Ribbon, result, money, item, attention, revision, or event writes; any sheet conflict rolls every candidate write back and leaves the preview recoverable.
+
+## P11-062 paired liveplay cockpit
+
+The liveplay Contest cockpit presents the active entry as a Trainer/Pokémon pair with one stage position and separate Voltage. When both members are legal, a keyboard-operable decision surface asks “Choose who appeals first” for Simultaneous play (or identifies the current performer choice for Alternating), then reveals only the selected member's private legal Move offers. Shared Contest dice appear once from the paired Pokémon/team authority. Get Ready and Attention Grabber expose the exact optional partner target, and all interventions submit the selected or accepted `targetPerformerId`.
+
+Accepted rerolls stay in an explicit pending window, unavailable Moves retain a textual reason, selected state uses text and icon in addition to colour, and the right rail remains a role-safe public scoreboard/journal. The matte Live Encounter surface uses the versioned encounter tokens, 44px controls, visible cyan focus, finite/reduced motion policy, and single-column mobile reflow. Target-state design evidence and its autonomous 10/10 review remain local under `.pi/artifacts/ui-mockups/trainer-participant-contest-cockpit/`.
+
+## P11-063 deterministic variant matrix
+
+`data/contests/trainer-participant-variant-matrix.v1.json` covers Standard, Supercontest, Festival, and Rotation at three, four, and five contestants for both Simultaneous and Alternating: 24 seeded scenarios. It binds canonical Contest and Move source hashes and records letters, exact accepted-appeal counts, Festival heat progression, Supercontest type rolls, performer-kind sequences, placements, per-entry settlement, and a hash of immutable journal/ledger/history/settlement evidence. The generator reproduces both the archived ordinary 18-scenario matrix and this paired matrix byte-for-byte; drift fails the fixture check.
+
+## P11-064 native activation
+
+The app-owned canonical `trainer-participant` row is `native`. All four compatible base variants and both methods traverse setup, Introduction, Performance, intervention windows, placement, settlement, completion, recovery, projections, and liveplay UI without a participant-specific progression gate. Unknown participant IDs, missing methods, unsupported providers, missing Contest Move identities, ambiguous Simultaneous Voltage corrections, and malformed persisted evidence remain fail-closed. Runtime code reads only app-owned canonical JSON and typed contracts; no rules prose is parsed.
 
 ## Compatibility and recovery
 

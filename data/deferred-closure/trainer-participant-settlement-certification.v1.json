@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-settlement-v1",
+  "ticket": "P11-061",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-projection-certification.v1.json",
+    "sha256": "8324bce443dd1a8499696595e7fe816f5f14af7d1dcc6f31a4d2b3d0e43ee085"
+  },
+  "authorities": [
+    {
+      "id": "paired-settlement-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "ceeb0dcfc827ab0cfe062f9678e7d0e21d8d5cff532ab06e5cce411cba725794",
+      "guarantees": ["entry-level-final-placement", "ordinary-placement-significance-xp", "rotation-team-xp-distribution", "pokemon-only-experience-awards", "winner-ribbon-policy", "preview-before-commit"]
+    },
+    {
+      "id": "atomic-sheet-settlement",
+      "path": "server/useCases/contests.ts",
+      "sha256": "18b2192f8e5ad23e732225d4b0b2aa09a5fecc8f04d0b05aa1969883b54913b2",
+      "guarantees": ["trainer-result-receipt", "pokemon-experience-and-level", "ribbon-provenance", "money-and-item-prizes", "progression-attention-handoff", "all-sheet-contest-operation-event-transaction", "exact-retry-no-duplicate"]
+    },
+    {
+      "id": "completed-document-contract",
+      "path": "shared/contests/document.ts",
+      "sha256": "87dfbcd6eb2820ff29c52cfd6d05ee087a15e0802c750b208023d08b66fbf39a",
+      "guarantees": ["participant-completed-stage-admitted", "preview-and-committed-settlement-reconciliation", "terminal-resource-cleanup-with-receipt-retention"]
+    },
+    {
+      "id": "settlement-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "bfae2a14ac649974656cc7f36abeecd8015313397c596309d926e1bc24008da8",
+      "guarantees": ["xp-ribbon-prize-policy-documented", "atomic-retry-and-conflict-policy-documented"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestTrainerParticipantVoltageRuntime.test.ts",
+      "sha256": "fa0c330f606438c10cac7df8e126ba824d32b732c6305107d81251edc0cbc14b",
+      "scenarioIds": ["eighteen-appeal-performance-completion", "paired-settlement-preview", "placement-xp-formula", "winner-ribbon", "trainer-result-receipts", "exact-retry-no-duplicate-sheet-write", "mid-commit-sheet-conflict-full-rollback"]
+    }
+  ],
+  "acceptance": {
+    "placementScope": "trainer-pokemon-entry",
+    "trainerExperienceAwards": 0,
+    "pokemonExperienceFormula": "ordinary-base-variant",
+    "winnerRibbonPolicyReused": true,
+    "atomicCommit": true,
+    "duplicateRewardsOnExactRetry": 0,
+    "partialWritesOnConflict": 0,
+    "nextTicket": "P11-062"
+  }
+}

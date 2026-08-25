@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-backup-restore-reconnect-v1",
+  "ticket": "P11-083",
+  "status": "certified",
+  "toolingAdded": 0,
+  "manualRepairRequired": false,
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/migration-upgrade-certification.v1.json",
+    "sha256": "d61d7793b05d51922a814909780be0145e7915c74ef45a1207038540bbb52c17"
+  },
+  "workflow": {
+    "runbook": "docs/private-vps-backups.md",
+    "method": "preferred-stopped-service-closed-sqlite-copy",
+    "integrityCheck": "ok",
+    "foreignKeyViolations": 0,
+    "archiveOrDatabaseCommittedToRepository": false
+  },
+  "durableStates": [
+    {
+      "stateId": "generic-skill-check",
+      "documentCopies": 1,
+      "operationCopies": 3,
+      "duplicateRollsAfterRestore": 0
+    },
+    {
+      "stateId": "readied-shield",
+      "effectCopies": 3,
+      "operationCopies": 1,
+      "duplicateEffectsAfterRestore": 0
+    },
+    {
+      "stateId": "netted-target",
+      "effectCopies": 4,
+      "operationCopies": 1,
+      "duplicateEffectsAfterRestore": 0
+    },
+    {
+      "stateId": "linked-battle-contest",
+      "contestCopies": 1,
+      "encounterCopies": 1,
+      "mapCopies": 1,
+      "duplicateLinksAfterRestore": 0
+    }
+  ],
+  "authorities": [
+    {
+      "path": "server/storage/database.ts",
+      "sha256": "472095a114e611757bc9e86b67687d3d8e1f27ec15a1c4d6a304257ca3d1f849"
+    },
+    {
+      "path": "server/storage/mapRepository.ts",
+      "sha256": "6f5d7f24a3dc3ef4f84f965f030bc6311c003599f18a339be5fe5e7440bebb61"
+    },
+    {
+      "path": "server/storage/equipmentActionOperationRepository.ts",
+      "sha256": "a78af72a4ad319a925403570a8c427e56482493bf37aa1ce789d73a17d847eb3"
+    },
+    {
+      "path": "server/storage/skillCheckRepository.ts",
+      "sha256": "481164fb1b09b232b0282c37cb1156502d925a6e47a3d1365be6c25319f8e2d3"
+    },
+    {
+      "path": "server/storage/contestRepository.ts",
+      "sha256": "bd0d3747a32cc3e453f0cd9e3ddd6c25efcb45b4458e1da5dd908eac83be488b"
+    },
+    {
+      "path": "server/storage/encounterDocumentRepository.ts",
+      "sha256": "d31f6d45988639d925f1bea634dcdb45eed956a985300b725a72146cd0d92745"
+    },
+    {
+      "path": "server/useCases/executeEquipmentAction.ts",
+      "sha256": "0878a67b224dcf31bded2858d21f6d654d592aa51079161aa090dfca66ea9613"
+    },
+    {
+      "path": "server/useCases/manageGmSkillChecks.ts",
+      "sha256": "8f88ca389144f213f7155eb7e0cb62fe9223765282a1acd61b652a9db6151178"
+    },
+    {
+      "path": "server/useCases/contests.ts",
+      "sha256": "0538919e9929896a11816f28e750b30399cf983a225e1127bac3d2f17a4c8782"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/deferredClosureBackupRestore.test.ts",
+      "sha256": "53d3c6f2015cfe521a22d98524221dada85d4cd2d4e80ee1c6b8c37ecbb51205"
+    },
+    {
+      "path": "tests/server/equipmentActionUseCase.test.ts",
+      "sha256": "f67eb9ca34fa48e2e93b995f733fb25039f9341fb0ba4afdbe97a519d0096b20"
+    },
+    {
+      "path": "tests/server/skillChecksRuntime.test.ts",
+      "sha256": "be0157437a918498d432152f99aeda9520b71f376d421b0e9bcb5ec5f5314333"
+    },
+    {
+      "path": "tests/server/contestBattleEncounterRuntime.test.ts",
+      "sha256": "ac19b6451d6c4184f6c28e10d93ef6b55ed5db32dd85de7a36c2dcc6a21acd79"
+    },
+    {
+      "path": "tests/server/contestStorageRecovery.test.ts",
+      "sha256": "a345f16078f1ff4cefe8bbc42d200dbc21e1fea205425703e81c63d17fb9629c"
+    },
+    {
+      "path": "tests/docs/privateVpsBackupRunbook.test.ts",
+      "sha256": "cdcdbf8ef14661a409756b7d891979da15bba5179301eb947447d9780977ca08"
+    },
+    {
+      "path": "tests/data/deferredClosureBackupRestoreCertification.test.ts",
+      "sha256": "ad1861637e22ed05dc1349d43dcdc2fe595e363c6ba339ca7b44aeb8350d4e58"
+    },
+    {
+      "path": "docs/private-vps-backups.md",
+      "sha256": "87a435cb90750eb6c147845ec02f1a128f1f032203e3cbd84766da69bc72f14f"
+    },
+    {
+      "path": "package.json",
+      "sha256": "15a0e3570d66ac02b10f6156bd6106791a398c7cc9f4cc0f590bc14ced95d8b8"
+    }
+  ],
+  "validation": {
+    "focusedGate": "passed",
+    "trackedTableDigests": 9,
+    "restart": "passed",
+    "reconnect": "passed",
+    "exactRestoredRetries": "passed",
+    "integrityAndForeignKeys": "passed"
+  },
+  "acceptance": {
+    "byteExactTrackedTables": 9,
+    "lostAuthorityRows": 0,
+    "duplicateAuthorityRows": 0,
+    "restartReloads": 1,
+    "reconnectReloads": 3,
+    "exactRetryAdditionalRealtimeRows": 0,
+    "manualRepairs": 0,
+    "nextTicket": "P11-084"
+  }
+}

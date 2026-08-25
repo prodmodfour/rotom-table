@@ -110,6 +110,9 @@ if have npm; then
   run_cmd npm run check:complete-play-loop-documentation
   run_cmd npm run check:complete-play-loop-alpha-acceptance
 
+  pp_section "Deferred Mechanics Closure drift and forbidden gaps"
+  run_cmd npm run check:deferred-closure-drift
+
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 
@@ -126,7 +129,7 @@ if have npm; then
 
   run_cmd npm run lint --if-present
   run_cmd npm run typecheck --if-present
-  run_cmd npm test --if-present
+  run_cmd npm test --if-present -- --maxWorkers=1 --no-file-parallelism
   run_cmd npm run test:nuxt --if-present
   run_cmd npm run test:e2e --if-present -- --workers=1
   run_cmd npm run build --if-present

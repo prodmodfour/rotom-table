@@ -2,11 +2,11 @@ This is a Nuxt 4 and three.js project.
 
 ## Implementation plan completion
 
-- Active execution snapshot: Plans 1–10 are `DONE` and archived; Plan 11 ([Deferred Mechanics Closure](implementation-plans/DEFERRED_MECHANICS_CLOSURE_PLAN.md)) is registered `IN_PROGRESS` with `CURRENT_TICKET: P11-059` and 58 of 92 tickets complete.
+- Active execution snapshot: Plans 1–11 are `DONE` and archived; Plan 11 ([Deferred Mechanics Closure](implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md)) completed all 92 tickets and 29/29 closure rows. No numbered implementation plan is active; the [GM Campaign Toolkit](implementation-plans/drafts/GM_CAMPAIGN_TOOLKIT_PLAN.md) is a registered-for-review prospective scope with no execution obligation.
 - Read `implementation-plans/plan-order.md` before implementation work and follow its dependency order.
-- Plan 10's authoritative archived ledger is `implementation-plans/done/POKEMON_CONTESTS_PLAN.md`; each registered plan's `PLAN_STATUS` and `CURRENT_TICKET` remain authoritative.
+- Plan 11's authoritative archived ledger is `implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md`; each registered numbered plan's `PLAN_STATUS` and `CURRENT_TICKET` remain authoritative.
 - The recorded finish line is the 1.0 release definition in `implementation-plans/plan-order.md`, with prospective Plans 12–13 (GM Campaign Toolkit, 1.0 Release Readiness). Prospective rows and registered drafts are scope intent only and impose no execution obligation until converted into reviewed numbered ledgers registered in the authoritative plan table.
-- Keep the active plan and `implementation-plans/plan-order.md` synchronized whenever ticket counts, current execution, dependencies, or plan status change.
+- Keep any active numbered plan and `implementation-plans/plan-order.md` synchronized whenever ticket counts, current execution, dependencies, or plan status change.
 - Completing one ticket, phase, or plan is only a checkpoint. Do not stop, finish the task, or report overall completion while any implementation plan or ticket in the ordered ledgers remains unfinished. Continue autonomously in dependency order until every implementation is `DONE`, unless a genuine external blocker prevents progress; record any such blocker in both authoritative ledgers.
 
 ## Validation and resource discipline
@@ -24,8 +24,10 @@ This is a liveplay-only app. Local hosting is deprecated. All implemented featur
 
 ## UI design workflow
 
-- Whenever work touches visible or interactive UI—including Vue/Nuxt pages and components, CSS, layout, responsive behavior, accessibility presentation, interaction states, or three.js visuals—read and follow `.pi/skills/ui-design-workflow/SKILL.md` before editing.
+- Whenever work touches visible or interactive UI—including Vue/Nuxt pages and components, CSS, layout, responsive behavior, accessibility presentation, interaction states, or three.js visuals—load and follow the global `ui-design-workflow` skill before editing.
 - For substantive visible changes, use the skill's resource-capped Codex image-generation wrapper to create and inspect a target-state mockup before implementation unless the user explicitly opts out. Load the skill even when a provably non-visual UI-adjacent change does not require image generation.
+- Rotom-specific design authority layered on the skill: `DESIGN.md` is normative; for encounter UI also read `docs/encounter-workspace/design-system.md`, `data/encounter-workspace/design-tokens.v1.json`, and the relevant `Encounter*` primitives, and run `npm run check:encounter-design` for encounter design-system changes.
+- Product contexts are Field Guide, Workshop, and Live Encounter; identify the audience and authorised projection before choosing visible data. The mockup renderer's Rotom visual direction lives in `.pi/ui-mockup-style.md` (auto-injected by the wrapper).
 
 ## Authoritative PTU reference data
 

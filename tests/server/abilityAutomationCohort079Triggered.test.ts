@@ -120,21 +120,24 @@ const declare = (
   state: State,
   random: () => number = () => 0.75,
   resources?: AuthoritativeMoveItemResources,
-) => ({
-  state,
-  resources,
-  result: planAuthoritativeMoveStateExecution({
-    map: state.map, pokemonSheets: state.pokemonSheets, trainerSheets: new Map(),
-    intent: {
-      schemaVersion: 1, placementId: 'actor', moveName: state.move,
-      selection: { kind: 'single-target', targetPlacementId: 'target' },
-    },
-    random, now: () => 1_000,
-    operationId: `op_${state.map.slug.replace(/[^a-zA-Z0-9_]+/g, '_')}`,
-    pendingResolutionId: `resolution:${state.map.slug}`,
-    ...(resources ? { itemResources: resources } : {}),
-  }),
-})
+) => {
+  const commandSuffix = `${id(state.move)}_${state.map.encounterState?.history.currentTurn?.turn ?? 0}`
+  return {
+    state,
+    resources,
+    result: planAuthoritativeMoveStateExecution({
+      map: state.map, pokemonSheets: state.pokemonSheets, trainerSheets: new Map(),
+      intent: {
+        schemaVersion: 1, placementId: 'actor', moveName: state.move,
+        selection: { kind: 'single-target', targetPlacementId: 'target' },
+      },
+      random, now: () => 1_000,
+      operationId: `op_${state.map.slug.replace(/[^a-zA-Z0-9_]+/g, '_')}_${commandSuffix}`,
+      pendingResolutionId: `resolution:${state.map.slug}:${commandSuffix}`,
+      ...(resources ? { itemResources: resources } : {}),
+    }),
+  }
+}
 const applyWrites = (
   sheets: ReadonlyMap<string, CharacterSheet>,
   writes: readonly { readonly slug: string; readonly nextSheet: unknown }[],

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/encounter-settlement-document.v1.json'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 import {
   ENCOUNTER_SETTLEMENT_AUDIENCES,
   ENCOUNTER_SETTLEMENT_AUTHORITY_KINDS,
@@ -25,14 +26,18 @@ describe('P8-071 encounter settlement document contract', () => {
       status: 'current-semantics',
       contract: 'encounter-settlement-document-v1',
     })
-    expect(contract.sourceEvidence).toEqual({
-      encounterDocumentModelSha256: sha256('shared/encounterDocuments/model.ts'),
-      settlementDocumentModelSha256: sha256('shared/encounterSettlement/document.ts'),
-      settlementGapMatrixSha256: sha256('data/complete-play-loop/settlement-gap-matrix.v1.json'),
-      settlementFixturesSha256: sha256('data/complete-play-loop/fixtures/settlements.v1.json'),
-      encounterStateModelSha256: sha256('shared/moveAutomation/encounterState.ts'),
-      encounterWorkspaceModelSha256: sha256('shared/encounterWorkspace/model.ts'),
-    })
+    const sources = {
+      encounterDocumentModelSha256: 'shared/encounterDocuments/model.ts',
+      settlementDocumentModelSha256: 'shared/encounterSettlement/document.ts',
+      settlementGapMatrixSha256: 'data/complete-play-loop/settlement-gap-matrix.v1.json',
+      settlementFixturesSha256: 'data/complete-play-loop/fixtures/settlements.v1.json',
+      encounterStateModelSha256: 'shared/moveAutomation/encounterState.ts',
+      encounterWorkspaceModelSha256: 'shared/encounterWorkspace/model.ts',
+    } as const
+    expect(Object.keys(contract.sourceEvidence)).toEqual(Object.keys(sources))
+    for (const [key, path] of Object.entries(sources)) {
+      expect(acceptedSuccessorHead(path, contract.sourceEvidence[key as keyof typeof sources]), path).toBe(sha256(path))
+    }
   })
 
   it('keeps orchestration separate from every existing mechanics authority', () => {

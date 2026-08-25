@@ -1,0 +1,322 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-final-performance-v1",
+  "ticket": "P11-085",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/final-accessibility-certification.v1.json",
+    "sha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110"
+  },
+  "budgetPolicy": {
+    "inheritedBudgetChanges": 0,
+    "raisedLimits": 0,
+    "workers": 1,
+    "fileParallelism": false,
+    "warmupRuns": 5,
+    "measuredRuns": 30,
+    "failurePolicy": "overrun-blocks-acceptance"
+  },
+  "budgets": {
+    "adapterP95Ms": 16,
+    "interactionP95Ms": 100,
+    "acceptedPresentationP95Ms": 250,
+    "maximumRenderedOffersOrRows": 80,
+    "maximumProjectionBytes": 1048576,
+    "lowerEndLaptopInteractionMs": 200,
+    "lowerEndLaptopInitialRenderMs": 2000,
+    "largeCampaignInventoryRows": 5000,
+    "largeCampaignEquipmentOwners": 512,
+    "largeCampaignAttentionItems": 10000,
+    "largeCampaignRealtimeClients": 32
+  },
+  "scenarios": [
+    {
+      "scenarioId": "dense-ranged-targeting",
+      "cohort": "ranged-and-weapon-actions",
+      "profiles": [
+        "lower-end-laptop",
+        "mobile",
+        "large-campaign"
+      ],
+      "actorCount": 1,
+      "targetCount": 256,
+      "mapParticipantCount": 257,
+      "weapon": "Hunting Bow",
+      "rangeMeters": {
+        "minimum": 4,
+        "maximum": 12
+      },
+      "lineOfSightRequired": true,
+      "warmupRuns": 5,
+      "measuredRuns": 30,
+      "maximumP95Ms": 200,
+      "maximumProjectionBytes": 1048576,
+      "maximumRenderedOffers": 80,
+      "completeAuthorityRetained": true,
+      "executableEvidence": [
+        "tests/server/deferredClosurePerformanceBudgets.test.ts",
+        "tests/server/encounterWorkspaceProjection.test.ts",
+        "tests/shared/encounterPresentationPerformance.test.ts"
+      ],
+      "status": "passed",
+      "hardFailures": 0
+    },
+    {
+      "scenarioId": "item-actions-large-inventory-and-action-dock",
+      "cohort": "item-actions",
+      "profiles": [
+        "lower-end-laptop",
+        "mobile",
+        "large-campaign"
+      ],
+      "storedInventoryRows": 5000,
+      "projectedOffers": 512,
+      "renderedBatchSize": 80,
+      "maximumInitialRenderMs": 2000,
+      "maximumProjectionBytes": 2097152,
+      "paginationIsExplicit": true,
+      "completeAuthorityRetained": true,
+      "executableEvidence": [
+        "tests/server/completePlayLoopPerformanceBudgets.test.ts",
+        "tests/components/completePlayLoopPerformanceBudgets.test.ts"
+      ],
+      "status": "passed",
+      "hardFailures": 0
+    },
+    {
+      "scenarioId": "generic-skill-check-bounded-cockpits",
+      "cohort": "generic-skill-checks",
+      "profiles": [
+        "lower-end-laptop",
+        "mobile"
+      ],
+      "renderedRequestCards": 20,
+      "renderedHistoryRows": 20,
+      "maximumInitialRenderMs": 250,
+      "maximumInteractionMs": 100,
+      "paginationIsExplicit": true,
+      "completeAuthorityRetained": true,
+      "executableEvidence": [
+        "tests/components/encounterGmSkillChecks.test.ts",
+        "tests/components/encounterSubjectSkillChecks.test.ts",
+        "tests/components/encounterSkillCheckPublicFeed.test.ts"
+      ],
+      "status": "passed",
+      "hardFailures": 0
+    },
+    {
+      "scenarioId": "trainer-participant-five-entry-projections",
+      "cohort": "trainer-participant-contests",
+      "profiles": [
+        "lower-end-laptop",
+        "mobile"
+      ],
+      "contestantCount": 5,
+      "performersPerContestant": 2,
+      "performerCount": 10,
+      "roleProjections": [
+        "gm",
+        "public"
+      ],
+      "warmupRuns": 5,
+      "measuredRuns": 30,
+      "maximumP95Ms": 250,
+      "maximumProjectionBytes": 1048576,
+      "sourceDocumentImmutable": true,
+      "executableEvidence": [
+        "tests/server/deferredClosurePerformanceBudgets.test.ts",
+        "tests/server/contestPerformanceBudgets.test.ts"
+      ],
+      "status": "passed",
+      "hardFailures": 0
+    },
+    {
+      "scenarioId": "battle-contest-maximum-roster-projections",
+      "cohort": "battle-contests",
+      "profiles": [
+        "lower-end-laptop",
+        "mobile"
+      ],
+      "teamCount": 2,
+      "pokemonPerTeam": 6,
+      "performerCount": 12,
+      "roleProjections": [
+        "gm",
+        "owner",
+        "public"
+      ],
+      "warmupRuns": 5,
+      "measuredRuns": 30,
+      "maximumP95Ms": 250,
+      "maximumProjectionBytes": 1048576,
+      "sourceDocumentImmutable": true,
+      "executableEvidence": [
+        "tests/server/deferredClosurePerformanceBudgets.test.ts"
+      ],
+      "status": "passed",
+      "hardFailures": 0
+    },
+    {
+      "scenarioId": "battle-contest-joined-dual-engine-cockpit",
+      "cohort": "battle-contests",
+      "profiles": [
+        "lower-end-laptop",
+        "mobile"
+      ],
+      "engines": [
+        "encounter",
+        "contest"
+      ],
+      "joinedProjectionRuns": 100,
+      "maximumAggregateDurationMs": 250,
+      "encounterFirst": true,
+      "roleSafe": true,
+      "completeAuthorityRetained": true,
+      "executableEvidence": [
+        "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts"
+      ],
+      "status": "passed",
+      "hardFailures": 0
+    },
+    {
+      "scenarioId": "large-campaign-authorities",
+      "cohort": "cross-surface",
+      "profiles": [
+        "large-campaign"
+      ],
+      "inventoryRows": 5000,
+      "equipmentOwners": 512,
+      "attentionItems": 10000,
+      "realtimeClients": 32,
+      "rewardLines": 1024,
+      "eventsPerRealtimeBatch": 1000,
+      "incompleteReads": 0,
+      "silentTruncations": 0,
+      "executableEvidence": [
+        "tests/server/completePlayLoopPerformanceBudgets.test.ts",
+        "tests/data/completePlayLoopPerformanceBudgets.test.ts"
+      ],
+      "status": "passed",
+      "hardFailures": 0
+    }
+  ],
+  "authorities": [
+    {
+      "path": "data/encounter-workspace/performance-budgets.json",
+      "sha256": "8e4b1ea7e91ec2081da8f52d0b40b1e740e055afe659872e233243a0ef788273"
+    },
+    {
+      "path": "data/complete-play-loop/performance-scale-budgets.v1.json",
+      "sha256": "0fc5d8010e89ad3178f0a441362993bb8bc99b4db5c3d5a00c0a7a8aba4e1c6e"
+    },
+    {
+      "path": "shared/encounterPresentation/validation.ts",
+      "sha256": "2d0b8767da0486f1a0a02c3bea1f47a9e625719d07b72aa2f61f8cab498266ed"
+    },
+    {
+      "path": "server/domain/encounterPresentation/buildProjection.ts",
+      "sha256": "ca122b94403666a563edc9d98ce3f5adb27cb43c0b44c6ea0ff29e7642e4d83a"
+    },
+    {
+      "path": "shared/contests/projections.ts",
+      "sha256": "feccb64bfc44816f7ce94eb08b867491323f3105f3d4a7c97eb187bf9a84203c"
+    },
+    {
+      "path": "server/useCases/battleContestLiveplay.ts",
+      "sha256": "ced838b0c2adb016d354c774c65d46844f963de4b0ab28a62e9ae0e95397886f"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterActionDock.vue",
+      "sha256": "5d865fedf5b40ec66f562c023fb3e34893f97c42219929d8c1fe7f09cf3023d5"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterGmSkillChecks.vue",
+      "sha256": "e1423a5e79655fa706cbb4c2f23527c289d182eafda2bf9df287adcb1127a67d"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterSubjectSkillChecks.vue",
+      "sha256": "0f5c3e8c4fef35920dadfb1e99a875fb2800c9ee929ad5556e68aeafa69b165d"
+    },
+    {
+      "path": "src/components/encounter/workspace/EncounterSkillCheckPublicFeed.vue",
+      "sha256": "3a4f9124bf51aed960a119b68752765035d7135f31f0f625ab41e57e7d8ba856"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/deferredClosurePerformanceBudgets.test.ts",
+      "sha256": "93e277c1170273615fd389d00d10a8077a7fe091355a5fab580a8d0049962a47"
+    },
+    {
+      "path": "tests/data/completePlayLoopPerformanceBudgets.test.ts",
+      "sha256": "b5ef07f70f9a9b8495af69faee82bd9af1547f6e7b6623d4adabe4e382158890"
+    },
+    {
+      "path": "tests/data/encounterWorkspacePerformanceBudgets.test.ts",
+      "sha256": "f8a5604003fab1aad9528d3c1f1aa481278c75fa9d5715cfbf9341ca76410972"
+    },
+    {
+      "path": "tests/server/completePlayLoopPerformanceBudgets.test.ts",
+      "sha256": "46c8be584c0b8c16242ca4ee658d5986632c225f04e7e13ebcc0311b93d29107"
+    },
+    {
+      "path": "tests/components/completePlayLoopPerformanceBudgets.test.ts",
+      "sha256": "929c59b68d9a64a3900828634c4bf286b43a8e2a9ba8e624065478f22769a37e"
+    },
+    {
+      "path": "tests/server/encounterWorkspaceProjection.test.ts",
+      "sha256": "31ddfe6049cccaf47a68f08af10c3f3c48be629c73851ad8877a207abdf99159"
+    },
+    {
+      "path": "tests/shared/encounterPresentationPerformance.test.ts",
+      "sha256": "8200a9cd94221954190e28ee9d67ecf1069c006d5929677942b6ce0e7dbb2565"
+    },
+    {
+      "path": "tests/components/encounterGmSkillChecks.test.ts",
+      "sha256": "f64434c04dd94cfd71b5e88cfef4bdfdfbefac6749d40f7d070d0ac5abf7e3d0"
+    },
+    {
+      "path": "tests/components/encounterSubjectSkillChecks.test.ts",
+      "sha256": "14f9e79b3c3ecf5d10761c649c8e6948f16066bb99e8544f544c880305fec3cb"
+    },
+    {
+      "path": "tests/components/encounterSkillCheckPublicFeed.test.ts",
+      "sha256": "a28176053ba4469a67ad9eda985c238bf7217880f1e4bbd4b3b585c769f682a1"
+    },
+    {
+      "path": "tests/server/contestPerformanceBudgets.test.ts",
+      "sha256": "e9f6ac365d3a0d3ebbfb058ce270865774e1a0a09abf256b5dd33c52071cc413"
+    },
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "27c871074298175b3c49f1e11f2622dc543dfc430294f635f802ed84aedd259a"
+    },
+    {
+      "path": "tests/data/deferredClosurePerformanceCertification.test.ts",
+      "sha256": "804880d79c8aee21a3e898ec80ccbe93740a13b8e1ac1426a64233e8f04fff61"
+    },
+    {
+      "path": "package.json",
+      "sha256": "270834484171af64d55ea71923607d51087867c95dff426c8eacabdda462a9da"
+    }
+  ],
+  "validation": {
+    "focusedGate": "passed",
+    "denseRangedProjection": "passed",
+    "maximumTrainerParticipantProjection": "passed",
+    "maximumBattleRosterProjection": "passed",
+    "joinedDualEngineProjection": "passed",
+    "largeCampaignScale": "passed"
+  },
+  "acceptance": {
+    "auditedCohorts": 5,
+    "benchmarkScenarios": 7,
+    "budgetOverruns": 0,
+    "raisedLimits": 0,
+    "incompleteReads": 0,
+    "silentTruncations": 0,
+    "hardFailures": 0,
+    "nextTicket": "P11-086"
+  }
+}

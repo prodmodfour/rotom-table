@@ -22,9 +22,25 @@ import {
   type ContestStatId,
   type ContestVariantId,
 } from './ids'
-import { contestBaseVariantAllowsTrainerParticipants, contestCatalog, contestVariantIsNative, trainerParticipantContestVariant } from './catalog'
+import { battleContestVariant, contestBaseVariantAllowsTrainerParticipants, contestCatalog, contestVariantAllowsSetup, trainerParticipantContestVariant } from './catalog'
 import type { ContestStatContribution } from './preparation'
+import { assembleContestAppeal } from './appealAssembly'
+import { resolveContestEffectConsequences, terminalContestEffectVoltage } from './effectResolution'
+import {
+  parseBattleContestEncounterBinding,
+  type BattleContestEncounterBindingV1,
+} from './battleEncounter'
+import {
+  parseBattleContestHandoffReceipt,
+  type BattleContestHandoffReceiptV1,
+} from './battleBlend'
 import { resolveTrainerParticipantMethodTurn, type ContestParticipantPerformerKind } from './participantMethods'
+import { parseBattleContestRecoveryReceipts, type BattleContestRecoveryReceiptV1 } from './battleRecovery'
+import {
+  battleContestSettlementDefinitionSha256,
+  parseBattleContestSettlementCoordination,
+  type BattleContestSettlementCoordinationV1,
+} from './battleSettlement'
 import itemsJson from '../../data/reference/items.json'
 
 export const CONTEST_DOCUMENT_SCHEMA_VERSION = 1 as const
@@ -156,6 +172,18 @@ export interface ContestSharedDiceSpendJournalEntryV1 {
   readonly createdAt: number
 }
 
+export interface BattleContestTeamDiceSpendJournalEntryV1 {
+  readonly spendId: string
+  readonly operationId: string
+  /** Exact enrolled team Pokémon accepting the shared Trainer-team spend. */
+  readonly performerId: string
+  readonly sourcePolicy: 'battle-trainer-team'
+  readonly spentDice: Readonly<Record<ContestStatId, number>>
+  readonly remainingBefore: Readonly<Record<ContestStatId, number>>
+  readonly remainingAfter: Readonly<Record<ContestStatId, number>>
+  readonly createdAt: number
+}
+
 export interface ContestPendingEffectStateV1 {
   readonly nextRoundBaseMoveDiceMultiplier: number
   readonly fumbleProtectionRound: number | null
@@ -187,9 +215,9 @@ export interface ContestantStateV1 {
   readonly introduction: ContestIntroductionStateV1
   readonly appeal: number
   readonly fumble: number
-  /** Shared-entry Voltage for ordinary and Alternating play; fixed at zero under Simultaneous. */
+  /** Shared-entry Voltage for ordinary and Alternating play; fixed at zero under Simultaneous and Battle. */
   readonly voltage: number
-  /** Exact per-performer Voltage authority for Simultaneous; empty for every other format/method. */
+  /** Exact per-performer Voltage authority for Simultaneous, or exact per-Pokémon authority for Battle. */
   readonly performerVoltages: Readonly<Record<string, number>>
   readonly lastMoveOptionId: string | null
   readonly usedInterventionIds: readonly string[]
@@ -197,6 +225,8 @@ export interface ContestantStateV1 {
   readonly teamDicePools: Readonly<Record<ContestStatId, ContestDicePoolV1>>
   /** Immutable single-spend evidence for the Trainer Participant shared pool. */
   readonly sharedDiceSpendJournal: readonly ContestSharedDiceSpendJournalEntryV1[]
+  /** Immutable single-spend evidence for Battle's Trainer-team Introduction pool. */
+  readonly battleTeamDiceSpendJournal: readonly BattleContestTeamDiceSpendJournalEntryV1[]
   readonly teamContestDiceSpent: number
   readonly pendingEffects: ContestPendingEffectStateV1
   readonly withdrawn: boolean
@@ -242,6 +272,8 @@ export interface ContestAppealLedgerEntryV1 {
   readonly partnerEffectTargetPerformerId: string | null
   readonly centerOfAttention: boolean
   readonly adjacentContestantIds: readonly string[]
+  /** Exact internal performer targets consulted for Battle adjacency; never public sheet authority. */
+  readonly adjacentPerformerIds: readonly string[]
   readonly spentDice: Readonly<Record<ContestStatId, number>>
   readonly contributors: readonly ContestAppealContributorV1[]
   readonly baseMoveDiceMultiplier: 1 | 2
@@ -273,6 +305,8 @@ export interface ContestCorrectionReceiptV1 {
   readonly correctionId: string
   readonly operationId: string
   readonly contestantId: string | null
+  /** Exact Pokémon target for Battle Voltage correction; null for every other correction. */
+  readonly performerId: string | null
   readonly kind: 'appeal-delta' | 'fumble-delta' | 'voltage-delta' | 'dice-pool-delta' | 'controller-reassignment' | 'cancel-contest'
   readonly reason: string
   readonly numericDelta: number | null
@@ -298,8 +332,59 @@ export interface ContestSettlementV1 {
   readonly money: number
   readonly items: readonly ContestPrizeItemV1[]
   readonly attentionItemIds: readonly string[]
+  /** Private exact preview/result binding for the linked Encounter settlement; Battle only. */
+  readonly battleCoordination: BattleContestSettlementCoordinationV1 | null
   readonly committedOperationId: string | null
   readonly committedAt: number | null
+}
+
+export const BATTLE_CONTEST_VOLTAGE_LIFECYCLE_RULES = Object.freeze([
+  'attack-knockout',
+  'damage-over-time-knockout',
+  'other-knockout',
+  'recall',
+  'recall-exception',
+] as const)
+export type BattleContestVoltageLifecycleRuleV1 = typeof BATTLE_CONTEST_VOLTAGE_LIFECYCLE_RULES[number]
+
+export const BATTLE_CONTEST_RECALL_EXCEPTION_IDS = Object.freeze([
+  'Baton Pass',
+  'U-Turn',
+  'Volt Switch',
+  'Juggler-equivalent-switch',
+] as const)
+export type BattleContestRecallExceptionIdV1 = typeof BATTLE_CONTEST_RECALL_EXCEPTION_IDS[number]
+
+export interface BattleContestVoltageTransitionV1 {
+  readonly contestantId: string
+  readonly performerId: string
+  /** Canonical rule delta before the shared zero-through-five cap. */
+  readonly ruleDelta: -2 | 0 | 2
+  readonly voltageBefore: number
+  readonly voltageAfter: number
+}
+
+/** Contest-owned immutable consequence of one source-bound Encounter lifecycle fact. */
+export interface BattleContestVoltageLifecycleLedgerEntryV1 {
+  readonly lifecycleId: string
+  readonly operationId: string
+  readonly handoffId: string
+  readonly sourceResultId: string
+  readonly sourceKind: 'knockout' | 'switch'
+  readonly rule: BattleContestVoltageLifecycleRuleV1
+  readonly encounterRound: number
+  readonly causalCanonicalId: string | null
+  readonly causalProviderId: string | null
+  readonly recallExceptionId: BattleContestRecallExceptionIdV1 | null
+  readonly transitions: readonly BattleContestVoltageTransitionV1[]
+  readonly acceptedAt: number
+}
+
+export interface BattleContestSetupStateV1 {
+  readonly declaredPokemonPerTrainer: number | null
+  readonly roundBudget: number | null
+  /** Immutable existing-Encounter opening authority; null until atomic linking. */
+  readonly encounter: BattleContestEncounterBindingV1 | null
 }
 
 export interface ContestDocumentV1 {
@@ -316,6 +401,8 @@ export interface ContestDocumentV1 {
   }
   /** Canonical base ruleset used for charts, type policy, and lifecycle. */
   readonly variantId: ContestVariantId
+  /** Battle-only setup authority; null for every ordinary base variant. */
+  readonly battle: BattleContestSetupStateV1 | null
   /** Optional reviewed performer-format layer; null preserves ordinary Pokémon-only entries. */
   readonly participantVariantId: ContestParticipantVariantId | null
   /** Explicit source-bound method choice for Trainer Participant entries. */
@@ -337,6 +424,12 @@ export interface ContestDocumentV1 {
   readonly gmNotes: string
   readonly diceJournal: readonly ContestDiceJournalEntryV1[]
   readonly appealLedger: readonly ContestAppealLedgerEntryV1[]
+  /** Contest-owned at-most-once receipts for server-derived Battle Encounter facts. */
+  readonly battleHandoffReceipts: readonly BattleContestHandoffReceiptV1[]
+  /** Ordered, source-bound KO/recall Voltage transitions; diagnostic-only in projections. */
+  readonly battleVoltageLifecycleLedger: readonly BattleContestVoltageLifecycleLedgerEntryV1[]
+  /** Matching coordinator receipts are retained in both linked documents and omitted from role projections. */
+  readonly battleRecoveryReceipts: readonly BattleContestRecoveryReceiptV1[]
   readonly corrections: readonly ContestCorrectionReceiptV1[]
   readonly history: readonly ContestHistoryEntryV1[]
   readonly settlement: ContestSettlementV1 | null
@@ -415,12 +508,13 @@ export interface CreateContestDocumentInput {
 
 export const createContestDocument = (input: CreateContestDocumentInput): ContestDocumentV1 => {
   const contestId = parseContestId(input.contestId)
-  if (!contestVariantIsNative(input.variantId)) fail('contest.variant-unsupported', 'variantId', 'Choose a supported Contest variant.')
+  if (!contestVariantAllowsSetup(input.variantId)) fail('contest.variant-unsupported', 'variantId', 'Choose a supported Contest variant.')
+  if (input.variantId === 'battle' && input.participantVariantId != null) fail('contest.variant-unsupported', 'participantVariantId', 'Battle Contest uses its own two-team roster format.')
   if (input.participantVariantId !== undefined && input.participantVariantId !== null && !isContestParticipantVariantId(input.participantVariantId)) fail('contest.variant-unsupported', 'participantVariantId', 'Choose a reviewed participant format.')
   if (input.participantVariantId === 'trainer-participant' && !contestBaseVariantAllowsTrainerParticipants(input.variantId)) fail('contest.variant-unsupported', 'participantVariantId', 'Trainer performers are not permitted by this base Contest variant.')
   if (input.participantMethodId !== undefined && input.participantMethodId !== null && !isContestParticipantMethodId(input.participantMethodId)) fail('contest.variant-unsupported', 'participantMethodId', 'Choose a canonical Trainer Participant method.')
   if (input.participantVariantId !== 'trainer-participant' && input.participantMethodId != null) fail('contest.policy-invalid', 'participantMethodId', 'A participant method is available only to Trainer Participant Contests.')
-  const needsFixedType = input.variantId === 'standard' || input.variantId === 'festival' || input.variantId === 'rotation'
+  const needsFixedType = input.variantId === 'standard' || input.variantId === 'festival' || input.variantId === 'rotation' || input.variantId === 'battle'
   if (needsFixedType && !isContestStatId(input.contestTypeId)) fail('contest.type-required', 'contestTypeId', 'Choose a Contest type.')
   if (input.variantId === 'supercontest' && input.contestTypeId != null) fail('contest.type-invalid', 'contestTypeId', 'Supercontest types are rolled authoritatively each round and cannot be fixed during setup.')
   if (input.contestTypeId != null && !isContestStatId(input.contestTypeId)) fail('contest.type-invalid', 'contestTypeId', 'Contest type is not canonical.')
@@ -449,6 +543,7 @@ export const createContestDocument = (input: CreateContestDocumentInput): Contes
       description: safeText(input.description ?? '', 'description', 1_000),
     },
     variantId: input.variantId,
+    battle: input.variantId === 'battle' ? { declaredPokemonPerTrainer: null, roundBudget: null, encounter: null } : null,
     participantVariantId: input.participantVariantId ?? null,
     participantMethodId: input.participantVariantId === 'trainer-participant' ? input.participantMethodId ?? null : null,
     sharedContestDicePoolScope: input.participantVariantId === 'trainer-participant' ? trainerParticipantContestVariant.sharedContestDicePool.scope : null,
@@ -474,6 +569,9 @@ export const createContestDocument = (input: CreateContestDocumentInput): Contes
     gmNotes: safeText(input.gmNotes ?? '', 'gmNotes', 4_000),
     diceJournal: [],
     appealLedger: [],
+    battleHandoffReceipts: [],
+    battleVoltageLifecycleLedger: [],
+    battleRecoveryReceipts: [],
     corrections: [],
     history: [{
       sequence: 1,
@@ -482,7 +580,7 @@ export const createContestDocument = (input: CreateContestDocumentInput): Contes
       visibility: 'public' as const,
       contestantId: null,
       headline: `${input.name} created`,
-      detail: `${input.hallName} is preparing a ${input.participantVariantId === 'trainer-participant' ? 'Trainer Participant ' : ''}${input.variantId} Contest.`,
+      detail: `${input.hallName} is preparing a ${input.variantId === 'battle' ? 'Battle' : input.participantVariantId === 'trainer-participant' ? 'Trainer Participant' : input.variantId} Contest.`,
       operationId: null,
       createdAt: now,
     }],
@@ -519,7 +617,7 @@ const validateDicePool = (value: unknown, field: string): void => {
 
 const validateContestant = (value: unknown, index: number): ContestantStateV1 => {
   const field = `contestants[${index}]`, row = record(value, field)
-  exact(row, ['contestantId','trainerSheetSlug','trainerSheetRevision','displayName','controller','performers','rotationOrder','letter','introductionSkillDice','introduction','appeal','fumble','voltage','performerVoltages','lastMoveOptionId','usedInterventionIds','teamDicePools','sharedDiceSpendJournal','teamContestDiceSpent','pendingEffects','withdrawn','finalPlacement','finalScore'], field)
+  exact(row, ['contestantId','trainerSheetSlug','trainerSheetRevision','displayName','controller','performers','rotationOrder','letter','introductionSkillDice','introduction','appeal','fumble','voltage','performerVoltages','lastMoveOptionId','usedInterventionIds','teamDicePools','sharedDiceSpendJournal','battleTeamDiceSpendJournal','teamContestDiceSpent','pendingEffects','withdrawn','finalPlacement','finalScore'], field)
   parseContestantId(row.contestantId, `${field}.contestantId`); safeText(row.trainerSheetSlug, `${field}.trainerSheetSlug`, 160, true); safeInteger(row.trainerSheetRevision, `${field}.trainerSheetRevision`); safeText(row.displayName, `${field}.displayName`, 160, true); parseController(row.controller, `${field}.controller`)
   const performers = array(row.performers, `${field}.performers`, 6); if (performers.length < 1) fail('contest.invalid-contestant', `${field}.performers`, 'must contain at least one performer')
   const performerIds = new Set<string>(), pokemonPerformerIds = new Set<string>(), trainerPerformerIds = new Set<string>()
@@ -588,11 +686,33 @@ const validateContestant = (value: unknown, index: number): ContestantStateV1 =>
     if (spentTotal < 1 || spentTotal > contestCatalog.performance.contestDiceSpendMaximumPerAppeal) fail('contest.invalid-contestant', `${spendPath}.spentDice`, 'must record one bounded accepted spend')
     safeInteger(spend.createdAt, `${spendPath}.createdAt`)
   }
+  const battleSpends = array(row.battleTeamDiceSpendJournal, `${field}.battleTeamDiceSpendJournal`, 10_000)
+  const battleSpendIds = new Set<string>(), battleSpendOperationIds = new Set<string>()
+  for (const [spendIndex, rawSpend] of battleSpends.entries()) {
+    const spendPath = `${field}.battleTeamDiceSpendJournal[${spendIndex}]`, spend = record(rawSpend, spendPath)
+    exact(spend, ['spendId','operationId','performerId','sourcePolicy','spentDice','remainingBefore','remainingAfter','createdAt'], spendPath)
+    const operationId = parseContestOperationId(spend.operationId, `${spendPath}.operationId`), spendId = safeText(spend.spendId, `${spendPath}.spendId`, 240, true)
+    if (spendId !== `${operationId}:battle-team-dice` || battleSpendIds.has(spendId) || battleSpendOperationIds.has(operationId)) fail('contest.invalid-contestant', spendPath, 'must use unique operation-derived Battle team spend identity')
+    battleSpendIds.add(spendId); battleSpendOperationIds.add(operationId)
+    const performerId = safeText(spend.performerId, `${spendPath}.performerId`, 160, true)
+    if (!pokemonPerformerIds.has(performerId) || spend.sourcePolicy !== 'battle-trainer-team') fail('contest.invalid-contestant', spendPath, 'must bind one enrolled team Pokémon to the Battle Trainer-team pool')
+    const spentDice = record(spend.spentDice, `${spendPath}.spentDice`), remainingBefore = record(spend.remainingBefore, `${spendPath}.remainingBefore`), remainingAfter = record(spend.remainingAfter, `${spendPath}.remainingAfter`)
+    for (const [label, values] of Object.entries({ spentDice, remainingBefore, remainingAfter })) exact(values, CONTEST_STAT_IDS, `${spendPath}.${label}`)
+    let spentTotal = 0
+    for (const statId of CONTEST_STAT_IDS) {
+      const spent = safeInteger(spentDice[statId], `${spendPath}.spentDice.${statId}`, 0, contestCatalog.performance.contestDiceSpendMaximumPerAppeal)
+      const before = safeInteger(remainingBefore[statId], `${spendPath}.remainingBefore.${statId}`, 0, 1_000), after = safeInteger(remainingAfter[statId], `${spendPath}.remainingAfter.${statId}`, 0, 1_000)
+      if (after !== before - spent) fail('contest.invalid-contestant', `${spendPath}.${statId}`, 'must deplete the shared Battle team pool exactly once')
+      spentTotal += spent
+    }
+    if (spentTotal < 1 || spentTotal > contestCatalog.performance.contestDiceSpendMaximumPerAppeal) fail('contest.invalid-contestant', `${spendPath}.spentDice`, 'must record one bounded Battle team spend')
+    safeInteger(spend.createdAt, `${spendPath}.createdAt`)
+  }
   safeInteger(row.teamContestDiceSpent, `${field}.teamContestDiceSpent`, 0, 1_000)
   const pending = record(row.pendingEffects, `${field}.pendingEffects`); exact(pending, ['nextRoundBaseMoveDiceMultiplier','fumbleProtectionRound','nextAppealAlignmentSteps','nextAppealAlignmentTypeId','nextAppealBonusDice','nextAppealTypeId','nextAppealEffectId','fixedAppealPerDie','targetPerformerId','blockedMoveOptionIds','blockedMoveRound','blockedMovePerformerId'], `${field}.pendingEffects`)
   safeInteger(pending.nextRoundBaseMoveDiceMultiplier, `${field}.pendingEffects.nextRoundBaseMoveDiceMultiplier`, 1, 2); if (pending.fumbleProtectionRound !== null) safeInteger(pending.fumbleProtectionRound, `${field}.pendingEffects.fumbleProtectionRound`, 1, 100); const alignmentSteps = safeInteger(pending.nextAppealAlignmentSteps, `${field}.pendingEffects.nextAppealAlignmentSteps`, 0, 1); if (pending.nextAppealAlignmentTypeId !== null && !isContestStatId(pending.nextAppealAlignmentTypeId)) fail('contest.invalid-contestant', `${field}.pendingEffects.nextAppealAlignmentTypeId`, 'is invalid'); safeInteger(pending.nextAppealBonusDice, `${field}.pendingEffects.nextAppealBonusDice`, 0, 2); if (pending.targetPerformerId !== null && !performerIds.has(safeText(pending.targetPerformerId, `${field}.pendingEffects.targetPerformerId`, 160, true))) fail('contest.invalid-contestant', `${field}.pendingEffects.targetPerformerId`, 'must identify an enrolled performer'); if (pending.nextAppealTypeId !== null && !isContestStatId(pending.nextAppealTypeId)) fail('contest.invalid-contestant', `${field}.pendingEffects.nextAppealTypeId`, 'is invalid'); if (pending.nextAppealEffectId !== null && !isContestEffectId(pending.nextAppealEffectId)) fail('contest.invalid-contestant', `${field}.pendingEffects.nextAppealEffectId`, 'is invalid'); if (typeof pending.fixedAppealPerDie !== 'boolean') fail('contest.invalid-contestant', `${field}.pendingEffects.fixedAppealPerDie`, 'must be boolean'); const blockedMoveOptionIds = array(pending.blockedMoveOptionIds, `${field}.pendingEffects.blockedMoveOptionIds`, 2); blockedMoveOptionIds.forEach((id, blockedIndex) => safeText(id, `${field}.pendingEffects.blockedMoveOptionIds[${blockedIndex}]`, 240, true)); if (pending.blockedMoveRound !== null) safeInteger(pending.blockedMoveRound, `${field}.pendingEffects.blockedMoveRound`, 1, 100); if (pending.blockedMovePerformerId !== null) safeText(pending.blockedMovePerformerId, `${field}.pendingEffects.blockedMovePerformerId`, 160, true)
   if ((alignmentSteps === 0) !== (pending.nextAppealAlignmentTypeId === null) || (pending.nextAppealTypeId === null) !== (pending.nextAppealEffectId === null) || (blockedMoveOptionIds.length === 0) !== (pending.blockedMoveRound === null && pending.blockedMovePerformerId === null) || blockedMoveOptionIds.length > 0 && (blockedMoveOptionIds.length !== 2 || new Set(blockedMoveOptionIds).size !== 2 || pending.blockedMoveRound === null || pending.blockedMovePerformerId === null)) fail('contest.invalid-contestant', `${field}.pendingEffects`, 'contains inconsistent intervention evidence')
-  if (typeof row.withdrawn !== 'boolean') fail('contest.invalid-contestant', `${field}.withdrawn`, 'must be boolean'); if (row.finalPlacement !== null) safeInteger(row.finalPlacement, `${field}.finalPlacement`, 1, 5); if (row.finalScore !== null) { safeInteger(row.finalScore, `${field}.finalScore`, -1_000_000, 1_000_000); if (row.finalScore !== Number(row.appeal) - Number(row.fumble)) fail('contest.invalid-contestant', `${field}.finalScore`, 'must equal Appeal minus Fumble') }
+  if (typeof row.withdrawn !== 'boolean') fail('contest.invalid-contestant', `${field}.withdrawn`, 'must be boolean'); if (row.finalPlacement !== null) safeInteger(row.finalPlacement, `${field}.finalPlacement`, 1, 5); if (row.finalScore !== null) safeInteger(row.finalScore, `${field}.finalScore`, -1_000_000, 1_000_000)
   return row as unknown as ContestantStateV1
 }
 
@@ -623,15 +743,20 @@ const validateJournal = (value: unknown, index: number): ContestDiceJournalEntry
   return row as unknown as ContestDiceJournalEntryV1
 }
 
-const validateAppeal = (value: unknown, index: number, journalsById: ReadonlyMap<string, ContestDiceJournalEntryV1>): ContestAppealLedgerEntryV1 => {
+const validateAppeal = (value: unknown, index: number, journalsById: ReadonlyMap<string, ContestDiceJournalEntryV1>, battleAppeal = false): ContestAppealLedgerEntryV1 => {
   const field = `appealLedger[${index}]`, row = record(value, field)
-  exact(row, ['appealId','operationId','round','turn','contestantId','performerId','moveOptionId','moveLabel','moveTypeId','contestTypeId','effectId','partnerEffectTargetPerformerId','centerOfAttention','adjacentContestantIds','spentDice','contributors','baseMoveDiceMultiplier','assembledDice','journalIds','acceptedResults','appealDelta','fumbleDelta','voltageBefore','voltageAfter','consequences','acceptedAt','correctionIds'], field)
+  exact(row, ['appealId','operationId','round','turn','contestantId','performerId','moveOptionId','moveLabel','moveTypeId','contestTypeId','effectId','partnerEffectTargetPerformerId','centerOfAttention','adjacentContestantIds','adjacentPerformerIds','spentDice','contributors','baseMoveDiceMultiplier','assembledDice','journalIds','acceptedResults','appealDelta','fumbleDelta','voltageBefore','voltageAfter','consequences','acceptedAt','correctionIds'], field)
   parseContestAppealId(row.appealId, `${field}.appealId`); parseContestOperationId(row.operationId, `${field}.operationId`); parseContestantId(row.contestantId, `${field}.contestantId`)
-  safeInteger(row.round, `${field}.round`, 1, 100); safeInteger(row.turn, `${field}.turn`, 1, 5)
+  safeInteger(row.round, `${field}.round`, 1, 100); safeInteger(row.turn, `${field}.turn`, 1, 10_000)
   safeText(row.performerId, `${field}.performerId`, 160, true); safeText(row.moveOptionId, `${field}.moveOptionId`, 240, true); safeText(row.moveLabel, `${field}.moveLabel`, 160, true); if (row.partnerEffectTargetPerformerId !== null) safeText(row.partnerEffectTargetPerformerId, `${field}.partnerEffectTargetPerformerId`, 160, true)
   if (!isContestStatId(row.moveTypeId) || !isContestStatId(row.contestTypeId) || !isContestEffectId(row.effectId)) fail('contest.invalid-document', field, 'has noncanonical Move identity')
   if (typeof row.centerOfAttention !== 'boolean') fail('contest.invalid-document', `${field}.centerOfAttention`, 'must be boolean')
   const adjacent = array(row.adjacentContestantIds, `${field}.adjacentContestantIds`, 2); adjacent.forEach((id, adjacentIndex) => parseContestantId(id, `${field}.adjacentContestantIds[${adjacentIndex}]`)); if (new Set(adjacent).size !== adjacent.length || adjacent.includes(row.contestantId)) fail('contest.invalid-document', `${field}.adjacentContestantIds`, 'must be unique competitors')
+  const adjacentPerformers = array(row.adjacentPerformerIds, `${field}.adjacentPerformerIds`, 6); adjacentPerformers.forEach((id, adjacentIndex) => safeText(id, `${field}.adjacentPerformerIds[${adjacentIndex}]`, 160, true)); if (new Set(adjacentPerformers).size !== adjacentPerformers.length) fail('contest.invalid-document', `${field}.adjacentPerformerIds`, 'must be unique')
+  const legacyBattleAppeal = battleAppeal && adjacent.length === 0 && adjacentPerformers.length === 0
+  if (battleAppeal && adjacent.length > 1) fail('contest.invalid-document', `${field}.adjacentContestantIds`, 'must identify the one opposing Trainer team')
+  if (battleAppeal && !legacyBattleAppeal && (adjacentPerformers.length < battleContestVariant.contestEffectPolicy.onFieldPokemonMinimumPerTrainer || adjacentPerformers.length > battleContestVariant.contestEffectPolicy.onFieldPokemonMaximumPerTrainer)) fail('contest.invalid-document', `${field}.adjacentPerformerIds`, 'must identify every opposing on-field Pokémon')
+  if (!battleAppeal && adjacentPerformers.length) fail('contest.invalid-document', `${field}.adjacentPerformerIds`, 'is available only to Battle Contest Appeals')
   const spent = record(row.spentDice, `${field}.spentDice`); exact(spent, CONTEST_STAT_IDS, `${field}.spentDice`); let spentTotal = 0; for (const statId of CONTEST_STAT_IDS) spentTotal += safeInteger(spent[statId], `${field}.spentDice.${statId}`, 0, 3); if (spentTotal > contestCatalog.performance.contestDiceSpendMaximumPerAppeal) fail('contest.invalid-document', `${field}.spentDice`, 'exceeds the per-appeal cap')
   const baseMoveDiceMultiplier = safeInteger(row.baseMoveDiceMultiplier, `${field}.baseMoveDiceMultiplier`, 1, 2); if (baseMoveDiceMultiplier !== 1 && baseMoveDiceMultiplier !== 2) fail('contest.invalid-document', `${field}.baseMoveDiceMultiplier`, 'must be one or two')
   const assembled = safeInteger(row.assembledDice, `${field}.assembledDice`, 0, 1_000)
@@ -699,10 +824,12 @@ const validateAppeal = (value: unknown, index: number, journalsById: ReadonlyMap
     const actorOnly = ['big-show','excitement','steady-performance','gamble','reliable','catching-up','good-show','exhausting-act','saving-grace'].includes(String(row.effectId))
     if (adjacentOnly && !adjacent.includes(targetId) || actorOnly && targetId !== row.contestantId || !adjacentOnly && !actorOnly && targetId !== row.contestantId && !adjacent.includes(targetId)) fail('contest.invalid-document', `${path}.contestantId`, 'is not a canonical effect target')
     if (performerId !== null && (appealChange !== 0 || fumbleChange !== 0) || !['sabotage','tease','saving-grace'].includes(String(row.effectId)) && fumbleChange !== 0 || ['sabotage','tease'].includes(String(row.effectId)) && (fumbleChange < 0 || voltageChange !== 0) || row.effectId === 'saving-grace' && (fumbleChange > 0 || voltageChange !== 0 || -fumbleChange > Number(row.voltageBefore))) fail('contest.invalid-document', path, 'has an invalid effect delta kind')
+    if (battleAppeal && voltageChange !== 0 && performerId === null || battleAppeal && ['sabotage','tease'].includes(String(row.effectId)) && performerId !== null) fail('contest.invalid-document', path, 'does not use the reviewed per-Pokémon Voltage and Trainer-team Fumble targets')
     const indirectFumble = row.effectId === 'sabotage' ? accepted.length : row.effectId === 'tease' ? accepted.filter(value => value === 6).length : null
     if (indirectFumble !== null && fumbleChange !== 0 && fumbleChange !== indirectFumble) fail('contest.invalid-document', path, 'does not match the accepted indirect Fumble evidence')
   }
-  if ((row.effectId === 'sabotage' || row.effectId === 'tease') && adjacent.some(targetId => !consequenceKeys.has(`${targetId}:shared:${row.effectId === 'sabotage' ? 'Sabotage' : 'Tease'}`))) fail('contest.invalid-document', `${field}.consequences`, 'must cover every adjacent indirect Fumble target')
+  if (legacyBattleAppeal && consequences.length) fail('contest.invalid-document', `${field}.consequences`, 'legacy pre-effect Battle Appeals cannot retain successor Effect consequences')
+  if (!legacyBattleAppeal && (row.effectId === 'sabotage' || row.effectId === 'tease') && adjacent.some(targetId => !consequenceKeys.has(`${targetId}:shared:${row.effectId === 'sabotage' ? 'Sabotage' : 'Tease'}`))) fail('contest.invalid-document', `${field}.consequences`, 'must cover every adjacent indirect Fumble target')
   {
     const actorRows = consequences.map(raw => raw as Record<string, unknown>).filter(consequence => consequence.contestantId === row.contestantId && (consequence.performerId === null || consequence.performerId === row.performerId))
     let expectedVoltage = Number(row.voltageBefore)
@@ -710,15 +837,63 @@ const validateAppeal = (value: unknown, index: number, journalsById: ReadonlyMap
     expectedVoltage = Math.max(0, Math.min(5, expectedVoltage + actorRows.reduce((sum, consequence) => sum + Number(consequence.voltageDelta), 0)))
     if (row.effectId === 'get-ready' || row.effectId === 'double-time') expectedVoltage = Math.max(0, expectedVoltage - 2)
     if (row.effectId === 'seen-nothing-yet') expectedVoltage = 0
-    if (Number(row.voltageAfter) !== expectedVoltage) fail('contest.invalid-document', `${field}.voltageAfter`, 'does not match canonical effect consequences')
+    if (Number(row.voltageAfter) !== (legacyBattleAppeal ? Number(row.voltageBefore) : expectedVoltage)) fail('contest.invalid-document', `${field}.voltageAfter`, 'does not match canonical effect consequences')
   }
   safeInteger(row.acceptedAt, `${field}.acceptedAt`); const correctionIds = array(row.correctionIds, `${field}.correctionIds`, 100); correctionIds.forEach((id, correctionIndex) => safeText(id, `${field}.correctionIds[${correctionIndex}]`, 240, true)); if (new Set(correctionIds).size !== correctionIds.length) fail('contest.invalid-document', `${field}.correctionIds`, 'must be unique')
   return row as unknown as ContestAppealLedgerEntryV1
 }
 
+const validateBattleVoltageLifecycle = (
+  value: unknown,
+  index: number,
+): BattleContestVoltageLifecycleLedgerEntryV1 => {
+  const field = `battleVoltageLifecycleLedger[${index}]`, row = record(value, field)
+  exact(row, ['lifecycleId','operationId','handoffId','sourceResultId','sourceKind','rule','encounterRound','causalCanonicalId','causalProviderId','recallExceptionId','transitions','acceptedAt'], field)
+  safeText(row.lifecycleId, `${field}.lifecycleId`, 240, true)
+  parseContestOperationId(row.operationId, `${field}.operationId`)
+  const handoffId = safeText(row.handoffId, `${field}.handoffId`, 200, true)
+  if (!handoffId.startsWith('battle-contest-handoff:v1:')) fail('contest.invalid-document', `${field}.handoffId`, 'must identify one Battle handoff')
+  safeText(row.sourceResultId, `${field}.sourceResultId`, 200, true)
+  if (row.sourceKind !== 'knockout' && row.sourceKind !== 'switch') fail('contest.invalid-document', `${field}.sourceKind`, 'must be knockout or switch')
+  if (!BATTLE_CONTEST_VOLTAGE_LIFECYCLE_RULES.includes(row.rule as BattleContestVoltageLifecycleRuleV1)) fail('contest.invalid-document', `${field}.rule`, 'is not a canonical Battle Voltage lifecycle rule')
+  const rule = row.rule as BattleContestVoltageLifecycleRuleV1
+  safeInteger(row.encounterRound, `${field}.encounterRound`, 1, 1_000_000)
+  const causalCanonicalId = row.causalCanonicalId === null ? null : safeText(row.causalCanonicalId, `${field}.causalCanonicalId`, 160, true)
+  const causalProviderId = row.causalProviderId === null ? null : safeText(row.causalProviderId, `${field}.causalProviderId`, 200, true)
+  const recallExceptionId = row.recallExceptionId === null ? null : BATTLE_CONTEST_RECALL_EXCEPTION_IDS.includes(row.recallExceptionId as BattleContestRecallExceptionIdV1)
+    ? row.recallExceptionId as BattleContestRecallExceptionIdV1
+    : fail('contest.invalid-document', `${field}.recallExceptionId`, 'is not a canonical recall exception')
+  if ((row.sourceKind === 'knockout') !== ['attack-knockout','damage-over-time-knockout','other-knockout'].includes(rule)) fail('contest.invalid-document', field, 'source kind does not match its Battle Voltage rule')
+  if (rule === 'attack-knockout' && causalCanonicalId === null) fail('contest.invalid-document', `${field}.causalCanonicalId`, 'attack knockouts require canonical Move ancestry')
+  if ((rule === 'damage-over-time-knockout' || rule === 'other-knockout') && (causalCanonicalId !== null || causalProviderId !== null || recallExceptionId !== null)) fail('contest.invalid-document', field, 'non-attack knockout evidence cannot claim recall ancestry')
+  if (rule === 'recall-exception') {
+    if (recallExceptionId === null) fail('contest.invalid-document', `${field}.recallExceptionId`, 'is required for an exempt recall')
+    if (recallExceptionId === 'Juggler-equivalent-switch') {
+      if (causalProviderId === null || !(battleContestVariant.voltagePolicy.jugglerRecallExceptionProviderIds as readonly string[]).includes(causalProviderId)) fail('contest.invalid-document', `${field}.causalProviderId`, 'is not a reviewed Juggler-equivalent switch provider')
+    } else if (causalCanonicalId !== recallExceptionId) fail('contest.invalid-document', `${field}.causalCanonicalId`, 'does not match the canonical Move recall exception')
+  } else if (recallExceptionId !== null) fail('contest.invalid-document', `${field}.recallExceptionId`, 'is available only to exempt recalls')
+  const transitions = array(row.transitions, `${field}.transitions`, 1)
+  const expectedCount = rule === 'other-knockout' ? 0 : 1
+  if (transitions.length !== expectedCount) fail('contest.invalid-document', `${field}.transitions`, `must contain exactly ${expectedCount} canonical Voltage transition${expectedCount === 1 ? '' : 's'}`)
+  const expectedDelta: -2 | 0 | 2 = rule === 'attack-knockout' || rule === 'damage-over-time-knockout' ? 2 : rule === 'recall' ? -2 : 0
+  for (const [transitionIndex, raw] of transitions.entries()) {
+    const path = `${field}.transitions[${transitionIndex}]`, transition = record(raw, path)
+    exact(transition, ['contestantId','performerId','ruleDelta','voltageBefore','voltageAfter'], path)
+    parseContestantId(transition.contestantId, `${path}.contestantId`)
+    safeText(transition.performerId, `${path}.performerId`, 160, true)
+    if (transition.ruleDelta !== expectedDelta) fail('contest.invalid-document', `${path}.ruleDelta`, 'does not match the canonical lifecycle rule')
+    const before = safeInteger(transition.voltageBefore, `${path}.voltageBefore`, contestCatalog.performance.voltage.minimum, contestCatalog.performance.voltage.maximum)
+    const after = safeInteger(transition.voltageAfter, `${path}.voltageAfter`, contestCatalog.performance.voltage.minimum, contestCatalog.performance.voltage.maximum)
+    const expectedAfter = Math.max(contestCatalog.performance.voltage.minimum, Math.min(contestCatalog.performance.voltage.maximum, before + expectedDelta))
+    if (after !== expectedAfter) fail('contest.invalid-document', `${path}.voltageAfter`, 'does not apply the canonical capped Voltage delta')
+  }
+  safeInteger(row.acceptedAt, `${field}.acceptedAt`)
+  return row as unknown as BattleContestVoltageLifecycleLedgerEntryV1
+}
+
 const validateSettlement = (value: unknown, contestantIds: ReadonlySet<string>): ContestSettlementV1 | null => {
   if (value === null) return null
-  const row = record(value, 'settlement'); exact(row, ['settlementId','status','entries','money','items','attentionItemIds','committedOperationId','committedAt'], 'settlement')
+  const row = record(value, 'settlement'); exact(row, ['settlementId','status','entries','money','items','attentionItemIds','battleCoordination','committedOperationId','committedAt'], 'settlement')
   safeText(row.settlementId, 'settlement.settlementId', 240, true); if (row.status !== 'preview' && row.status !== 'committed') fail('contest.invalid-document', 'settlement.status', 'is invalid')
   const entries = array(row.entries, 'settlement.entries', 5); if (entries.length !== contestantIds.size) fail('contest.invalid-document', 'settlement.entries', 'must cover every enrolled contestant exactly once')
   const entryContestantIds: string[] = [], placements: number[] = []
@@ -726,15 +901,20 @@ const validateSettlement = (value: unknown, contestantIds: ReadonlySet<string>):
     const path = `settlement.entries[${index}]`, entry = record(raw, path); exact(entry, ['contestantId','placement','finalScore','experienceByPokemon','ribbon','trainerSheetSlug'], path)
     const id = parseContestantId(entry.contestantId); if (!contestantIds.has(id)) fail('contest.invalid-document', `${path}.contestantId`, 'is not enrolled'); entryContestantIds.push(id)
     const placement = safeInteger(entry.placement, `${path}.placement`, 1, contestantIds.size); placements.push(placement); safeInteger(entry.finalScore, `${path}.finalScore`, -1_000_000, 1_000_000)
-    const experience = array(entry.experienceByPokemon, `${path}.experienceByPokemon`, 5); if (!experience.length) fail('contest.invalid-document', `${path}.experienceByPokemon`, 'must name at least one enrolled performer')
+    const experience = array(entry.experienceByPokemon, `${path}.experienceByPokemon`, battleContestVariant.rosterPolicy.pokemonPerTrainerMaximum); if (!experience.length) fail('contest.invalid-document', `${path}.experienceByPokemon`, 'must name at least one enrolled performer')
     const pokemonSlugs: string[] = []; for (const [xpIndex, rawXp] of experience.entries()) { const xpPath = `${path}.experienceByPokemon[${xpIndex}]`, xp = record(rawXp, xpPath); exact(xp, ['pokemonSheetSlug','experience'], xpPath); pokemonSlugs.push(safeText(xp.pokemonSheetSlug, `${xpPath}.pokemonSheetSlug`, 160, true)); safeInteger(xp.experience, `${xpPath}.experience`, 0, 1_000_000_000) }; if (new Set(pokemonSlugs).size !== pokemonSlugs.length) fail('contest.invalid-document', `${path}.experienceByPokemon`, 'must contain unique Pokémon')
     if (typeof entry.ribbon !== 'boolean' || entry.ribbon && placement !== 1) fail('contest.invalid-document', `${path}.ribbon`, 'must be a first-place boolean award'); safeText(entry.trainerSheetSlug, `${path}.trainerSheetSlug`, 160, true)
   }
   if (new Set(entryContestantIds).size !== entries.length || new Set(placements).size !== entries.length) fail('contest.invalid-document', 'settlement.entries', 'must have unique contestant and placement identities')
   safeInteger(row.money, 'settlement.money', 0, 1_000_000_000); normalizeContestPrize({ declared: true, money: row.money as number, items: row.items as ContestPrizeItemV1[], notes: '' }); const attentionIds = array(row.attentionItemIds, 'settlement.attentionItemIds', 100); attentionIds.forEach((id, index) => safeText(id, `settlement.attentionItemIds[${index}]`, 240, true)); if (new Set(attentionIds).size !== attentionIds.length) fail('contest.invalid-document', 'settlement.attentionItemIds', 'must be unique')
+  const battleCoordination = row.battleCoordination === null ? null : (() => {
+    try { return parseBattleContestSettlementCoordination(row.battleCoordination) }
+    catch (error) { return fail('contest.invalid-document', 'settlement.battleCoordination', error instanceof Error ? error.message : 'is invalid') }
+  })()
   if (row.committedOperationId !== null) parseContestOperationId(row.committedOperationId, 'settlement.committedOperationId'); if (row.committedAt !== null) safeInteger(row.committedAt, 'settlement.committedAt')
   if ((row.status === 'committed') !== (row.committedOperationId !== null && row.committedAt !== null)) fail('contest.invalid-document', 'settlement', 'commit evidence does not match status')
-  return row as unknown as ContestSettlementV1
+  if (battleCoordination && (row.status === 'committed') !== (battleCoordination.status === 'accepted')) fail('contest.invalid-document', 'settlement.battleCoordination', 'status must match the Contest settlement status')
+  return { ...row, battleCoordination } as unknown as ContestSettlementV1
 }
 
 export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
@@ -743,9 +923,15 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
   // Schema-v1 additive compatibility: Plan 10 introduced these fields before
   // release while persisted development/backup fixtures already existed.
   if (!Object.hasOwn(root, 'pendingInterventionAppealId')) root.pendingInterventionAppealId = null
+  if (!Object.hasOwn(root, 'battleHandoffReceipts')) root.battleHandoffReceipts = []
+  if (!Object.hasOwn(root, 'battleVoltageLifecycleLedger')) root.battleVoltageLifecycleLedger = []
+  if (!Object.hasOwn(root, 'battleRecoveryReceipts')) root.battleRecoveryReceipts = []
+  if (!Object.hasOwn(root, 'battle')) root.battle = root.variantId === 'battle' ? { declaredPokemonPerTrainer: null, roundBudget: null, encounter: null } : null
+  if (root.variantId === 'battle' && root.battle && typeof root.battle === 'object' && !Array.isArray(root.battle) && !Object.hasOwn(root.battle, 'encounter')) (root.battle as Record<string, unknown>).encounter = null
   if (!Object.hasOwn(root, 'participantVariantId')) root.participantVariantId = null
   if (!Object.hasOwn(root, 'participantMethodId')) root.participantMethodId = null
   if (!Object.hasOwn(root, 'sharedContestDicePoolScope')) root.sharedContestDicePoolScope = root.participantVariantId === 'trainer-participant' ? trainerParticipantContestVariant.sharedContestDicePool.scope : null
+  if (root.settlement && typeof root.settlement === 'object' && !Array.isArray(root.settlement) && !Object.hasOwn(root.settlement, 'battleCoordination')) (root.settlement as Record<string, unknown>).battleCoordination = null
   for (const contestantRaw of Array.isArray(root.contestants) ? root.contestants : []) {
     if (!contestantRaw || typeof contestantRaw !== 'object' || Array.isArray(contestantRaw)) continue
     const contestant = contestantRaw as Record<string, unknown>
@@ -757,12 +943,16 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     }
     if (!Object.hasOwn(contestant, 'teamDicePools')) contestant.teamDicePools = emptyContestStatRecord(() => ({ total: 0, remaining: 0, contributors: [] }))
     if (!Object.hasOwn(contestant, 'sharedDiceSpendJournal')) contestant.sharedDiceSpendJournal = []
+    if (!Object.hasOwn(contestant, 'battleTeamDiceSpendJournal')) contestant.battleTeamDiceSpendJournal = []
     for (const performerRaw of Array.isArray(contestant.performers) ? contestant.performers : []) {
       if (performerRaw && typeof performerRaw === 'object' && !Array.isArray(performerRaw) && !Object.hasOwn(performerRaw, 'performerKind')) (performerRaw as Record<string, unknown>).performerKind = 'pokemon'
     }
-    if (!Object.hasOwn(contestant, 'performerVoltages')) contestant.performerVoltages = root.participantVariantId === 'trainer-participant' && root.participantMethodId === 'simultaneous'
-      ? Object.fromEntries(((contestant.performers as Record<string, unknown>[] | undefined) ?? []).map(performer => [String(performer.performerId), 0]))
-      : {}
+    const performerRows = (contestant.performers as Record<string, unknown>[] | undefined) ?? []
+    if (!Object.hasOwn(contestant, 'performerVoltages') || root.variantId === 'battle' && Object.keys((contestant.performerVoltages as Record<string, unknown> | undefined) ?? {}).length === 0) contestant.performerVoltages = root.participantVariantId === 'trainer-participant' && root.participantMethodId === 'simultaneous'
+      ? Object.fromEntries(performerRows.map(performer => [String(performer.performerId), 0]))
+      : root.variantId === 'battle'
+        ? Object.fromEntries(performerRows.filter(performer => performer.performerKind === 'pokemon').map(performer => [String(performer.performerId), 0]))
+        : {}
     const introduction = contestant.introduction as Record<string, unknown> | undefined
     if (introduction && !Object.hasOwn(introduction, 'performerId')) introduction.performerId = root.participantVariantId === 'trainer-participant'
       ? (contestant.performers as Record<string, unknown>[] | undefined)?.find(performer => performer.performerKind === 'trainer')?.performerId ?? null
@@ -772,10 +962,12 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
       if (!Object.hasOwn(contestant.pendingEffects, 'targetPerformerId')) (contestant.pendingEffects as Record<string, unknown>).targetPerformerId = null
     }
   }
+  for (const correctionRaw of Array.isArray(root.corrections) ? root.corrections : []) if (correctionRaw && typeof correctionRaw === 'object' && !Array.isArray(correctionRaw) && !Object.hasOwn(correctionRaw, 'performerId')) (correctionRaw as Record<string, unknown>).performerId = null
   for (const appealRaw of Array.isArray(root.appealLedger) ? root.appealLedger : []) {
     if (!appealRaw || typeof appealRaw !== 'object' || Array.isArray(appealRaw)) continue
     const appeal = appealRaw as Record<string, unknown>
     if (!Object.hasOwn(appeal, 'partnerEffectTargetPerformerId')) appeal.partnerEffectTargetPerformerId = null
+    if (!Object.hasOwn(appeal, 'adjacentPerformerIds')) appeal.adjacentPerformerIds = []
     if (!Object.hasOwn(appeal, 'baseMoveDiceMultiplier')) appeal.baseMoveDiceMultiplier = Array.isArray(appeal.contributors) && (appeal.contributors as Record<string, unknown>[]).some(contributor => String(contributor.explanation ?? '').includes('×2')) ? 2 : 1
     if (!Object.hasOwn(appeal, 'moveTypeId')) {
       const contestant = (root.contestants as Record<string, unknown>[] | undefined)?.find(row => row.contestantId === appeal.contestantId)
@@ -786,18 +978,30 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     }
     for (const consequenceRaw of Array.isArray(appeal.consequences) ? appeal.consequences : []) if (consequenceRaw && typeof consequenceRaw === 'object' && !Array.isArray(consequenceRaw) && !Object.hasOwn(consequenceRaw, 'performerId')) (consequenceRaw as Record<string, unknown>).performerId = null
   }
-  exact(root, ['schemaVersion','contestId','catalogId','revision','createdAt','updatedAt','display','variantId','participantVariantId','participantMethodId','sharedContestDicePoolScope','contestTypeId','stage','paused','round','turnIndex','pendingInterventionAppealId','currentRoundContestTypeId','supercontestTypeByRound','festivalHeat','contestants','policy','gmNotes','diceJournal','appealLedger','corrections','history','settlement','cancellationReason'], 'contest')
+  exact(root, ['schemaVersion','contestId','catalogId','revision','createdAt','updatedAt','display','variantId','battle','participantVariantId','participantMethodId','sharedContestDicePoolScope','contestTypeId','stage','paused','round','turnIndex','pendingInterventionAppealId','currentRoundContestTypeId','supercontestTypeByRound','festivalHeat','contestants','policy','gmNotes','diceJournal','appealLedger','battleHandoffReceipts','battleVoltageLifecycleLedger','battleRecoveryReceipts','corrections','history','settlement','cancellationReason'], 'contest')
   if (root.schemaVersion !== CONTEST_DOCUMENT_SCHEMA_VERSION) fail('contest.schema-unsupported', 'schemaVersion', 'This Contest document version is not supported.')
   parseContestId(root.contestId)
   if (root.catalogId !== contestCatalog.catalogId) fail('contest.catalog-drift', 'catalogId', 'Contest canonical catalog does not match this build.')
-  if (!isContestVariantId(root.variantId) || !contestVariantIsNative(root.variantId)) fail('contest.variant-unsupported', 'variantId', 'Contest variant is unavailable.')
+  if (!isContestVariantId(root.variantId) || !contestVariantAllowsSetup(root.variantId)) fail('contest.variant-unsupported', 'variantId', 'Contest variant is unavailable.')
+  let battle: BattleContestSetupStateV1 | null = null
+  if (root.variantId === 'battle') {
+    const row = record(root.battle, 'battle'); exact(row, ['declaredPokemonPerTrainer','roundBudget','encounter'], 'battle')
+    const declaredPokemonPerTrainer = row.declaredPokemonPerTrainer === null ? null : safeInteger(row.declaredPokemonPerTrainer, 'battle.declaredPokemonPerTrainer', battleContestVariant.rosterPolicy.pokemonPerTrainerMinimum, battleContestVariant.rosterPolicy.pokemonPerTrainerMaximum)
+    const roundBudget = row.roundBudget === null ? null : safeInteger(row.roundBudget, 'battle.roundBudget', battleContestVariant.roundBudget.minimum, battleContestVariant.roundBudget.maximum)
+    if ((declaredPokemonPerTrainer === null) !== (roundBudget === null) || declaredPokemonPerTrainer !== null && roundBudget !== declaredPokemonPerTrainer * 2) fail('contest.invalid-document', 'battle', 'declared roster size and canonical round budget must be present together and agree.')
+    const encounter = row.encounter === null ? null : parseBattleContestEncounterBinding(row.encounter)
+    battle = Object.freeze({ declaredPokemonPerTrainer, roundBudget, encounter })
+    root.battle = battle
+  } else if (root.battle !== null) fail('contest.invalid-document', 'battle', 'Battle setup authority is available only to Battle Contest.')
   if (root.participantVariantId !== null && !isContestParticipantVariantId(root.participantVariantId)) fail('contest.variant-unsupported', 'participantVariantId', 'Contest participant format is unavailable.')
   if (root.participantVariantId === 'trainer-participant' && !contestBaseVariantAllowsTrainerParticipants(root.variantId as ContestVariantId)) fail('contest.variant-unsupported', 'participantVariantId', 'Trainer performers are not permitted by this base Contest variant.')
+  if (root.variantId === 'battle' && root.participantVariantId !== null) fail('contest.variant-unsupported', 'participantVariantId', 'Battle Contest cannot layer a participant format.')
   if (root.participantMethodId !== null && !isContestParticipantMethodId(root.participantMethodId)) fail('contest.variant-unsupported', 'participantMethodId', 'Trainer Participant method is unavailable.')
   if (root.participantVariantId !== 'trainer-participant' && root.participantMethodId !== null) fail('contest.invalid-document', 'participantMethodId', 'Participant method authority requires the Trainer Participant format.')
   if (root.participantVariantId === 'trainer-participant' ? root.sharedContestDicePoolScope !== trainerParticipantContestVariant.sharedContestDicePool.scope : root.sharedContestDicePoolScope !== null) fail('contest.invalid-document', 'sharedContestDicePoolScope', 'Shared Contest dice authority does not match the participant format.')
   if (root.contestTypeId !== null && !isContestStatId(root.contestTypeId)) fail('contest.type-invalid', 'contestTypeId', 'Contest type is not canonical.')
   if (root.variantId === 'supercontest' && root.contestTypeId !== null) fail('contest.type-invalid', 'contestTypeId', 'Supercontest setup cannot retain a fixed Contest type.')
+  if (root.variantId === 'battle' && !isContestStatId(root.contestTypeId)) fail('contest.type-required', 'contestTypeId', 'Battle Contest requires one fixed Contest type at setup.')
   if (!CONTEST_STAGES.includes(root.stage as ContestStage)) fail('contest.stage-invalid', 'stage', 'Contest stage is invalid.')
   const display = record(root.display, 'display'); exact(display, ['name','hallName','description'], 'display'); safeText(display.name, 'display.name', 120, true); safeText(display.hallName, 'display.hallName', 120, true); safeText(display.description, 'display.description', 1_000)
   if (typeof root.paused !== 'boolean') fail('contest.invalid-document', 'paused', 'must be boolean')
@@ -810,6 +1014,10 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
   safeInteger(root.round, 'round', 0, 100)
   safeInteger(root.turnIndex, 'turnIndex', 0, 5)
   const contestants = array(root.contestants, 'contestants', 5).map(validateContestant)
+  for (const contestant of contestants) if (contestant.finalScore !== null) {
+    const expectedFinalScore = root.variantId === 'battle' ? contestant.appeal : contestant.appeal - contestant.fumble
+    if (contestant.finalScore !== expectedFinalScore) fail('contest.invalid-contestant', `${contestant.contestantId}.finalScore`, root.variantId === 'battle' ? 'must equal Battle Appeal points' : 'must equal Appeal minus Fumble')
+  }
   if (new Set(contestants.map(row => row.contestantId)).size !== contestants.length) fail('contest.duplicate-contestant', 'contestants', 'Contestant identities must be unique.')
   if (new Set(contestants.map(row => row.trainerSheetSlug)).size !== contestants.length) fail('contest.duplicate-contestant', 'contestants', 'A Trainer may enroll only once.')
   const pokemonPerformers = contestants.flatMap(row => row.performers.filter(contestPerformerIsPokemon))
@@ -823,20 +1031,58 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     if (trainers.some(performer => performer.trainerSheetSlug !== contestant.trainerSheetSlug || performer.trainerSheetRevision !== contestant.trainerSheetRevision)) fail('contest.invalid-contestant', `${contestant.contestantId}.performers`, 'Trainer performer authority must be the contestant’s exact enrolled Trainer sheet revision.')
     if (requiresTrainer ? contestant.introduction.performerId !== trainers[0]?.performerId : contestant.introduction.performerId !== null) fail('contest.invalid-contestant', `${contestant.contestantId}.introduction.performerId`, requiresTrainer ? 'must identify the exact enrolled Trainer performer' : 'must remain null for an ordinary Contest entry')
     if (!requiresTrainer && contestant.sharedDiceSpendJournal.length !== 0) fail('contest.invalid-contestant', `${contestant.contestantId}.sharedDiceSpendJournal`, 'is available only to Trainer Participant entries')
+    if (root.variantId !== 'battle' && contestant.battleTeamDiceSpendJournal.length !== 0) fail('contest.invalid-contestant', `${contestant.contestantId}.battleTeamDiceSpendJournal`, 'is available only to Battle Contest teams')
     const performerVoltageIds = Object.keys(contestant.performerVoltages).sort(), enrolledPerformerIds = contestant.performers.map(performer => performer.performerId).sort()
     if (root.participantVariantId === 'trainer-participant' && root.participantMethodId === 'simultaneous') {
       if (contestant.voltage !== 0 || performerVoltageIds.join(',') !== enrolledPerformerIds.join(',')) fail('contest.invalid-contestant', `${contestant.contestantId}.performerVoltages`, 'Simultaneous entries require exact per-performer Voltage and a zero shared-entry compatibility value')
-    } else if (performerVoltageIds.length !== 0) fail('contest.invalid-contestant', `${contestant.contestantId}.performerVoltages`, 'Per-performer Voltage authority is available only to the Simultaneous method')
+    } else if (root.variantId === 'battle') {
+      const pokemonPerformerIds = pokemon.map(performer => performer.performerId).sort()
+      if (contestant.voltage !== 0 || performerVoltageIds.join(',') !== pokemonPerformerIds.join(',')) fail('contest.invalid-contestant', `${contestant.contestantId}.performerVoltages`, 'Battle teams require exact per-Pokémon Voltage ledgers and a zero shared-team compatibility value')
+    } else if (performerVoltageIds.length !== 0) fail('contest.invalid-contestant', `${contestant.contestantId}.performerVoltages`, 'Per-performer Voltage authority is available only to Simultaneous or Battle Contest entries')
     const hasTargetedPendingAppeal = contestant.pendingEffects.nextAppealAlignmentSteps > 0 || contestant.pendingEffects.nextAppealBonusDice > 0 || contestant.pendingEffects.nextAppealTypeId !== null || contestant.pendingEffects.fixedAppealPerDie
     if (root.participantVariantId === 'trainer-participant' ? hasTargetedPendingAppeal !== (contestant.pendingEffects.targetPerformerId !== null) : contestant.pendingEffects.targetPerformerId !== null) fail('contest.invalid-contestant', `${contestant.contestantId}.pendingEffects.targetPerformerId`, 'does not match pending Trainer Participant intervention authority')
     if (root.variantId === 'rotation') {
       if (pokemon.length < 3 || pokemon.length > 5) fail('contest.rotation-team-size', `${contestant.contestantId}.performers`, 'Rotation teams require three through five Pokémon performers.')
       if (contestant.rotationOrder.some(index => !contestPerformerIsPokemon(contestant.performers[index]!))) fail('contest.rotation-order', `${contestant.contestantId}.rotationOrder`, 'Rotation order may reference only enrolled Pokémon performers.')
+    } else if (root.variantId === 'battle') {
+      if (pokemon.length < battleContestVariant.rosterPolicy.pokemonPerTrainerMinimum || pokemon.length > battleContestVariant.rosterPolicy.pokemonPerTrainerMaximum) fail('contest.battle-team-size', `${contestant.contestantId}.performers`, 'Battle Contest teams require three through six Pokémon performers.')
+      if (battle?.declaredPokemonPerTrainer !== null && pokemon.length !== battle?.declaredPokemonPerTrainer) fail('contest.battle-team-size', `${contestant.contestantId}.performers`, 'Battle Contest teams must use the same declared roster size.')
+      if (contestant.rotationOrder.length !== 0) fail('contest.invalid-contestant', `${contestant.contestantId}`, 'Battle Contest initiative cannot retain a Contest rotation order.')
+      let battleSpentTotal = 0
+      for (const statId of CONTEST_STAT_IDS) {
+        let expectedRemaining = contestant.teamDicePools[statId].total
+        for (const receipt of contestant.battleTeamDiceSpendJournal) {
+          if (receipt.remainingBefore[statId] !== expectedRemaining) fail('contest.invalid-contestant', `${contestant.contestantId}.battleTeamDiceSpendJournal`, 'must form one contiguous shared team-pool depletion chain')
+          expectedRemaining = receipt.remainingAfter[statId]
+          battleSpentTotal += receipt.spentDice[statId]
+        }
+        if (contestant.teamDicePools[statId].remaining !== expectedRemaining) fail('contest.invalid-contestant', `${contestant.contestantId}.teamDicePools.${statId}.remaining`, 'must reconcile with Battle team spend receipts')
+      }
+      if (contestant.teamContestDiceSpent !== battleSpentTotal) fail('contest.invalid-contestant', `${contestant.contestantId}.teamContestDiceSpent`, 'must equal accepted Battle team-pool spend evidence')
     } else if (pokemon.length !== 1 || contestant.rotationOrder.length !== 0 || contestant.teamContestDiceSpent !== 0 || CONTEST_STAT_IDS.some(statId => contestant.teamDicePools[statId].total !== 0)) fail('contest.invalid-contestant', `${contestant.contestantId}.performers`, 'This base Contest variant requires exactly one Pokémon performer and no Rotation team authority.')
   }
-  if (root.participantVariantId === 'trainer-participant' && !['setup','introduction','performance','settling','cancelled'].includes(String(root.stage))) fail('contest.variant-unsupported', 'stage', 'Trainer Participant settlement mechanics are not active yet.')
+  if (root.participantVariantId === 'trainer-participant' && !CONTEST_STAGES.includes(root.stage as ContestStage)) fail('contest.variant-unsupported', 'stage', 'Trainer Participant Contest stage is invalid.')
   if (root.participantVariantId === 'trainer-participant' && root.stage !== 'setup' && root.stage !== 'cancelled' && root.participantMethodId === null) fail('contest.invalid-document', 'participantMethodId', 'Trainer Participant play requires one locked canonical method.')
-  if (root.stage !== 'setup' && (contestants.length < 3 || contestants.length > 5)) fail('contest.contestant-count', 'contestants', 'A started Contest needs three through five contestants.')
+  if (root.variantId === 'battle') {
+    if (contestants.length > battleContestVariant.trainerCount) fail('contest.contestant-count', 'contestants', 'Battle Contest supports exactly two Trainer teams.')
+    if (contestants.length === 0 ? battle?.declaredPokemonPerTrainer !== null : battle?.declaredPokemonPerTrainer === null) fail('contest.invalid-document', 'battle.declaredPokemonPerTrainer', 'must be set exactly while at least one Battle team is enrolled.')
+    if (root.stage !== 'setup' && root.stage !== 'cancelled' && contestants.length !== battleContestVariant.trainerCount) fail('contest.contestant-count', 'contestants', 'A started Battle Contest needs exactly two Trainer teams.')
+    const binding = battle?.encounter ?? null
+    if (binding) {
+      if (binding.link.contestId !== root.contestId) fail('contest.invalid-document', 'battle.encounter.link.contestId', 'must identify this exact Battle Contest.')
+      for (const [teamIndex, team] of binding.teams.entries()) {
+        const contestant = contestants.find(candidate => candidate.contestantId === team.contestantId)
+          ?? fail('contest.invalid-document', `battle.encounter.teams[${teamIndex}].contestantId`, 'must identify one accepted Contest team.')
+        if (team.trainer.sheetSlug !== contestant.trainerSheetSlug || team.trainer.contestSheetRevision !== contestant.trainerSheetRevision) fail('contest.invalid-document', `battle.encounter.teams[${teamIndex}].trainer`, 'must bind the exact enrolled Trainer snapshot.')
+        const pokemon = contestant.performers.filter(contestPerformerIsPokemon)
+        if (team.pokemon.length !== pokemon.length || team.pokemon.some((member, memberIndex) => {
+          const performer = pokemon[memberIndex]
+          return !performer || member.performerId !== performer.performerId || member.sheetSlug !== performer.pokemonSheetSlug || member.contestSheetRevision !== performer.pokemonSheetRevision
+        })) fail('contest.invalid-document', `battle.encounter.teams[${teamIndex}].pokemon`, 'must preserve the exact accepted roster order and snapshots.')
+      }
+      if (root.stage === 'setup' || root.stage === 'introduction') fail('contest.stage-invalid', 'battle.encounter', 'Encounter binding is available only after Battle Performance begins.')
+    } else if (['performance','settling','completed'].includes(String(root.stage))) fail('contest.stage-invalid', 'battle.encounter', 'Battle Performance requires an immutable linked Encounter authority.')
+  } else if (root.stage !== 'setup' && (contestants.length < 3 || contestants.length > 5)) fail('contest.contestant-count', 'contestants', 'A started Contest needs three through five contestants.')
   const letters = contestants.map(row => row.letter).filter((letter): letter is ContestLetter => letter !== null)
   if (new Set(letters).size !== letters.length) fail('contest.duplicate-letter', 'contestants', 'Contest letters must be unique.')
   if (root.pendingInterventionAppealId !== null) parseContestAppealId(root.pendingInterventionAppealId, 'pendingInterventionAppealId')
@@ -866,7 +1112,7 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     const uglyGenerated = introduction.results.map(value => value === 6 ? 1 : value).filter(value => contestCatalog.introduction.successFaces.includes(value)).length
     if (introduction.generatedDice !== rawGenerated && introduction.generatedDice !== uglyGenerated) fail('contest.invalid-contestant', `${contestant.contestantId}.introduction.generatedDice`, 'does not match accepted results')
     const hasAllocationEvidence = Array.isArray(root.history) && root.history.some(raw => raw && typeof raw === 'object' && !Array.isArray(raw) && (raw as Record<string, unknown>).type === 'introduction-evidence' && (raw as Record<string, unknown>).operationId === introduction.operationId)
-    const introductionPools = root.variantId === 'rotation' ? [contestant.teamDicePools] : contestant.performers.filter(performer => root.participantVariantId !== 'trainer-participant' || contestPerformerIsPokemon(performer)).map(performer => performer.dicePools)
+    const introductionPools = root.variantId === 'rotation' || root.variantId === 'battle' ? [contestant.teamDicePools] : contestant.performers.filter(performer => root.participantVariantId !== 'trainer-participant' || contestPerformerIsPokemon(performer)).map(performer => performer.dicePools)
     for (const pools of introductionPools) {
       const matchingContributions = CONTEST_STAT_IDS.flatMap(statId => pools[statId].contributors.filter(entry => entry.kind === 'introduction' && entry.sourceId === introduction.operationId))
       const contributed = matchingContributions.reduce((dice, entry) => dice + (entry.active ? entry.dice : 0), 0)
@@ -876,9 +1122,10 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     // Early schema-v1 development snapshots tied this bonus to the generated
     // stat. Allocation-evidence snapshots use the canonical selected-Skill rule.
     const matching = root.variantId === 'standard' && (hasAllocationEvidence ? mappedStatId : introduction.generatedStatId) === root.contestTypeId
-    if (introduction.matchingAppealBonus !== (matching ? contestCatalog.introduction.standardMatchingAppealBonus : 0) || introduction.letterTotal !== introduction.generatedDice + (matching ? contestCatalog.introduction.standardMatchingLetterTotalBonus : 0)) fail('contest.invalid-contestant', `${contestant.contestantId}.introduction`, 'matching bonuses do not match canonical policy')
+    const expectedLetterTotal = root.variantId === 'battle' ? 0 : introduction.generatedDice + (matching ? contestCatalog.introduction.standardMatchingLetterTotalBonus : 0)
+    if (introduction.matchingAppealBonus !== (matching ? contestCatalog.introduction.standardMatchingAppealBonus : 0) || introduction.letterTotal !== expectedLetterTotal) fail('contest.invalid-contestant', `${contestant.contestantId}.introduction`, 'matching bonuses do not match canonical policy')
   }
-  const validatesIntroductionLetters = root.variantId !== 'festival' || root.festivalHeat === 1
+  const validatesIntroductionLetters = root.variantId !== 'battle' && (root.variantId !== 'festival' || root.festivalHeat === 1)
   if (validatesIntroductionLetters && contestants.length > 0 && contestants.every(row => row.introduction.status === 'accepted' && row.letter !== null)) {
     const currentIntroductionJournalIndexes = contestants.flatMap(contestant => journals.map((journal, index) => journal.operationId === contestant.introduction.operationId && (journal.purpose === 'introduction' || journal.purpose === 'introduction-bonus') ? index : -1).filter(index => index >= 0))
     const lastIntroductionJournalIndex = Math.max(...currentIntroductionJournalIndexes)
@@ -905,16 +1152,85 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     if (expected.some((contestant, index) => contestant.letter !== CONTEST_LETTERS[index])) fail('contest.invalid-document', 'contestants', 'letters do not match immutable Introduction and tie evidence')
     if (tieJournalCursor !== tieJournals.length) fail('contest.invalid-document', 'diceJournal', 'contains orphan current letter tie evidence')
   }
-  const appeals = array(root.appealLedger, 'appealLedger', 10_000).map((row, index) => validateAppeal(row, index, journalsById)); if (new Set(appeals.map(row => row.appealId)).size !== appeals.length) fail('contest.invalid-document', 'appealLedger', 'appeal identities must be unique')
+  const appeals = array(root.appealLedger, 'appealLedger', 10_000).map((row, index) => validateAppeal(row, index, journalsById, root.variantId === 'battle')); if (new Set(appeals.map(row => row.appealId)).size !== appeals.length) fail('contest.invalid-document', 'appealLedger', 'appeal identities must be unique')
+  const battleHandoffReceipts = array(root.battleHandoffReceipts, 'battleHandoffReceipts', 20_000).map((row, index) => {
+    try { return parseBattleContestHandoffReceipt(row) }
+    catch (error) { return fail('contest.invalid-document', `battleHandoffReceipts[${index}]`, error instanceof Error ? error.message : 'is invalid') }
+  })
+  const battleVoltageLifecycleLedger = array(root.battleVoltageLifecycleLedger, 'battleVoltageLifecycleLedger', 20_000).map(validateBattleVoltageLifecycle)
+  let battleRecoveryReceipts: readonly BattleContestRecoveryReceiptV1[]
+  try { battleRecoveryReceipts = parseBattleContestRecoveryReceipts(root.battleRecoveryReceipts) }
+  catch (error) { return fail('contest.invalid-document', 'battleRecoveryReceipts', error instanceof Error ? error.message : 'is invalid') }
+  if (root.variantId !== 'battle' && (battleHandoffReceipts.length || battleVoltageLifecycleLedger.length || battleRecoveryReceipts.length)) fail('contest.invalid-document', 'battleHandoffReceipts', 'Battle handoff, Voltage lifecycle, and recovery evidence is available only to Battle Contests')
+  for (const [index, receipt] of battleRecoveryReceipts.entries()) {
+    if (!battle?.encounter || receipt.linkId !== battle.encounter.link.linkId) fail('contest.invalid-document', `battleRecoveryReceipts[${index}].linkId`, 'does not identify the immutable linked Battle authority')
+    if (receipt.contestRevisionAfter > Number(root.revision)) fail('contest.invalid-document', `battleRecoveryReceipts[${index}].contestRevisionAfter`, 'cannot exceed current Contest authority')
+  }
+  const latestBattleRecovery = battleRecoveryReceipts.at(-1)
+  if (latestBattleRecovery?.contestRevisionAfter === Number(root.revision) && latestBattleRecovery.contestPausedAfter !== root.paused) fail('contest.invalid-document', 'paused', 'does not match the latest coordinated Battle recovery receipt')
+  for (const identity of ['handoffId','sourceResultId','operationId'] as const) if (new Set(battleHandoffReceipts.map(receipt => receipt[identity])).size !== battleHandoffReceipts.length) fail('contest.invalid-document', 'battleHandoffReceipts', `must use unique ${identity} values`)
+  const battleEndReceipts = battleHandoffReceipts.filter(receipt => receipt.outcome === 'contest-ended')
+  if (battleEndReceipts.length > 1) fail('contest.invalid-document', 'battleHandoffReceipts', 'Battle Contest may retain exactly one terminal end handoff')
+  for (const identity of ['lifecycleId','handoffId','sourceResultId','operationId'] as const) if (new Set(battleVoltageLifecycleLedger.map(entry => entry[identity])).size !== battleVoltageLifecycleLedger.length) fail('contest.invalid-document', 'battleVoltageLifecycleLedger', `must use unique ${identity} values`)
+  for (const [index, entry] of battleVoltageLifecycleLedger.entries()) {
+    const receipt = battleHandoffReceipts.find(candidate => candidate.handoffId === entry.handoffId && candidate.sourceResultId === entry.sourceResultId && candidate.operationId === entry.operationId)
+    if (!receipt || receipt.outcome !== 'lifecycle-applied' || receipt.appealId !== null) fail('contest.invalid-document', `battleVoltageLifecycleLedger[${index}]`, 'does not bind one exact lifecycle-applied handoff receipt')
+    if (index > 0 && entry.acceptedAt < battleVoltageLifecycleLedger[index - 1]!.acceptedAt) fail('contest.invalid-document', `battleVoltageLifecycleLedger[${index}].acceptedAt`, 'must be monotonic')
+    for (const transition of entry.transitions) {
+      const contestant = contestants.find(candidate => candidate.contestantId === transition.contestantId)
+      if (!contestant?.performers.some(performer => contestPerformerIsPokemon(performer) && performer.performerId === transition.performerId)) fail('contest.invalid-document', `battleVoltageLifecycleLedger[${index}].transitions`, 'references a Pokémon outside the immutable Battle enrollment')
+    }
+  }
+  for (const [index, receipt] of battleHandoffReceipts.entries()) {
+    if (receipt.contestRevisionAfter > Number(root.revision) || index > 0 && (receipt.contestRevisionBefore < battleHandoffReceipts[index - 1]!.contestRevisionAfter || receipt.encounterRevision < battleHandoffReceipts[index - 1]!.encounterRevision || receipt.appliedAt < battleHandoffReceipts[index - 1]!.appliedAt)) fail('contest.invalid-document', `battleHandoffReceipts[${index}]`, 'does not follow monotonically accepted Contest, Encounter, and timestamp authority')
+    const appeal = receipt.appealId === null ? null : appeals.find(candidate => candidate.appealId === receipt.appealId)
+    if (receipt.outcome === 'scored-appeal' && (!appeal || appeal.operationId !== receipt.operationId) || receipt.outcome !== 'scored-appeal' && appeal !== null) fail('contest.invalid-document', `battleHandoffReceipts[${index}]`, 'does not bind its exact scored Appeal outcome')
+    const lifecycle = battleVoltageLifecycleLedger.find(entry => entry.handoffId === receipt.handoffId && entry.sourceResultId === receipt.sourceResultId && entry.operationId === receipt.operationId)
+    if ((receipt.outcome === 'lifecycle-applied') !== Boolean(lifecycle)) fail('contest.invalid-document', `battleHandoffReceipts[${index}]`, 'does not bind its exact Battle Voltage lifecycle outcome')
+  }
+  if (root.variantId === 'battle' && appeals.some(appeal => !battleHandoffReceipts.some(receipt => receipt.outcome === 'scored-appeal' && receipt.appealId === appeal.appealId && receipt.operationId === appeal.operationId))) fail('contest.invalid-document', 'appealLedger', 'every Battle Appeal must have one source-bound handoff receipt')
   if (root.pendingInterventionAppealId !== null && !appeals.some(row => row.appealId === root.pendingInterventionAppealId)) fail('contest.invalid-document', 'pendingInterventionAppealId', 'must reference accepted evidence')
   const corrections = array(root.corrections, 'corrections', 10_000).map((raw, index) => {
-    const path = `corrections[${index}]`, row = record(raw, path); exact(row, ['correctionId','operationId','contestantId','kind','reason','numericDelta','statId','priorValue','nextValue','createdAt'], path)
-    safeText(row.correctionId, `${path}.correctionId`, 240, true); parseContestOperationId(row.operationId, `${path}.operationId`); if (row.contestantId !== null && !contestantIds.has(parseContestantId(row.contestantId, `${path}.contestantId`))) fail('contest.invalid-document', `${path}.contestantId`, 'is not enrolled'); if (!['appeal-delta','fumble-delta','voltage-delta','dice-pool-delta','controller-reassignment','cancel-contest'].includes(String(row.kind))) fail('contest.invalid-document', `${path}.kind`, 'is invalid'); safeText(row.reason, `${path}.reason`, 500, true); if (row.numericDelta !== null) safeInteger(row.numericDelta, `${path}.numericDelta`, -99, 99); if (row.statId !== null && !isContestStatId(row.statId)) fail('contest.invalid-document', `${path}.statId`, 'is invalid'); for (const key of ['priorValue','nextValue'] as const) if (row[key] !== null && typeof row[key] !== 'number' && typeof row[key] !== 'string') fail('contest.invalid-document', `${path}.${key}`, 'must be a scalar receipt value'); else if (typeof row[key] === 'number') safeNumber(row[key], `${path}.${key}`, -1_000_000, 1_000_000); else if (typeof row[key] === 'string') safeText(row[key], `${path}.${key}`, 240, true); safeInteger(row.createdAt, `${path}.createdAt`); if (row.kind === 'cancel-contest' && (row.contestantId !== null || row.numericDelta !== null || row.statId !== null) || row.kind === 'controller-reassignment' && (row.contestantId === null || row.numericDelta !== null || row.statId !== null || typeof row.priorValue !== 'string' || typeof row.nextValue !== 'string') || row.kind === 'dice-pool-delta' && (row.contestantId === null || row.numericDelta === null || row.statId === null) || ['appeal-delta','fumble-delta','voltage-delta'].includes(String(row.kind)) && (row.contestantId === null || row.numericDelta === null || row.statId !== null)) fail('contest.invalid-document', path, 'has invalid correction evidence for its kind'); if (['appeal-delta','fumble-delta','voltage-delta'].includes(String(row.kind))) { const priorValue = row.priorValue, nextValue = row.nextValue; if (typeof priorValue !== 'number' || typeof nextValue !== 'number') fail('contest.invalid-document', path, 'numeric correction receipt values are required'); const expected = row.kind === 'voltage-delta' ? Math.max(0, Math.min(5, Number(priorValue) + Number(row.numericDelta))) : Math.max(0, Number(priorValue) + Number(row.numericDelta)); if (nextValue !== expected) fail('contest.invalid-document', path, 'numeric correction receipt does not match its delta') }; return row
-  }); const correctionIds = new Set(corrections.map(row => row.correctionId)); if (correctionIds.size !== corrections.length) fail('contest.invalid-document', 'corrections', 'correction identities must be unique')
+    const path = `corrections[${index}]`, row = record(raw, path)
+    exact(row, ['correctionId','operationId','contestantId','performerId','kind','reason','numericDelta','statId','priorValue','nextValue','createdAt'], path)
+    safeText(row.correctionId, `${path}.correctionId`, 240, true)
+    parseContestOperationId(row.operationId, `${path}.operationId`)
+    const contestantId = row.contestantId === null ? null : parseContestantId(row.contestantId, `${path}.contestantId`)
+    if (contestantId !== null && !contestantIds.has(contestantId)) fail('contest.invalid-document', `${path}.contestantId`, 'is not enrolled')
+    const performerId = row.performerId === null ? null : safeText(row.performerId, `${path}.performerId`, 160, true)
+    if (!['appeal-delta','fumble-delta','voltage-delta','dice-pool-delta','controller-reassignment','cancel-contest'].includes(String(row.kind))) fail('contest.invalid-document', `${path}.kind`, 'is invalid')
+    safeText(row.reason, `${path}.reason`, 500, true)
+    if (row.numericDelta !== null) safeInteger(row.numericDelta, `${path}.numericDelta`, -99, 99)
+    if (row.statId !== null && !isContestStatId(row.statId)) fail('contest.invalid-document', `${path}.statId`, 'is invalid')
+    for (const key of ['priorValue','nextValue'] as const) if (row[key] !== null && typeof row[key] !== 'number' && typeof row[key] !== 'string') fail('contest.invalid-document', `${path}.${key}`, 'must be a scalar receipt value'); else if (typeof row[key] === 'number') safeNumber(row[key], `${path}.${key}`, -1_000_000, 1_000_000); else if (typeof row[key] === 'string') safeText(row[key], `${path}.${key}`, 240, true)
+    safeInteger(row.createdAt, `${path}.createdAt`)
+    if (row.kind === 'cancel-contest' && (contestantId !== null || performerId !== null || row.numericDelta !== null || row.statId !== null)
+      || row.kind === 'controller-reassignment' && (contestantId === null || performerId !== null || row.numericDelta !== null || row.statId !== null || typeof row.priorValue !== 'string' || typeof row.nextValue !== 'string')
+      || row.kind === 'dice-pool-delta' && (contestantId === null || performerId !== null || row.numericDelta === null || row.statId === null)
+      || ['appeal-delta','fumble-delta'].includes(String(row.kind)) && (contestantId === null || performerId !== null || row.numericDelta === null || row.statId !== null)
+      || row.kind === 'voltage-delta' && (contestantId === null || row.numericDelta === null || row.statId !== null || (root.variantId === 'battle') !== (performerId !== null))) fail('contest.invalid-document', path, 'has invalid correction evidence for its kind')
+    if (root.variantId === 'battle' && performerId !== null) {
+      const contestant = contestants.find(candidate => candidate.contestantId === contestantId)
+      if (!contestant?.performers.some(performer => contestPerformerIsPokemon(performer) && performer.performerId === performerId)) fail('contest.invalid-document', `${path}.performerId`, 'must identify one enrolled Pokémon on the corrected Trainer team')
+    }
+    if (['appeal-delta','fumble-delta','voltage-delta'].includes(String(row.kind))) {
+      const priorValue = row.priorValue, nextValue = row.nextValue
+      if (typeof priorValue !== 'number' || typeof nextValue !== 'number') fail('contest.invalid-document', path, 'numeric correction receipt values are required')
+      const expected = row.kind === 'voltage-delta' ? Math.max(0, Math.min(5, Number(priorValue) + Number(row.numericDelta))) : Math.max(0, Number(priorValue) + Number(row.numericDelta))
+      if (nextValue !== expected) fail('contest.invalid-document', path, 'numeric correction receipt does not match its delta')
+    }
+    return row as unknown as ContestCorrectionReceiptV1
+  })
+  const correctionIds = new Set(corrections.map(row => row.correctionId)); if (correctionIds.size !== corrections.length) fail('contest.invalid-document', 'corrections', 'correction identities must be unique')
   for (const [index, appeal] of appeals.entries()) {
     const contestant = contestants.find(row => row.contestantId === appeal.contestantId), performer = contestant?.performers.find(row => row.performerId === appeal.performerId)
     const option = performer?.moves.find(row => row.optionId === appeal.moveOptionId)
     if (!contestant || !performer || !option || !option.available || option.label !== appeal.moveLabel || option.typeId !== appeal.moveTypeId || option.effectId !== appeal.effectId) fail('contest.invalid-document', `appealLedger[${index}]`, 'references an unavailable or mismatched enrolled option')
+    if (root.variantId === 'battle' && appeal.adjacentPerformerIds.length > 0) {
+      const opposingContestants = contestants.filter(candidate => candidate.contestantId !== appeal.contestantId)
+      const opposing = opposingContestants.length === 1 ? opposingContestants[0]! : null
+      if (!contestPerformerIsPokemon(performer!) || !opposing || appeal.adjacentContestantIds.length !== 1 || appeal.adjacentContestantIds[0] !== opposing.contestantId || appeal.adjacentPerformerIds.some(performerId => !opposing.performers.some(candidate => contestPerformerIsPokemon(candidate) && candidate.performerId === performerId))) fail('contest.invalid-document', `appealLedger[${index}].adjacentPerformerIds`, 'does not bind every target to an enrolled opposing-team Pokémon')
+    }
     if (appeal.partnerEffectTargetPerformerId !== null) {
       const acceptedContestant = contestant!
       const pairedPokemon = root.variantId === 'rotation' ? acceptedContestant.performers[acceptedContestant.rotationOrder[appeal.round - 1] ?? -1] : acceptedContestant.performers.find(contestPerformerIsPokemon)
@@ -931,12 +1247,19 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
         const targetTrainer = target.performers.find(contestPerformerIsTrainer)
         const legalVoltageTargets = consequence.contestantId === appeal.contestantId ? [appeal.performerId, appeal.partnerEffectTargetPerformerId] : [targetTrainer?.performerId, targetPokemon?.performerId]
         if (consequence.performerId === null || !legalVoltageTargets.includes(consequence.performerId)) fail('contest.invalid-document', `appealLedger[${index}].consequences`, 'does not bind Simultaneous Voltage to the exact acting or adjacent paired performer')
-      } else if (consequence.performerId !== null) fail('contest.invalid-document', `appealLedger[${index}].consequences`, 'can bind a performer only for nonzero Simultaneous Voltage')
+      } else if (root.variantId === 'battle' && consequence.voltageDelta !== 0) {
+        if (consequence.performerId === null || !target.performers.some(candidate => contestPerformerIsPokemon(candidate) && candidate.performerId === consequence.performerId)) fail('contest.invalid-document', `appealLedger[${index}].consequences`, 'does not bind Battle Voltage to one exact enrolled Pokémon')
+      } else if (consequence.performerId !== null) fail('contest.invalid-document', `appealLedger[${index}].consequences`, 'can bind a performer only for nonzero performer-scoped Voltage')
     }
     const firstJournalIndex = journals.findIndex(journal => journal.journalId === appeal.journalIds[0])
     const precedingType = [...journals.slice(0, firstJournalIndex)].reverse().find(journal => journal.purpose === 'supercontest-type')
     const expectedType = rollsRoundTypes ? precedingType ? ({ 1: 'cool', 2: 'tough', 3: 'beauty', 4: 'smart', 5: 'cute' } as const)[precedingType.results.at(-1)! as 1|2|3|4|5] : null : root.contestTypeId
     if (appeal.contestTypeId !== expectedType) fail('contest.invalid-document', `appealLedger[${index}].contestTypeId`, 'does not match immutable round-type authority')
+  }
+  if (root.variantId === 'battle') for (const [index, appeal] of appeals.entries()) if (appeal.adjacentPerformerIds.length > 0) {
+    const previousPerformerAppeal = [...appeals.slice(0, index)].reverse().find(candidate => candidate.performerId === appeal.performerId)
+    const expectedMultiplier = previousPerformerAppeal?.effectId === 'get-ready' && previousPerformerAppeal.round === appeal.round - 1 ? 2 : 1
+    if (appeal.baseMoveDiceMultiplier !== expectedMultiplier) fail('contest.invalid-document', `appealLedger[${index}].baseMoveDiceMultiplier`, 'does not match same-Pokémon Get Ready authority from the previous Encounter round')
   }
   if (root.participantVariantId === 'trainer-participant' && root.participantMethodId !== null) {
     const previousKindByContestant = new Map<string, ContestParticipantPerformerKind>(), acceptedKindsByCursor = new Map<string, ContestParticipantPerformerKind[]>()
@@ -977,6 +1300,13 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
       }
       if (contestantAppeals.some(appeal => CONTEST_STAT_IDS.some(statId => appeal.spentDice[statId] > 0) && !contestant.sharedDiceSpendJournal.some(receipt => receipt.operationId === appeal.operationId))) fail('contest.invalid-contestant', `${contestant.contestantId}.sharedDiceSpendJournal`, 'must cover every accepted shared-pool spend exactly once')
     }
+    if (root.variantId === 'battle') {
+      for (const receipt of contestant.battleTeamDiceSpendJournal) {
+        const appeal = contestantAppeals.find(candidate => candidate.operationId === receipt.operationId)
+        if (!appeal || appeal.performerId !== receipt.performerId || CONTEST_STAT_IDS.some(statId => appeal.spentDice[statId] !== receipt.spentDice[statId])) fail('contest.invalid-contestant', `${contestant.contestantId}.battleTeamDiceSpendJournal`, 'must match one source-bound Battle Appeal by the exact enrolled Pokémon and spend')
+      }
+      if (contestantAppeals.some(appeal => CONTEST_STAT_IDS.some(statId => appeal.spentDice[statId] > 0) && !contestant.battleTeamDiceSpendJournal.some(receipt => receipt.operationId === appeal.operationId))) fail('contest.invalid-contestant', `${contestant.contestantId}.battleTeamDiceSpendJournal`, 'must cover every accepted Battle Appeal team-pool spend exactly once')
+    }
   }
   if (root.variantId === 'supercontest') {
     const expectedTypeRolls = ['settling','completed'].includes(String(root.stage)) ? contestants.length : root.stage === 'performance' ? Number(root.round) : 0
@@ -989,7 +1319,7 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     expectedTypeRolls += ['settling','completed'].includes(String(root.stage)) ? currentActiveCount : root.stage === 'performance' ? Number(root.round) : 0
     if (typeJournals.length !== expectedTypeRolls) fail('contest.invalid-document', 'supercontestTypeByRound', 'does not cover every opened Festival round exactly once')
   }
-  if (root.variantId !== 'festival' && appeals.length) {
+  if (root.variantId !== 'festival' && root.variantId !== 'battle' && appeals.length) {
     const chart = contestCatalog.charts[String(contestants.length) as '3'|'4'|'5']
     const contestantsByLetter = new Map(contestants.map(contestant => [contestant.letter, contestant]))
     const turnCounts = new Map<string, number>(), appealsPerTurn = root.participantVariantId === 'trainer-participant' && root.participantMethodId === 'simultaneous' ? 2 : 1
@@ -1063,7 +1393,21 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     }
   }
   const history = array(root.history, 'history', 20_000) as ContestHistoryEntryV1[]
-  const historyIds = new Set<string>(); for (const [index, raw] of history.entries()) { const path = `history[${index}]`, row = record(raw, path); exact(row, ['sequence','eventId','type','visibility','contestantId','headline','detail','operationId','createdAt'], path); if (row.sequence !== index + 1) fail('contest.history-order', 'history', 'History sequence must be contiguous.'); const eventId = safeText(row.eventId, `${path}.eventId`, 240, true); if (historyIds.has(eventId)) fail('contest.history-order', `${path}.eventId`, 'must be unique'); historyIds.add(eventId); safeText(row.type, `${path}.type`, 120, true); if (!['public','owner','gm','diagnostic'].includes(String(row.visibility))) fail('contest.invalid-document', `${path}.visibility`, 'is invalid'); if (row.contestantId !== null && !contestantIds.has(parseContestantId(row.contestantId, `${path}.contestantId`))) fail('contest.invalid-document', `${path}.contestantId`, 'is not enrolled'); safeText(row.headline, `${path}.headline`, 500, true); safeText(row.detail, `${path}.detail`, 4_000); if (row.operationId !== null) parseContestOperationId(row.operationId, `${path}.operationId`); safeInteger(row.createdAt, `${path}.createdAt`) }
+  const battleEndHistory = history.filter(row => row.type === 'battle-ended-round-budget' || row.type === 'battle-ended-all-pokemon-ko')
+  if (battleEndHistory.length !== battleEndReceipts.length
+    || battleEndHistory.some(row => !battleEndReceipts.some(receipt => receipt.operationId === row.operationId && receipt.appliedAt === row.createdAt))) {
+    fail('contest.invalid-document', 'history', 'Battle end history must bind the exact contest-ended handoff receipt')
+  }
+  const battleRecoveryHistory = history.filter(row => row.type === 'battle-recovery-coordinated')
+  if (battleRecoveryHistory.length !== battleRecoveryReceipts.length
+    || battleRecoveryHistory.some(row => !battleRecoveryReceipts.some(receipt => receipt.operationId === row.operationId && receipt.createdAt === row.createdAt))) fail('contest.invalid-document', 'history', 'Battle recovery history must bind every matching cross-document receipt exactly once')
+  for (const receipt of battleRecoveryReceipts) {
+    const correction = corrections.find(candidate => candidate.operationId === receipt.operationId)
+    if (receipt.kind === 'correction' && (!correction || correction.kind !== receipt.correctionKind || correction.performerId !== receipt.correctionTargetPerformerId)
+      || receipt.kind === 'cancel' && receipt.correctionKind === 'cancel-contest' && correction?.kind !== 'cancel-contest'
+      || (receipt.kind === 'pause' || receipt.kind === 'resume') && correction) fail('contest.invalid-document', receipt.receiptId, 'does not bind its exact local correction or lifecycle operation')
+  }
+  const historyIds = new Set<string>(); for (const [index, raw] of history.entries()) { const path = `history[${index}]`, row = record(raw, path); exact(row, ['sequence','eventId','type','visibility','contestantId','headline','detail','operationId','createdAt'], path); if (row.sequence !== index + 1) fail('contest.history-order', 'history', 'History sequence must be contiguous.'); const eventId = safeText(row.eventId, `${path}.eventId`, 240, true); if (historyIds.has(eventId)) fail('contest.history-order', `${path}.eventId`, 'must be unique'); historyIds.add(eventId); safeText(row.type, `${path}.type`, 120, true); if (!['public','owner','gm','diagnostic'].includes(String(row.visibility))) fail('contest.invalid-document', `${path}.visibility`, 'is invalid'); if (row.contestantId !== null) parseContestantId(row.contestantId, `${path}.contestantId`); safeText(row.headline, `${path}.headline`, 500, true); safeText(row.detail, `${path}.detail`, 4_000); if (row.operationId !== null) parseContestOperationId(row.operationId, `${path}.operationId`); safeInteger(row.createdAt, `${path}.createdAt`) }
   const lastIntroductionRestart = [...history].reverse().find(row => row.type === 'introduction-restarted')?.sequence ?? 0
   const operationSequence = new Map(history.flatMap(row => row.operationId === null ? [] : [[row.operationId, row.sequence] as const]))
   for (const contestant of contestants) {
@@ -1109,12 +1453,138 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     for (const contestant of contestants) if (fumbleByContestant.get(contestant.contestantId) !== contestant.fumble) fail('contest.invalid-contestant', `${contestant.contestantId}.fumble`, 'does not reconcile with accepted Festival heat evidence')
   }
   const voltageCorrections = corrections.filter(correction => correction.kind === 'voltage-delta')
-  if (root.participantVariantId === 'trainer-participant' && root.participantMethodId === 'simultaneous') {
-    if (voltageCorrections.length) fail('contest.invalid-document', 'corrections', 'Simultaneous Voltage corrections require unavailable exact-performer correction authority')
-    const voltageByPerformer = new Map<string, number>(contestants.flatMap(contestant => contestant.performers.map(performer => [`${contestant.contestantId}:${performer.performerId}`, 0] as const)))
+  const performerScopedVoltage = root.participantVariantId === 'trainer-participant' && root.participantMethodId === 'simultaneous'
+  if (root.variantId === 'battle') {
+    const voltageByPerformer = new Map<string, number>(contestants.flatMap(contestant => contestant.performers.filter(contestPerformerIsPokemon).map(performer => [`${contestant.contestantId}:${performer.performerId}`, 0] as const)))
+    const fumbleByContestant = new Map(contestants.map(contestant => [contestant.contestantId, 0]))
+    const consequenceIdentity = (row: ContestAppealLedgerEntryV1['consequences'][number]): string => [row.contestantId, row.performerId ?? 'shared', row.reason, row.appealDelta, row.fumbleDelta, row.voltageDelta].join('|')
+    const orderedStateCorrections = corrections.filter(correction => correction.kind === 'fumble-delta' || correction.kind === 'voltage-delta')
+      .sort((left, right) => (operationSequence.get(left.operationId) ?? Number.MAX_SAFE_INTEGER) - (operationSequence.get(right.operationId) ?? Number.MAX_SAFE_INTEGER))
+    let correctionCursor = 0
+    const applyCorrectionsBefore = (sequence: number): void => {
+      while (correctionCursor < orderedStateCorrections.length && (operationSequence.get(orderedStateCorrections[correctionCursor]!.operationId) ?? Number.MAX_SAFE_INTEGER) < sequence) {
+        const correction = orderedStateCorrections[correctionCursor++]!
+        const contestantId = correction.contestantId
+        if (!contestantId) return fail('contest.invalid-document', correction.correctionId, 'Battle state correction has no Trainer team')
+        const targetContestantId = contestantId as string
+        if (correction.kind === 'fumble-delta') {
+          const current = fumbleByContestant.get(targetContestantId) ?? fail('contest.invalid-document', correction.correctionId, 'Battle Fumble correction references a missing Trainer team')
+          if (current !== correction.priorValue) fail('contest.invalid-document', correction.correctionId, 'Battle Fumble correction prior value does not match ordered authority')
+          fumbleByContestant.set(targetContestantId, Number(correction.nextValue))
+        } else {
+          const performerId = correction.performerId ?? fail('contest.invalid-document', correction.correctionId, 'Battle Voltage correction has no exact Pokémon target')
+          const key = `${targetContestantId}:${performerId}`
+          const current = voltageByPerformer.get(key) ?? fail('contest.invalid-document', correction.correctionId, 'Battle Voltage correction references a missing Pokémon')
+          if (current !== correction.priorValue) fail('contest.invalid-document', correction.correctionId, 'Battle Voltage correction prior value does not match ordered authority')
+          voltageByPerformer.set(key, Number(correction.nextValue))
+        }
+      }
+    }
+    let battleReceiptCursor = 0
+    const applyLifecycleReceipt = (receipt: BattleContestHandoffReceiptV1): void => {
+      const entry = battleVoltageLifecycleLedger.find(candidate => candidate.operationId === receipt.operationId && candidate.handoffId === receipt.handoffId)
+        ?? fail('contest.invalid-document', receipt.operationId, 'lifecycle receipt has no Battle Voltage evidence')
+      if (history.filter(event => event.type === 'battle-voltage-lifecycle-applied' && event.operationId === entry.operationId).length !== 1) fail('contest.invalid-document', entry.lifecycleId, 'must retain one exact Battle Voltage lifecycle history event')
+      for (const transition of entry.transitions) {
+        const key = `${transition.contestantId}:${transition.performerId}`
+        const current = voltageByPerformer.get(key) ?? fail('contest.invalid-document', entry.lifecycleId, 'Battle Voltage transition references missing Pokémon state')
+        if (current !== transition.voltageBefore) fail('contest.invalid-document', entry.lifecycleId, 'Battle Voltage lifecycle prior value does not match ordered source authority')
+        voltageByPerformer.set(key, transition.voltageAfter)
+      }
+    }
+    const consumeReceiptsBeforeAppeal = (appeal: ContestAppealLedgerEntryV1): void => {
+      while (battleReceiptCursor < battleHandoffReceipts.length) {
+        const receipt = battleHandoffReceipts[battleReceiptCursor++]!
+        applyCorrectionsBefore(operationSequence.get(receipt.operationId) ?? Number.MAX_SAFE_INTEGER)
+        if (receipt.outcome === 'canonical-exclusion') continue
+        if (receipt.outcome === 'lifecycle-applied') { applyLifecycleReceipt(receipt); continue }
+        if (receipt.appealId !== appeal.appealId || receipt.operationId !== appeal.operationId) fail('contest.invalid-document', appeal.appealId, 'does not follow ordered Battle handoff authority')
+        return
+      }
+      fail('contest.invalid-document', appeal.appealId, 'has no ordered Battle handoff receipt')
+    }
+    for (const [index, appeal] of appeals.entries()) {
+      consumeReceiptsBeforeAppeal(appeal)
+      if (history.filter(event => event.type === 'battle-appeal-accepted' && event.operationId === appeal.operationId).length !== 1) fail('contest.invalid-document', appeal.appealId, 'must retain one exact Battle Appeal history event')
+      const actorKey = `${appeal.contestantId}:${appeal.performerId}`
+      const actorVoltage = voltageByPerformer.get(actorKey) ?? fail('contest.invalid-document', appeal.appealId, 'acting Battle Pokémon has no Voltage authority')
+      if (actorVoltage !== appeal.voltageBefore) fail('contest.invalid-document', appeal.appealId, 'start-of-turn Battle Pokémon Voltage does not match accepted history')
+      const fumbleBefore = fumbleByContestant.get(appeal.contestantId) ?? 0
+      if (appeal.adjacentPerformerIds.length > 0) {
+        const contestant = contestants.find(candidate => candidate.contestantId === appeal.contestantId)!
+        const performer = contestant.performers.find(candidate => candidate.performerId === appeal.performerId && contestPerformerIsPokemon(candidate))!
+        const option = performer.moves.find(candidate => candidate.optionId === appeal.moveOptionId)!
+        const adjacentTargets = appeal.adjacentPerformerIds.map(performerId => {
+          const owner = contestants.find(candidate => candidate.performers.some(target => target.performerId === performerId && contestPerformerIsPokemon(target))) ?? fail('contest.invalid-document', appeal.appealId, 'adjacent Battle performer is unavailable')
+          const voltage = voltageByPerformer.get(`${owner.contestantId}:${performerId}`) ?? fail('contest.invalid-document', appeal.appealId, 'adjacent Battle performer has no Voltage authority')
+          return { contestantId: owner.contestantId, performerId, voltage }
+        })
+        const previousPerformerAppeal = [...appeals.slice(0, index)].reverse().find(candidate => candidate.performerId === appeal.performerId)
+        const spentTotal = CONTEST_STAT_IDS.reduce((sum, statId) => sum + appeal.spentDice[statId], 0)
+        const assembly = assembleContestAppeal({
+          effectId: appeal.effectId,
+          moveTypeId: appeal.moveTypeId,
+          contestTypeId: appeal.contestTypeId,
+          spentDice: spentTotal,
+          startingVoltage: actorVoltage,
+          adjacentVoltages: adjacentTargets.map(target => target.voltage),
+          repeatedMove: previousPerformerAppeal?.moveOptionId === appeal.moveOptionId,
+          baseMoveDiceMultiplier: appeal.baseMoveDiceMultiplier,
+          alignmentSteps: 0,
+          sonic: option.tags.includes('sonic'),
+          voiceLessonsActive: performer.providerIds.includes('feature:Voice Lessons'),
+          acceptedInterventionBonusDice: 0,
+        })
+        const baseContributor = appeal.contributors.find(row => row.id === `effect:${appeal.effectId}`)
+        const typeContributor = appeal.contributors.find(row => row.id === `type:${appeal.moveTypeId}:${appeal.contestTypeId}`)
+        const voiceContributor = appeal.contributors.find(row => row.id === 'feature:Voice Lessons')
+        if (assembly.assembledDice !== appeal.assembledDice || baseContributor?.dice !== assembly.baseDice || typeContributor?.dice !== assembly.relationship.dice || Boolean(voiceContributor) !== (assembly.voiceDice > 0)) fail('contest.invalid-document', appeal.appealId, 'does not match canonical Battle Contest Effect Appeal assembly')
+        const savingGraceRemoved = appeal.effectId === 'saving-grace' ? Math.min(actorVoltage, fumbleBefore) : 0
+        const effectStartingVoltage = appeal.effectId === 'saving-grace' ? Math.min(contestCatalog.performance.voltage.maximum, actorVoltage + (savingGraceRemoved <= 2 ? 1 : 0)) : actorVoltage
+        const resolved = resolveContestEffectConsequences({
+          effectId: appeal.effectId,
+          results: appeal.acceptedResults,
+          actor: { contestantId: appeal.contestantId, performerId: appeal.performerId, voltage: effectStartingVoltage },
+          attentionRecipient: null,
+          adjacentVoltageTargets: adjacentTargets,
+          adjacentFumbleTargets: appeal.adjacentContestantIds.map(contestantId => ({
+            contestantId,
+            protected: appeal.adjacentPerformerIds.every(performerId => appeals.slice(0, index).some(candidate => candidate.round === appeal.round && candidate.performerId === performerId && candidate.effectId === 'saving-grace')),
+          })),
+          repeatedMove: previousPerformerAppeal?.moveOptionId === appeal.moveOptionId,
+          matchingType: assembly.relationship.relationship === 'matching',
+        })
+        const expectedConsequences: ContestAppealLedgerEntryV1['consequences'][number][] = resolved.consequences.map(row => ({ ...row }))
+        if (savingGraceRemoved) expectedConsequences.push({ contestantId: appeal.contestantId, performerId: null, appealDelta: 0, fumbleDelta: -savingGraceRemoved, voltageDelta: 0, reason: 'Saving Grace' })
+        if (expectedConsequences.map(consequenceIdentity).sort().join('||') !== appeal.consequences.map(consequenceIdentity).sort().join('||')) fail('contest.invalid-document', appeal.appealId, 'does not match canonical Battle Contest Effect consequences')
+        if (terminalContestEffectVoltage(appeal.effectId, resolved.actorVoltage) !== appeal.voltageAfter) fail('contest.invalid-document', appeal.appealId, 'does not match canonical acting-Pokémon Voltage transition')
+      }
+      voltageByPerformer.set(actorKey, appeal.voltageAfter)
+      for (const consequence of appeal.consequences) if (consequence.performerId !== null && consequence.voltageDelta !== 0 && (consequence.contestantId !== appeal.contestantId || consequence.performerId !== appeal.performerId)) {
+        const targetKey = `${consequence.contestantId}:${consequence.performerId}`, currentVoltage = voltageByPerformer.get(targetKey) ?? fail('contest.invalid-document', appeal.appealId, 'Voltage consequence references missing Battle Pokémon state')
+        voltageByPerformer.set(targetKey, Math.max(0, Math.min(contestCatalog.performance.voltage.maximum, currentVoltage + consequence.voltageDelta)))
+      }
+      fumbleByContestant.set(appeal.contestantId, fumbleBefore + appeal.fumbleDelta)
+      for (const consequence of appeal.consequences) fumbleByContestant.set(consequence.contestantId, Math.max(0, (fumbleByContestant.get(consequence.contestantId) ?? 0) + consequence.fumbleDelta))
+    }
+    while (battleReceiptCursor < battleHandoffReceipts.length) {
+      const receipt = battleHandoffReceipts[battleReceiptCursor++]!
+      applyCorrectionsBefore(operationSequence.get(receipt.operationId) ?? Number.MAX_SAFE_INTEGER)
+      if (receipt.outcome === 'lifecycle-applied') applyLifecycleReceipt(receipt)
+      else if (receipt.outcome === 'scored-appeal') fail('contest.invalid-document', String(receipt.appealId), 'has no ordered Battle Appeal evidence')
+    }
+    applyCorrectionsBefore(Number.POSITIVE_INFINITY)
+    for (const contestant of contestants) {
+      if (fumbleByContestant.get(contestant.contestantId) !== contestant.fumble) fail('contest.invalid-contestant', `${contestant.contestantId}.fumble`, 'does not reconcile with ordered Battle Effect evidence')
+      for (const performer of contestant.performers.filter(contestPerformerIsPokemon)) if (voltageByPerformer.get(`${contestant.contestantId}:${performer.performerId}`) !== contestant.performerVoltages[performer.performerId]) fail('contest.invalid-contestant', `${contestant.contestantId}.performerVoltages.${performer.performerId}`, 'does not reconcile with accepted Battle Pokémon Appeal, Effect, and lifecycle evidence')
+    }
+  } else if (performerScopedVoltage) {
+    if (voltageCorrections.length) fail('contest.invalid-document', 'corrections', 'Performer-scoped Voltage corrections require unavailable exact-performer correction authority')
+    const voltagePerformers = (contestant: ContestantStateV1): readonly ContestPerformerSnapshotV1[] => root.variantId === 'battle' ? contestant.performers.filter(contestPerformerIsPokemon) : contestant.performers
+    const voltageByPerformer = new Map<string, number>(contestants.flatMap(contestant => voltagePerformers(contestant).map(performer => [`${contestant.contestantId}:${performer.performerId}`, 0] as const)))
     const appealsByOperation = new Map(appeals.map(appeal => [appeal.operationId, appeal])), eliminated = new Set<string>()
     for (const event of history) {
-      if (event.type === 'appeal-accepted' && event.operationId) {
+      if ((event.type === 'appeal-accepted' || event.type === 'battle-appeal-accepted') && event.operationId) {
         const appeal = appealsByOperation.get(event.operationId)
         if (appeal) {
           const actorKey = `${appeal.contestantId}:${appeal.performerId}`
@@ -1131,7 +1601,7 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
         for (const contestant of contestants) if (!eliminated.has(contestant.contestantId)) for (const performer of contestant.performers) voltageByPerformer.set(`${contestant.contestantId}:${performer.performerId}`, 0)
       }
     }
-    for (const contestant of contestants) for (const performer of contestant.performers) if (voltageByPerformer.get(`${contestant.contestantId}:${performer.performerId}`) !== contestant.performerVoltages[performer.performerId]) fail('contest.invalid-contestant', `${contestant.contestantId}.performerVoltages.${performer.performerId}`, 'does not reconcile with accepted performer appeal, effect, and Festival evidence')
+    for (const contestant of contestants) for (const performer of voltagePerformers(contestant)) if (voltageByPerformer.get(`${contestant.contestantId}:${performer.performerId}`) !== contestant.performerVoltages[performer.performerId]) fail('contest.invalid-contestant', `${contestant.contestantId}.performerVoltages.${performer.performerId}`, 'does not reconcile with accepted performer appeal and effect evidence')
   } else {
     const hasCorrectionInsideRerollWindow = appeals.some(appeal => {
       const acceptedSequence = history.find(row => row.type === 'appeal-accepted' && row.operationId === appeal.operationId)?.sequence ?? 0
@@ -1170,7 +1640,6 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     }
   }
   const settlement = validateSettlement(root.settlement, contestantIds)
-  if (root.participantVariantId === 'trainer-participant' && settlement !== null) fail('contest.variant-unsupported', 'settlement', 'Trainer Participant reward settlement authority is not active yet.')
   if (settlement) {
     if (settlement.money !== (policy.prize as ContestPolicyV1['prize']).money || JSON.stringify(settlement.items) !== JSON.stringify((policy.prize as ContestPolicyV1['prize']).items)) fail('contest.invalid-document', 'settlement', 'rewards do not match the locked declared prize')
     for (const [index, entry] of settlement.entries.entries()) {
@@ -1183,11 +1652,31 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
       const individual = pokemon.map(performer => Math.ceil(performer.level * units * Number(policy.significanceMultiplier)))
       const expectedExperience = new Map<string, number>()
       if (root.variantId === 'rotation') { const total = individual.reduce((sum, value) => sum + value, 0), base = Math.floor(total / pokemon.length); let remainder = total % pokemon.length; pokemon.forEach(performer => expectedExperience.set(performer.pokemonSheetSlug, base + (remainder-- > 0 ? 1 : 0))) }
+      else if (root.variantId === 'battle') pokemon.forEach((performer, performerIndex) => expectedExperience.set(performer.pokemonSheetSlug, individual[performerIndex]!))
       else expectedExperience.set(pokemon[0]!.pokemonSheetSlug, individual[0]!)
       if (entry.experienceByPokemon.some(row => expectedExperience.get(row.pokemonSheetSlug) !== row.experience)) fail('contest.invalid-document', `settlement.entries[${index}].experienceByPokemon`, 'does not match canonical Contest experience')
     }
     const expectedAttention = settlement.entries.flatMap(entry => entry.experienceByPokemon.filter(row => row.experience > 0).map(row => `contest-level-check:${root.contestId}:${row.pokemonSheetSlug}`))
     if ([...settlement.attentionItemIds].sort().join(',') !== expectedAttention.sort().join(',')) fail('contest.invalid-document', 'settlement.attentionItemIds', 'does not match awarded experience')
+    if (root.variantId !== 'battle' && settlement.battleCoordination !== null) fail('contest.invalid-document', 'settlement.battleCoordination', 'is available only to Battle Contests')
+    if (settlement.battleCoordination) {
+      const coordination = settlement.battleCoordination
+      const settlementBinding = battle?.encounter ?? fail('contest.invalid-document', 'settlement.battleCoordination', 'requires immutable linked Battle authority')
+      if (coordination.contestId !== root.contestId || coordination.battleContestLinkId !== settlementBinding.link.linkId
+        || coordination.encounterId !== settlementBinding.link.encounterId || coordination.mapSlug !== settlementBinding.link.linkedMapSlug) {
+        fail('contest.invalid-document', 'settlement.battleCoordination', 'does not match the immutable linked Battle authority')
+      }
+      if (coordination.contestRewardDefinitionSha256 !== battleContestSettlementDefinitionSha256({
+        contestId: root.contestId,
+        battleContestLinkId: settlementBinding.link.linkId,
+        settlementId: settlement.settlementId,
+        entries: settlement.entries,
+        money: settlement.money,
+        items: settlement.items,
+        attentionItemIds: settlement.attentionItemIds,
+      })) fail('contest.invalid-document', 'settlement.battleCoordination.contestRewardDefinitionSha256', 'does not match the exact Contest reward package')
+      if (coordination.status === 'accepted' && coordination.acceptedByContestOperationId !== settlement.committedOperationId) fail('contest.invalid-document', 'settlement.battleCoordination.acceptedByContestOperationId', 'must match the Contest settlement operation')
+    }
   }
   const stage = root.stage as ContestStage
   const activeContestants = contestants.filter(row => !row.withdrawn)
@@ -1197,11 +1686,13 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
     if (policy.rotationOrderPolicy === 'predeclared' && contestants.some(row => row.rotationOrder.length !== contestants.length)) fail('contest.invalid-contestant', 'contestants', 'Started Rotation teams require a complete predeclared order.')
     if (policy.rotationOrderPolicy === 'choose-each-round' && (stage === 'introduction' && contestants.some(row => row.rotationOrder.length !== 0) || ['settling','completed'].includes(stage) && contestants.some(row => row.rotationOrder.length !== contestants.length))) fail('contest.invalid-contestant', 'contestants', 'Rotation performer choices do not match the lifecycle stage.')
   }
-  if (stage === 'setup' && (root.diceJournal as unknown[]).length || stage === 'setup' && (root.appealLedger as unknown[]).length || stage === 'setup' && contestants.some(row => row.introduction.status !== 'pending' || row.letter !== null || row.appeal !== 0 || row.fumble !== 0 || row.voltage !== 0)) fail('contest.stage-invalid', 'contestants', 'Setup cannot retain accepted Contest play evidence.')
+  if (stage === 'setup' && (root.diceJournal as unknown[]).length || stage === 'setup' && (root.appealLedger as unknown[]).length || stage === 'setup' && (battleHandoffReceipts.length || battleVoltageLifecycleLedger.length || battleRecoveryReceipts.length) || stage === 'setup' && contestants.some(row => row.introduction.status !== 'pending' || row.letter !== null || row.appeal !== 0 || row.fumble !== 0 || row.voltage !== 0 || root.variantId === 'battle' && (row.battleTeamDiceSpendJournal.length !== 0 || CONTEST_STAT_IDS.some(statId => row.teamDicePools[statId].total !== 0)))) fail('contest.stage-invalid', 'contestants', 'Setup cannot retain accepted Contest play evidence.')
   if (stage === 'introduction') {
-    if (appeals.length || contestants.some(row => row.finalPlacement !== null || row.finalScore !== null)) fail('contest.stage-invalid', 'contestants', 'Introduction cannot retain Performance or settlement evidence.')
+    if (appeals.length || battleHandoffReceipts.length || battleVoltageLifecycleLedger.length || battleRecoveryReceipts.length || contestants.some(row => row.finalPlacement !== null || row.finalScore !== null)) fail('contest.stage-invalid', 'contestants', 'Introduction cannot retain Performance or settlement evidence.')
     const allAccepted = contestants.every(row => row.introduction.status === 'accepted')
-    if (allAccepted !== contestants.every(row => row.letter !== null) || !allAccepted && contestants.some(row => row.letter !== null)) fail('contest.stage-invalid', 'contestants', 'Letters are published only after every Introduction is accepted.')
+    if (root.variantId === 'battle') {
+      if (contestants.some(row => row.letter !== null || row.introduction.letterTotal !== 0 || row.battleTeamDiceSpendJournal.length !== 0 || row.teamContestDiceSpent !== 0)) fail('contest.stage-invalid', 'contestants', 'Battle Introductions build unspent Trainer-team pools and never assign Contest initiative letters.')
+    } else if (allAccepted !== contestants.every(row => row.letter !== null) || !allAccepted && contestants.some(row => row.letter !== null)) fail('contest.stage-invalid', 'contestants', 'Letters are published only after every Introduction is accepted.')
   }
   if (stage === 'performance' && root.variantId !== 'festival' && contestants.some(row => row.finalPlacement !== null || row.finalScore !== null)) fail('contest.stage-invalid', 'contestants', 'Non-Festival Performance cannot retain final placement evidence.')
   if (!['introduction','performance','settling'].includes(stage) && root.paused) fail('contest.stage-invalid', 'paused', 'Only an active Contest stage may remain paused.')
@@ -1235,13 +1726,24 @@ export const parseContestDocument = (value: unknown): ContestDocumentV1 => {
   if (stage === 'setup' && (root.round !== 0 || root.turnIndex !== 0 || policy.lockedAt !== null)) fail('contest.stage-invalid', 'stage', 'Setup state must remain unlocked before round play.')
   if (stage !== 'setup' && stage !== 'cancelled' && policy.lockedAt === null) fail('contest.stage-invalid', 'policy.lockedAt', 'A started Contest must retain its lock evidence.')
   if (stage === 'performance') {
-    if (activeContestants.some(row => row.letter === null || row.introduction.status !== 'accepted')) fail('contest.stage-invalid', 'contestants', 'Performance requires accepted Introductions and active letters.')
-    if (Number(root.round) < 1 || Number(root.round) > activeContestants.length || Number(root.turnIndex) >= activeContestants.length) fail('contest.stage-invalid', 'round', 'Performance round or turn is outside the active chart.')
+    if (root.variantId === 'battle') {
+      if (activeContestants.some(row => row.letter !== null || row.introduction.status !== 'accepted')) fail('contest.stage-invalid', 'contestants', 'Battle Performance requires accepted Introductions without Contest initiative letters.')
+      if (Number(root.round) < 1 || Number(root.round) > Number(battle?.roundBudget) || Number(root.turnIndex) !== 0) fail('contest.stage-invalid', 'round', 'Battle Performance round authority must stay within the linked Encounter budget without a Contest turn cursor.')
+      if (!battle?.encounter) fail('contest.stage-invalid', 'battle.encounter', 'Battle Performance requires its linked Encounter authority.')
+    } else {
+      if (activeContestants.some(row => row.letter === null || row.introduction.status !== 'accepted')) fail('contest.stage-invalid', 'contestants', 'Performance requires accepted Introductions and active letters.')
+      if (Number(root.round) < 1 || Number(root.round) > activeContestants.length || Number(root.turnIndex) >= activeContestants.length) fail('contest.stage-invalid', 'round', 'Performance round or turn is outside the active chart.')
+    }
     if (!isContestStatId(root.currentRoundContestTypeId)) fail('contest.type-invalid', 'currentRoundContestTypeId', 'Performance requires one canonical current Contest type.')
   }
   if (root.pendingInterventionAppealId !== null && stage !== 'performance') fail('contest.stage-invalid', 'pendingInterventionAppealId', 'An intervention window exists only during Performance.')
   if (root.settlement !== null && !['settling','completed','cancelled'].includes(stage)) fail('contest.stage-invalid', 'settlement', 'Settlement evidence exists only after Performance.')
   if (stage === 'settling' && activeContestants.some(row => row.finalPlacement === null || row.finalScore === null)) fail('contest.stage-invalid', 'contestants', 'Settling requires final active placements and scores.')
+  if (root.variantId === 'battle') {
+    const settledStage = ['settling', 'completed'].includes(stage)
+    if (settledStage && battleEndReceipts.length !== 1) fail('contest.stage-invalid', 'battleHandoffReceipts', 'Battle settling/completion requires exactly one source-bound end receipt')
+    if (battleEndReceipts.length === 1 && !['settling', 'completed', 'cancelled'].includes(stage)) fail('contest.stage-invalid', 'battleHandoffReceipts', 'Battle end receipt requires a terminal or settling stage')
+  }
   if (stage === 'completed' && (record(root.settlement, 'settlement').status !== 'committed' || root.paused)) fail('contest.stage-invalid', 'settlement', 'Completed state requires committed settlement evidence and cannot remain paused.')
   return frozenClone(root as unknown as ContestDocumentV1)
 }
@@ -1340,4 +1842,52 @@ export const spendTrainerParticipantSharedDice = (input: SpendTrainerParticipant
     createdAt: safeInteger(input.createdAt, 'createdAt'),
   })
   return Object.freeze({ pokemonPools, teamPools, journal: Object.freeze([...input.journal, receipt]), receipt, exactRetry: false })
+}
+
+export interface SpendBattleContestTeamDiceInputV1 {
+  readonly teamPools: Readonly<Record<ContestStatId, ContestDicePoolV1>>
+  readonly journal: readonly BattleContestTeamDiceSpendJournalEntryV1[]
+  readonly enrolledPokemonPerformerIds: readonly string[]
+  readonly performerId: string
+  readonly operationId: string
+  readonly spentDice: Readonly<Record<ContestStatId, number>>
+  readonly createdAt: number
+}
+
+export interface SpendBattleContestTeamDiceResultV1 {
+  readonly teamPools: Readonly<Record<ContestStatId, ContestDicePoolV1>>
+  readonly journal: readonly BattleContestTeamDiceSpendJournalEntryV1[]
+  readonly receipt: BattleContestTeamDiceSpendJournalEntryV1
+  readonly exactRetry: boolean
+}
+
+/** Replay-safe depletion of Battle Introduction dice shared by every Pokémon on one Trainer team. */
+export const spendBattleContestTeamDice = (input: SpendBattleContestTeamDiceInputV1): SpendBattleContestTeamDiceResultV1 => {
+  const operationId = parseContestOperationId(input.operationId)
+  const performerId = safeText(input.performerId, 'performerId', 160, true)
+  if (!input.enrolledPokemonPerformerIds.includes(performerId)) fail('contest.invalid-contestant', 'performerId', 'Battle team dice may be spent only by an enrolled Pokémon on that Trainer team.')
+  const spentDice = Object.freeze(emptyContestStatRecord(statId => safeInteger(input.spentDice[statId], `spentDice.${statId}`, 0, contestCatalog.performance.contestDiceSpendMaximumPerAppeal)))
+  const spentTotal = CONTEST_STAT_IDS.reduce((sum, statId) => sum + spentDice[statId], 0)
+  if (spentTotal < 1 || spentTotal > contestCatalog.performance.contestDiceSpendMaximumPerAppeal) fail('contest.dice-overspend', 'spentDice', `One Battle team-pool spend must contain one through ${contestCatalog.performance.contestDiceSpendMaximumPerAppeal} dice.`)
+  const existing = input.journal.find(entry => entry.operationId === operationId)
+  if (existing) {
+    if (existing.performerId !== performerId || CONTEST_STAT_IDS.some(statId => existing.spentDice[statId] !== spentDice[statId])) fail('contest.operation-conflict', 'operationId', 'Battle team dice operation ID was reused with changed input.')
+    return Object.freeze({ teamPools: input.teamPools, journal: input.journal, receipt: existing, exactRetry: true })
+  }
+  if (input.journal.length >= 10_000) fail('contest.invalid-contestant', 'battleTeamDiceSpendJournal', 'Battle team dice journal is full.')
+  const remainingBefore = Object.freeze(emptyContestStatRecord(statId => safeInteger(input.teamPools[statId].remaining, `teamPools.${statId}.remaining`, 0, input.teamPools[statId].total)))
+  for (const statId of CONTEST_STAT_IDS) if (spentDice[statId] > remainingBefore[statId]) fail('contest.dice-overspend', `spentDice.${statId}`, `Only ${remainingBefore[statId]} shared team ${statId} dice remain.`)
+  const remainingAfter = Object.freeze(emptyContestStatRecord(statId => remainingBefore[statId] - spentDice[statId]))
+  const teamPools = Object.freeze(emptyContestStatRecord(statId => Object.freeze({ ...input.teamPools[statId], remaining: remainingAfter[statId] })))
+  const receipt: BattleContestTeamDiceSpendJournalEntryV1 = Object.freeze({
+    spendId: `${operationId}:battle-team-dice`,
+    operationId,
+    performerId,
+    sourcePolicy: 'battle-trainer-team',
+    spentDice,
+    remainingBefore,
+    remainingAfter,
+    createdAt: safeInteger(input.createdAt, 'createdAt'),
+  })
+  return Object.freeze({ teamPools, journal: Object.freeze([...input.journal, receipt]), receipt, exactRetry: false })
 }

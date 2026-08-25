@@ -19,13 +19,16 @@ const sha = (path: string) => createHash('sha256').update(readFileSync(resolve(r
 const expectInstalledHashOrSuccessor = (path: string, expected: string): void => {
   const actual = sha(path)
   if (actual === expected) return
-  const edges = successorChain.edges.filter(edge => edge.surface === path)
-  expect(edges.length, `${path} requires an explicit reviewed successor`).toBeGreaterThan(0)
-  expect(edges[0]!.beforeSha256, path).toBe(expected)
-  for (let index = 1; index < edges.length; index += 1) {
-    expect(edges[index]!.beforeSha256, path).toBe(edges[index - 1]!.afterSha256)
+  const edges = successorChain.edges.filter(edge => edge.surface === path && edge.reviewStatus === 'accepted')
+  let cursor = expected
+  const visited = new Set<string>()
+  while (cursor !== actual) {
+    expect(visited.has(cursor), `${path} successor chain contains a cycle`).toBe(false)
+    visited.add(cursor)
+    const candidates = edges.filter(edge => edge.beforeSha256 === cursor)
+    expect(candidates, `${path} requires one accepted successor from ${cursor}`).toHaveLength(1)
+    cursor = candidates[0]!.afterSha256
   }
-  expect(edges.at(-1)!.afterSha256, path).toBe(actual)
 }
 
 describe('Pokémon Contest canonical closure', () => {

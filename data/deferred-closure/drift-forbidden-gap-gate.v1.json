@@ -1,0 +1,267 @@
+{
+  "schemaVersion": 1,
+  "gateId": "deferred-closure-drift-forbidden-gap-v1",
+  "ticket": "P11-088",
+  "status": "enforced",
+  "runtimeProseParsing": false,
+  "registryContracts": {
+    "closureRows": 29,
+    "userFacingMechanics": 27,
+    "rangedWeaponProfiles": 6,
+    "repairedWeaponMoves": 7,
+    "supplementalWeaponMoves": 12,
+    "itemActions": 11,
+    "contestVariants": 2,
+    "genericSkillCheckSurfaces": 1,
+    "expectedGrantIds": [
+      "equipment.weighted-rope.weapon",
+      "equipment.slingshot.weapon",
+      "equipment.throwing-hammers.weapon",
+      "equipment.hunting-bow.weapon",
+      "equipment.super-lucky-throwing-stars.weapon",
+      "equipment.twin-needled-bow.weapon",
+      "equipment.throwing-hammers.bash",
+      "equipment.hunting-bow.pierce",
+      "equipment.honed-claws.gouge",
+      "equipment.meteor-masher.titanic-slam",
+      "equipment.super-lucky-throwing-stars.bullseye",
+      "equipment.super-lucky-throwing-stars.deadly-strike",
+      "equipment.twin-needled-bow.triple-threat",
+      "equipment.old-rod.fish",
+      "equipment.good-rod.fish",
+      "equipment.super-rod.fish",
+      "equipment.glue-cannon.attack",
+      "equipment.hand-net.attack",
+      "equipment.weighted-nets.throw",
+      "equipment.weighted-nets.pull",
+      "equipment.light-shield.ready",
+      "equipment.heavy-shield.ready",
+      "equipment.snag-machine.convert",
+      "equipment.shock-collar.activate"
+    ],
+    "supplementalWeaponMoveIds": [
+      "Backswing",
+      "Bash!",
+      "Bullseye",
+      "Cheap Shot",
+      "Double Swipe",
+      "Pierce!",
+      "Wounding Strike",
+      "Bleed!",
+      "Deadly Strike",
+      "Gouge",
+      "Titanic Slam",
+      "Triple Threat"
+    ],
+    "itemActionIds": [
+      "equipment.fishing.old-rod",
+      "equipment.fishing.good-rod",
+      "equipment.fishing.super-rod",
+      "equipment.glue-cannon.attack",
+      "equipment.hand-net.attack",
+      "equipment.weighted-nets.throw",
+      "equipment.weighted-nets.pull",
+      "equipment.light-shield.ready",
+      "equipment.heavy-shield.ready",
+      "equipment.snag-machine.convert",
+      "equipment.shock-collar.activate"
+    ],
+    "contestVariantIds": [
+      "trainer-participant",
+      "battle"
+    ]
+  },
+  "forbiddenFinalTokens": [
+    "absent",
+    "blocked",
+    "deferred",
+    "definition-missing",
+    "prose-inferred",
+    "reference-only-deferral",
+    "silently-absent",
+    "visible-with-reason"
+  ],
+  "handlerContracts": [
+    {
+      "handlerId": "capability.weapon-moves",
+      "definitionPath": "shared/capabilityAutomation/weaponMoves.ts",
+      "registrationPath": "server/domain/moveAutomation/handlers/capabilityWeaponMoves.ts",
+      "registryPath": "server/domain/moveAutomation/handlers/registry.ts",
+      "expectedDefinitions": 12,
+      "orphanDefinitions": 0,
+      "orphanRegistrations": 0
+    }
+  ],
+  "documentContracts": [
+    {
+      "documentId": "encounter-equipment-actions",
+      "storageSchemaVersion": 47,
+      "parallelAuthority": false,
+      "requiredTokens": [
+        {
+          "path": "server/storage/migrations.ts",
+          "token": "version: 47"
+        },
+        {
+          "path": "shared/itemAutomation/equipmentActions.ts",
+          "token": "EQUIPMENT_ACTION_COMMAND_SCHEMA_VERSION"
+        },
+        {
+          "path": "server/storage/equipmentActionOperationRepository.ts",
+          "token": "createSqliteEquipmentActionOperationRepository"
+        }
+      ]
+    },
+    {
+      "documentId": "fishing-guided-declarations",
+      "storageSchemaVersion": 48,
+      "parallelAuthority": false,
+      "requiredTokens": [
+        {
+          "path": "server/storage/migrations.ts",
+          "token": "version: 48"
+        },
+        {
+          "path": "shared/itemAutomation/equipmentActions.ts",
+          "token": "fishing"
+        }
+      ]
+    },
+    {
+      "documentId": "snag-conversion-adjudication",
+      "storageSchemaVersion": 49,
+      "parallelAuthority": false,
+      "requiredTokens": [
+        {
+          "path": "server/storage/migrations.ts",
+          "token": "version: 49"
+        },
+        {
+          "path": "shared/itemAutomation/equipmentActions.ts",
+          "token": "snag-machine"
+        }
+      ]
+    },
+    {
+      "documentId": "generic-skill-check",
+      "storageSchemaVersion": 50,
+      "parallelAuthority": false,
+      "requiredTokens": [
+        {
+          "path": "server/storage/migrations.ts",
+          "token": "version: 50"
+        },
+        {
+          "path": "shared/skillChecks/contract.ts",
+          "token": "SkillCheckDocumentV1"
+        },
+        {
+          "path": "shared/skillChecks/persistence.ts",
+          "token": "parseSkillCheckDocument"
+        },
+        {
+          "path": "server/storage/skillCheckRepository.ts",
+          "token": "createSqliteSkillCheckRepository"
+        }
+      ]
+    },
+    {
+      "documentId": "trainer-participant-contest",
+      "storageSchemaVersion": 46,
+      "parallelAuthority": false,
+      "requiredTokens": [
+        {
+          "path": "shared/contests/document.ts",
+          "token": "participantVariantId"
+        },
+        {
+          "path": "data/reference/contests.json",
+          "token": "trainer-participant"
+        }
+      ]
+    },
+    {
+      "documentId": "battle-contest-blend",
+      "storageSchemaVersion": 46,
+      "parallelAuthority": false,
+      "requiredTokens": [
+        {
+          "path": "shared/contests/document.ts",
+          "token": "battleHandoffReceipts"
+        },
+        {
+          "path": "shared/contests/battleBlend.ts",
+          "token": "BattleContestHandoff"
+        },
+        {
+          "path": "data/reference/contests.json",
+          "token": "battle"
+        }
+      ]
+    }
+  ],
+  "generatedChecks": [
+    "check:complete-play-loop-equipment-definitions",
+    "check:complete-play-loop-equipment-grants",
+    "check:complete-play-loop-equipment-contributions",
+    "check:complete-play-loop-item-catalog-cohorts",
+    "check:contest-fixtures",
+    "check:battle-contest-fixtures"
+  ],
+  "directGeneratedChecks": [
+    "python3 scripts/migrate_pokemon_contests.py --check"
+  ],
+  "sourceBindings": [
+    {
+      "path": "data/deferred-closure/closure-inventory.v1.json",
+      "sha256": "1e5d623174060993ef02f3417c82888eb1e30b4a029980c0c283d55cf1eca3ac"
+    },
+    {
+      "path": "data/complete-play-loop/equipment-grants.v1.json",
+      "sha256": "17b961a5b23f6b69c86be9034666dfa9d9832a2c6c45a4437680f71a4587ea52"
+    },
+    {
+      "path": "data/reference/contests.json",
+      "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497"
+    },
+    {
+      "path": "shared/capabilityAutomation/weaponMoves.ts",
+      "sha256": "4d7bf8aaf62c807a8eabfda4424298eefe03354049f6da9fbb1c324a1e6c9f5e"
+    },
+    {
+      "path": "shared/itemAutomation/equipmentActions.ts",
+      "sha256": "43c1df581ac89146b64fbeface7a379822d1454e96782b0febf552f344d57be3"
+    },
+    {
+      "path": "shared/skillChecks/contract.ts",
+      "sha256": "6ccf07bd47d3318e43193fbaa3f0904626bcef8b209a9018fd00c267994286f4"
+    },
+    {
+      "path": "shared/skillChecks/persistence.ts",
+      "sha256": "8a12604722c003c07b38ebaeefa9d68f9f882c5fcdf8339db46fbe4833c9df18"
+    },
+    {
+      "path": "shared/contests/document.ts",
+      "sha256": "1ad2180ff9e998c0e84d9c3e7befd19fbd586a69fd3645d63921cc2abb988a7e"
+    },
+    {
+      "path": "shared/contests/battleBlend.ts",
+      "sha256": "c1d8ab09e0500ee266c24552a19b71cdecd7664b9670be4549961c423a481bd4"
+    },
+    {
+      "path": "server/storage/migrations.ts",
+      "sha256": "69cfdda140e9449ee70d43e13d850728b52027769c3ad596c27ae2059b8264d9"
+    }
+  ],
+  "zeroDeferredGate": {
+    "command": "check:deferred-closure-zero",
+    "inventoryGenerator": "python3 scripts/generate_deferred_closure_inventory.py --check",
+    "acceptanceGenerator": "python3 scripts/generate_zero_deferred_acceptance.py --check",
+    "required": true
+  },
+  "qualityGate": {
+    "command": "npm run check:deferred-closure-drift",
+    "scriptPath": "scripts/quality-gate.sh",
+    "required": true
+  }
+}

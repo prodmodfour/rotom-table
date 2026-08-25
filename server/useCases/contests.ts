@@ -1,4 +1,4 @@
-import { randomInt } from 'node:crypto'
+import { createHash, randomInt } from 'node:crypto'
 import type { AuthRole } from '#shared/auth'
 import { stableJsonStringify } from '#shared/automation/stableJson'
 import type { PlayerProfile } from '#shared/playerProfiles'
@@ -6,7 +6,8 @@ import { appendContestHistory, ContestContractError, contestCurrentPerformer, co
 import { parseContestCommand, type ContestCommandV1, type ContestOperationResultV1 } from '#shared/contests/operations'
 import { projectContestDiagnostic, projectContestGm, projectContestOwner, projectContestPublic, type ContestRoleProjectionV1 } from '#shared/contests/projections'
 import { buildContestPerformerSnapshot, buildContestTrainerPerformerSnapshot } from '#shared/contests/integrations'
-import { contestBaseVariantAllowsTrainerParticipants } from '#shared/contests/catalog'
+import { battleContestVariant, contestBaseVariantAllowsTrainerParticipants } from '#shared/contests/catalog'
+import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { resolvedSheetFeatureClosure } from '#shared/featureAutomation/sheetFeatures'
 import { FEATURE_AUTOMATION_MANIFEST_BY_ID } from '#shared/featureAutomation/manifest'
 import { beginAbilityDailyUsagePeriod, createEmptyAbilityDailyUsageLedger, parseAbilityDailyUsageLedger } from '#shared/abilityAutomation/resources'
@@ -16,32 +17,72 @@ import { ContestRuleError } from '#shared/contests/validation'
 import type { ContestRibbonRecordV1, TrainerContestResultRecordV1 } from '#shared/contests/ribbons'
 import itemsJson from '../../data/reference/items.json'
 import type { CharacterSheet } from '~/types/characterSheet'
+import type { TabletopMap } from '~/types/map'
 import type { TrainerSheet, InventoryEntry } from '~/types/trainerSheet'
 import { resolveTrainerSkills } from '~/utils/sheets/trainerDerived'
 import { calculatePokemonLevelFromExperience, pokemonExperienceNeededForLevel } from '~/utils/sheets/pokemonExperience'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { createSqliteContestRepository, contestCommandHash, ContestRepositoryError, type ContestRepository } from '../storage/contestRepository'
-import { createSqliteSheetRepository, type SheetRepository } from '../storage/sheetRepository'
+import { createSqliteSheetRepository, SheetRevisionConflictError, type SheetRepository } from '../storage/sheetRepository'
+import { createSqliteEncounterDocumentRepository, type EncounterDocumentRepository } from '../storage/encounterDocumentRepository'
+import { createSqliteMapRepository, type MapRepository } from '../storage/mapRepository'
+import { createSqliteMapInteractionModeRepository, type MapInteractionModeRepository } from '../storage/mapInteractionModeRepository'
+import { createSqliteLivePlayOpRepository, type LivePlayOpRepository } from '../storage/opRepository'
 import { createSqliteCampaignClockRepository } from '../storage/campaignClockRepository'
-import { createSqliteRealtimeEventRepository, type RealtimeEventRepository } from '../storage/realtimeEventRepository'
+import { createSqliteRealtimeEventRepository, type AppendRealtimeEventInput, type RealtimeEventRepository } from '../storage/realtimeEventRepository'
 import { contestRealtimeAppendInputs } from '../realtime/contestRealtime'
+import { encounterDocumentRealtimeAppendInputs } from '../realtime/encounterDocumentRealtime'
+import { interactionModeRealtimeAppendInputs, mapLibraryCreatedRealtimeAppendInputs } from '../realtime/libraryMutationRealtime'
 import { deduplicateAuthoritativeSheetDocumentUpdates, sheetDocumentUpdatedRealtimeAppendInput } from '../realtime/sheetDocumentRealtime'
 import { settleFeatureDeclarationResources } from '../domain/featureAutomation/resources'
 import type { PersistedRealtimeEvent } from '#shared/realtimeEventLog'
 import { publishPersistedRealtimeEventsAfterCommit, defaultPersistedRealtimeEventPublisher, defaultPersistedRealtimePublicationFailureReporter, type PersistedRealtimeEventPublisher, type PersistedRealtimePublicationFailureReporter } from '../realtime/persistedBatchPublication'
 import { readPlayerProfile } from '../utils/playerProfileStorage'
 import { createContestantState, executeContestEngineCommand } from '../domain/contests/engine'
+import { BattleContestEncounterPlanningError, planBattleContestEncounter } from '../domain/contests/battleEncounter'
+import { BattleAcceptedMoveDerivationError, deriveBattleContestAcceptedMoveDelivery } from '../domain/contests/battleAcceptedMove'
+import { BattleContestAppealError, executeBattleContestAcceptedMoveAppeal } from '../domain/contests/battleAppeal'
+import { assertBattleContestSingleSpendConvergence, BattleContestAccountingError } from '../domain/contests/battleAccounting'
+import { BattleContestLifecycleDerivationError, deriveBattleContestVoltageLifecycleDelivery } from '../domain/contests/battleLifecycle'
+import { BattleContestVoltageLifecycleError, executeBattleContestVoltageLifecycle } from '../domain/contests/battleVoltageLifecycle'
+import { BattleContestEndError, deriveBattleContestAllPokemonKnockedOutEndDelivery, deriveBattleContestRoundBudgetEndDelivery, executeBattleContestEnd } from '../domain/contests/battleEnd'
+import { assertBattleContestRecoveryAuthority, BattleContestRecoveryError, planBattleContestRecovery } from '../domain/contests/battleRecovery'
+import {
+  assertBattleContestRewardsUnapplied,
+  assertBattleContestSettlementExactRetry,
+  BattleContestSettlementError,
+  completeBattleContestSettlementCoordination,
+  encounterSettlementCommandForBattleCoordination,
+  planBattleContestSettlementCoordination,
+} from '../domain/contests/battleSettlement'
+import { parseEncounterHistory } from '#shared/moveAutomation/encounterHistory'
+import { assertBattleContestRevisionCoupling, BattleContestBlendContractError } from '#shared/contests/battleBlend'
+import { encounterSceneId } from '../domain/moveAutomation/planSceneLifecycle'
+import { toPersistableSheetPayload } from '~/utils/sheets/persistence'
+import { prepareFinishEncounter, PrepareFinishEncounterUseCaseError, rebuildPreparedFinishEncounter } from './prepareFinishEncounter'
+import {
+  createSqliteEncounterSettlementRepository,
+  EncounterSettlementRepositoryError,
+  type EncounterSettlementAtomicWriteBoundary,
+} from '../storage/encounterSettlementRepository'
+import { encounterSettlementAtomicDefinitionSha256 } from '../domain/encounterSettlement/atomicCommit'
 
 export interface ContestUseCaseDependencies {
   readonly database?: RotomDatabase
   readonly contests?: ContestRepository
   readonly sheets?: SheetRepository<Record<string, unknown>>
+  readonly encounters?: EncounterDocumentRepository
+  readonly maps?: MapRepository<TabletopMap>
+  readonly mapInteractionModes?: MapInteractionModeRepository
+  readonly livePlayOps?: Pick<LivePlayOpRepository, 'getStoredOpRecord'> & { readonly database?: RotomDatabase }
   readonly realtimeEvents?: Pick<RealtimeEventRepository, 'appendMany'> & { readonly database?: RotomDatabase }
   readonly random?: ContestRandomSource
   readonly now?: () => number
   readonly readProfile?: (id: unknown) => PlayerProfile | null
   readonly publishPersistedRealtimeEvent?: PersistedRealtimeEventPublisher
   readonly reportAfterCommitPublicationFailure?: PersistedRealtimePublicationFailureReporter
+  /** Deterministic failure injection for the private combined Battle settlement boundary. */
+  readonly onBattleSettlementWriteBoundary?: (boundary: EncounterSettlementAtomicWriteBoundary | 'after-contest-reward-writes' | 'after-contest-document-write' | 'after-contest-operation-write') => void
 }
 export interface ContestActorV1 { readonly role: AuthRole, readonly playerProfile?: PlayerProfile | null, readonly diagnostic?: boolean }
 export interface ExecuteContestCommandResultV1 { readonly result: ContestOperationResultV1, readonly projection: ContestRoleProjectionV1 }
@@ -52,14 +93,20 @@ export class ContestUseCaseError extends Error {
   constructor(statusCode: 400|403|404|409, code: string, message: string, details: unknown = null) { super(message); this.name = 'ContestUseCaseError'; this.statusCode = statusCode; this.code = code; this.details = details }
 }
 const fail = (statusCode: 400|403|404|409, code: string, message: string, details: unknown = null): never => { throw new ContestUseCaseError(statusCode, code, message, details) }
+/** Compare persistable JSON semantics after removing optional undefined fields. */
+const persistableCanonicalJson = (value: unknown): string => stableJsonStringify(JSON.parse(JSON.stringify(value)) as unknown)
 const cryptoRandom: ContestRandomSource = Object.freeze({ nextInteger: (minimum: number, maximum: number) => randomInt(minimum, maximum + 1) })
 const runtime = (dependencies: ContestUseCaseDependencies) => {
-  const database = dependencies.database ?? dependencies.contests?.database ?? dependencies.sheets?.database ?? dependencies.realtimeEvents?.database ?? getRotomDatabase()
-  for (const candidate of [dependencies.contests?.database, dependencies.sheets?.database, dependencies.realtimeEvents?.database]) if (candidate && candidate !== database) throw new Error('Contest repositories must share one transaction database.')
+  const database = dependencies.database ?? dependencies.contests?.database ?? dependencies.sheets?.database ?? dependencies.encounters?.database ?? dependencies.maps?.database ?? dependencies.mapInteractionModes?.database ?? dependencies.livePlayOps?.database ?? dependencies.realtimeEvents?.database ?? getRotomDatabase()
+  for (const candidate of [dependencies.contests?.database, dependencies.sheets?.database, dependencies.encounters?.database, dependencies.maps?.database, dependencies.mapInteractionModes?.database, dependencies.livePlayOps?.database, dependencies.realtimeEvents?.database]) if (candidate && candidate !== database) throw new Error('Contest and linked Encounter repositories must share one transaction database.')
   return {
     database,
     contests: dependencies.contests ?? createSqliteContestRepository(database),
     sheets: dependencies.sheets ?? createSqliteSheetRepository<Record<string, unknown>>(database),
+    encounters: dependencies.encounters ?? createSqliteEncounterDocumentRepository(database),
+    maps: dependencies.maps ?? createSqliteMapRepository<TabletopMap>(database),
+    mapModes: dependencies.mapInteractionModes ?? createSqliteMapInteractionModeRepository(database),
+    livePlayOps: dependencies.livePlayOps ?? createSqliteLivePlayOpRepository({ database }),
     realtime: dependencies.realtimeEvents ?? createSqliteRealtimeEventRepository({ database }),
     random: dependencies.random ?? cryptoRandom,
     readProfile: dependencies.readProfile ?? readPlayerProfile,
@@ -151,6 +198,12 @@ const enrollmentContext = (command: Extract<ContestCommandV1, { commandKind: 'en
     if (command.pokemonSheetSlugs.length < 3 || command.pokemonSheetSlugs.length > 5) fail(400, 'contest.rotation-team-size', 'A Rotation team needs three through five distinct Pokémon.')
     const requiredOrderLength = document.policy.rotationOrderPolicy === 'predeclared' ? command.pokemonSheetSlugs.length : 0
     if (new Set(command.rotationOrder).size !== command.rotationOrder.length || command.rotationOrder.length !== requiredOrderLength) fail(400, 'contest.rotation-order', document.policy.rotationOrderPolicy === 'predeclared' ? 'Rotation order must use each team performer exactly once.' : 'This Rotation Contest chooses one unused performer at each round turn.')
+  } else if (document.variantId === 'battle') {
+    const minimum = battleContestVariant.rosterPolicy.pokemonPerTrainerMinimum, maximum = battleContestVariant.rosterPolicy.pokemonPerTrainerMaximum
+    if (command.pokemonSheetSlugs.length < minimum || command.pokemonSheetSlugs.length > maximum) fail(400, 'contest.battle-team-size', `A Battle Contest team needs ${minimum} through ${maximum} distinct Pokémon.`)
+    if (command.rotationOrder.length !== 0) fail(400, 'contest.rotation-order', 'Battle Contest initiative is owned by the linked encounter; setup cannot declare a Contest performer order.')
+    const declared = document.battle?.declaredPokemonPerTrainer
+    if (declared !== null && command.pokemonSheetSlugs.length !== declared) fail(400, 'contest.battle-team-size', `Both Battle Contest teams must declare exactly ${declared} Pokémon.`)
   } else if (command.pokemonSheetSlugs.length !== 1) fail(400, 'contest.team-not-supported', 'This Contest variant enrolls exactly one Pokémon per contestant.')
   if (new Set(command.pokemonSheetSlugs).size !== command.pokemonSheetSlugs.length) fail(400, 'contest.duplicate-pokemon', 'A Pokémon may enroll only once in an entry.')
   const campaignDay = Math.floor(createSqliteCampaignClockRepository(repositories.database).get().campaignMinute / 1_440)
@@ -178,10 +231,20 @@ const enrollmentContext = (command: Extract<ContestCommandV1, { commandKind: 'en
     rotationOrder: Object.freeze([...command.rotationOrder]),
   })
 }
-const introductionContext = (command: Extract<ContestCommandV1, { commandKind: 'declare-introduction' }>, document: ContestDocumentV1) => {
+const introductionContext = (command: Extract<ContestCommandV1, { commandKind: 'declare-introduction' }>, document: ContestDocumentV1, repositories: ReturnType<typeof runtime>) => {
   const contestant = document.contestants.find(row => row.contestantId === command.contestantId) ?? fail(400, 'contest.contestant-not-found', 'Contestant is not enrolled.')
   const skillDice = contestant.introductionSkillDice[command.skillId] ?? 2
-  const providers = contestant.performers.find(contestPerformerIsPokemon)?.providerIds ?? []
+  const providers = document.variantId === 'battle'
+    ? (() => {
+        const pokemon = contestant.performers.filter(contestPerformerIsPokemon)
+        if (!pokemon.length) return []
+        const trainer = sheet<TrainerSheet>(repositories.sheets, 'trainer', contestant.trainerSheetSlug)
+        const trainerProviderIds = new Set(buildContestTrainerPerformerSnapshot({ sheet: trainer.document, revision: trainer.revision }).providerIds)
+        return pokemon[0]!.providerIds.filter(providerId => trainerProviderIds.has(providerId) && pokemon.every(performer => performer.providerIds.includes(providerId)))
+      })()
+    : document.participantVariantId === 'trainer-participant'
+      ? [...new Set(contestant.performers.flatMap(performer => performer.providerIds))]
+      : contestant.performers.find(contestPerformerIsPokemon)?.providerIds ?? []
   const bonusRolls: Array<{ sourceId: string, label: string, dice: number, statId: ContestStatId }> = []
   const add = (sourceId: string, label: string, dice: number, statId: ContestStatId): void => { if (dice > 0) bonusRolls.push({ sourceId, label, dice, statId }) }
   if (providers.includes('edge:Groomer:groomed')) add('groomer', 'Groomer', 1, command.generatedStatId)
@@ -208,8 +271,10 @@ const contestInterventionResourcePlan = (
   const contestant = document.contestants.find(row => row.contestantId === command.contestantId) ?? fail(400, 'contest.contestant-not-found', 'Contestant is not enrolled.')
   const campaignDay = Math.floor(createSqliteCampaignClockRepository(repositories.database).get().campaignMinute / 1_440)
   if (command.interventionId === 'Fashion Designer') {
-    const performer = contestCurrentPerformer(document, contestant)
-    if (!performer.providerIds.includes('ability:Fashion Designer')) return null
+    const performer = document.participantVariantId === 'trainer-participant'
+      ? contestant.performers.find(candidate => candidate.performerId === command.targetPerformerId)
+      : contestCurrentPerformer(document, contestant)
+    if (!performer || !contestPerformerIsPokemon(performer) || !performer.providerIds.includes('ability:Fashion Designer')) return null
     const current = sheet<CharacterSheet>(repositories.sheets, 'pokemon', performer.pokemonSheetSlug)
     const dayKey = `campaign-day:${campaignDay}`
     const ledger = beginAbilityDailyUsagePeriod(parseAbilityDailyUsageLedger(current.document.abilityUsage ?? createEmptyAbilityDailyUsageLedger()), dayKey)
@@ -267,7 +332,7 @@ const appendPrizeItem = (trainer: TrainerSheet, itemId: string, quantity: number
   if (existing) existing.qty = Math.max(0, Math.floor(existing.qty ?? 0)) + quantity
   else rows.push({ id: `contest-prize-${contestId.split(':').at(-1)}-${ordinal}`, name: itemId, qty: quantity } satisfies InventoryEntry)
 }
-const applySettlementWrites = (before: ContestDocumentV1, next: ContestDocumentV1, repositories: ReturnType<typeof runtime>, now: number): readonly AuthoritativeContestSheetUpdate[] => {
+const applySettlementWrites = (before: ContestDocumentV1, settlementOperationId: string, repositories: ReturnType<typeof runtime>, now: number): readonly AuthoritativeContestSheetUpdate[] => {
   const candidateSettlement = before.settlement
   if (!candidateSettlement || candidateSettlement.status !== 'preview') return fail(409, 'contest.settlement-not-ready', 'Settlement preview is unavailable.')
   const settlement = candidateSettlement
@@ -306,11 +371,11 @@ const applySettlementWrites = (before: ContestDocumentV1, next: ContestDocumentV
   winningTrainer.money = Math.max(0, Math.floor(winningTrainer.money ?? 0)) + settlement.money
   settlement.items.forEach((item, index) => appendPrizeItem(trainerFor(item.targetTrainerSlug ?? winner.trainerSheetSlug), item.itemId, item.quantity, before.contestId, index))
   for (const [slug, update] of trainerUpdates) {
-    const status = repositories.sheets.applyLivePlayUpdate({ kind: 'trainer', slug, expectedRevision: update.beforeRevision, nextSheet: update.sheet as unknown as Record<string, unknown>, sourceOperationId: next.settlement?.committedOperationId ?? undefined })
+    const status = repositories.sheets.applyLivePlayUpdate({ kind: 'trainer', slug, expectedRevision: update.beforeRevision, nextSheet: update.sheet as unknown as Record<string, unknown>, sourceOperationId: settlementOperationId })
     if (status !== 'applied') fail(409, 'contest.settlement-failed', `Trainer sheet ${slug} changed during settlement; no rewards were committed.`)
   }
   for (const [slug, update] of pokemonUpdates) {
-    const status = repositories.sheets.applyLivePlayUpdate({ kind: 'pokemon', slug, expectedRevision: update.beforeRevision, nextSheet: update.sheet as unknown as Record<string, unknown>, sourceOperationId: next.settlement?.committedOperationId ?? undefined })
+    const status = repositories.sheets.applyLivePlayUpdate({ kind: 'pokemon', slug, expectedRevision: update.beforeRevision, nextSheet: update.sheet as unknown as Record<string, unknown>, sourceOperationId: settlementOperationId })
     if (status !== 'applied') fail(409, 'contest.settlement-failed', `Pokémon sheet ${slug} changed during settlement; no rewards were committed.`)
   }
   return Object.freeze([
@@ -319,21 +384,37 @@ const applySettlementWrites = (before: ContestDocumentV1, next: ContestDocumentV
   ])
 }
 
-export const executeContestCommandUseCase = (value: unknown, actor: ContestActorV1, dependencies: ContestUseCaseDependencies = {}): ExecuteContestCommandResultV1 => {
+const executeContestCommand = (value: unknown, actor: ContestActorV1, dependencies: ContestUseCaseDependencies = {}, serverOwnedBattleCommand = false): ExecuteContestCommandResultV1 => {
   let command: ContestCommandV1
   try { command = parseContestCommand(value) } catch (error) { return fail(400, 'contest.invalid-command', error instanceof Error ? error.message : 'Contest command is invalid.') }
+  if ((command.commandKind === 'score-battle-accepted-move' || command.commandKind === 'apply-battle-voltage-lifecycle' || command.commandKind === 'end-battle-contest') && !serverOwnedBattleCommand) return fail(403, 'contest.server-owned-command', 'Battle handoffs are derived and delivered only by the server coordinator.')
   const repositories = runtime(dependencies)
   const existingOperation = repositories.contests.findOperation(command.operationId)
   if (existingOperation) {
     if (existingOperation.commandHash !== contestCommandHash(command)) fail(409, 'contest.operation-conflict', 'Operation ID was reused with changed input.')
     const current = repositories.contests.get(command.contestId)?.document ?? fail(404, 'contest.not-found', 'Contest was not found.')
     authorizeCommand(current, command, actor)
+    if (command.commandKind === 'commit-settlement' && current.variantId === 'battle') {
+      try {
+        const coordination = current.settlement?.battleCoordination
+        const encounterOperation = coordination
+          ? createSqliteEncounterSettlementRepository(repositories.database).getOperation(coordination.encounterSettlementOperationId)
+          : null
+        assertBattleContestSettlementExactRetry({ document: current, contestOperationId: command.operationId, encounterOperation })
+      }
+      catch (error) {
+        if (error instanceof BattleContestSettlementError) return fail(409, error.code, error.message)
+        throw error
+      }
+    }
     const refreshed = refreshContestProviderSnapshots(current, repositories, dependencies.now?.() ?? Date.now(), false)
     return Object.freeze({ result: Object.freeze({ ...existingOperation.result, exactRetry: true }), projection: projectFor(refreshed, actor) })
   }
   const now = dependencies.now?.() ?? Date.now()
   let persistedEvents: readonly PersistedRealtimeEvent[] = []
+  let encounterSettlementPersistedEvents: readonly PersistedRealtimeEvent[] = []
   let authoritativeSheetUpdates: AuthoritativeContestSheetUpdate[] = []
+  let linkedEncounterRealtimeInputs: readonly AppendRealtimeEventInput[] = []
   let terminal!: ContestDocumentV1
   let terminalResult!: ContestOperationResultV1
   try {
@@ -350,36 +431,512 @@ export const executeContestCommandUseCase = (value: unknown, actor: ContestActor
         if (stored.revision !== command.expectedRevision) fail(409, 'contest.revision-conflict', `Contest changed; expected revision ${command.expectedRevision}, current revision ${stored.revision}.`, { currentRevision: stored.revision })
         const authoritativeDocument = refreshContestProviderSnapshots(stored.document, repositories, now, true)
         const enrollment = command.commandKind === 'enroll-contestant' ? enrollmentContext(command, authoritativeDocument, repositories) : undefined
-        const introduction = command.commandKind === 'declare-introduction' ? introductionContext(command, authoritativeDocument) : undefined
+        const introduction = command.commandKind === 'declare-introduction' ? introductionContext(command, authoritativeDocument, repositories) : undefined
+        const battleEncounter = command.commandKind === 'create-battle-encounter'
+          ? (() => {
+              const encounterId = `${authoritativeDocument.contestId}:battle-encounter`
+              if (repositories.encounters.get(encounterId)) fail(409, 'contest.battle-encounter-conflict', 'The derived Battle Encounter identity already exists; no authority was changed.')
+              const mapSlug = repositories.maps.allocateSlug(`${authoritativeDocument.display.name.slice(0, 72)} Battle`)
+              return planBattleContestEncounter({
+                contest: authoritativeDocument,
+                operationId: command.operationId,
+                encounterId,
+                mapSlug,
+                now,
+                readSheet: (kind, slug) => {
+                  const stored = repositories.sheets.get(kind, slug)
+                  return stored ? { kind, slug: stored.slug, revision: stored.revision, updatedAt: stored.updatedAt, document: stored.document } : null
+                },
+              })
+            })()
+          : null
+        const battleRecovery = authoritativeDocument.battle?.encounter && (command.commandKind === 'set-paused' || command.commandKind === 'apply-correction' || command.commandKind === 'cancel-contest')
+          ? (() => {
+              const binding = authoritativeDocument.battle!.encounter!
+              const encounter = repositories.encounters.get(binding.link.encounterId) ?? fail(409, 'contest.battle-encounter-missing', 'The linked Encounter Document is unavailable; no recovery state changed.')
+              const map = repositories.maps.getBySlug(binding.link.linkedMapSlug) ?? fail(409, 'contest.battle-map-missing', 'The linked Encounter map is unavailable; no recovery state changed.')
+              return Object.freeze({ ...planBattleContestRecovery({ contest: authoritativeDocument, encounter, map, command, now }), encounterBefore: encounter, map })
+            })()
+          : null
+        const battleMoveAppeal = command.commandKind === 'score-battle-accepted-move'
+          ? (() => {
+              const binding = authoritativeDocument.battle?.encounter ?? fail(409, 'contest.battle-encounter-required', 'Battle Appeal scoring requires the immutable linked Encounter authority.')
+              const encounter = repositories.encounters.get(binding.link.encounterId) ?? fail(409, 'contest.battle-encounter-missing', 'The linked Encounter Document is unavailable; no Appeal was scored.')
+              const map = repositories.maps.getBySlug(binding.link.linkedMapSlug) ?? fail(409, 'contest.battle-map-missing', 'The linked Encounter map is unavailable; no Appeal was scored.')
+              const sourceOperation = repositories.livePlayOps.getStoredOpRecord(map.slug, command.sourceOperationId) ?? fail(409, 'contest.battle-source-missing', 'The accepted Encounter Move operation is unavailable; no Appeal was scored.')
+              const delivery = deriveBattleContestAcceptedMoveDelivery({
+                document: authoritativeDocument,
+                encounterDocument: encounter,
+                map,
+                sourceOperation,
+                sourceOperationId: command.sourceOperationId,
+                sourceResolutionId: command.sourceResolutionId,
+                contestOperationId: command.operationId,
+              })
+              const sceneId = map.activeScene ? encounterSceneId(map.slug, map.activeScene) : null
+              if (!Number.isSafeInteger(map.revision)) fail(409, 'contest.battle-authority-stale', 'The linked map lacks current revision authority; no Appeal was scored.')
+              const currentSceneId = sceneId ?? fail(409, 'contest.battle-authority-stale', 'The linked map lacks current Scene authority; no Appeal was scored.')
+              assertBattleContestRevisionCoupling(delivery, binding.link, {
+                contestId: authoritativeDocument.contestId,
+                contestRevision: authoritativeDocument.revision,
+                encounterId: encounter.encounterId,
+                encounterDocumentRevision: encounter.revision,
+                linkedMapSlug: map.slug,
+                encounterRevision: Number(map.revision),
+                encounterSceneId: currentSceneId,
+              })
+              if (delivery.fact.kind !== 'accepted-move') throw new Error('Accepted Move derivation returned a non-Move handoff.')
+              const acceptedMovePayload = delivery.fact.payload
+              const actorPlacement = map.placements.find(placement => placement.id === acceptedMovePayload.actorPlacementId)
+              const actorTeam = actorPlacement?.sheetKind === 'pokemon'
+                ? binding.teams.find(team => team.sideId === actorPlacement.sideId && team.pokemon.some(member => member.sheetSlug === actorPlacement.sheetSlug))
+                : null
+              if (acceptedMovePayload.sourceActionKind === 'pokemon-move' && !actorTeam) fail(409, 'contest.battle-actor-mismatch', 'Accepted Move actor is not a currently placed Pokémon on its immutable Battle team.')
+              const opposingTeam = actorTeam ? binding.teams.find(team => team.sideId !== actorTeam.sideId) : null
+              const adjacentPokemonSheetSlugs = opposingTeam
+                ? map.placements.filter(placement => placement.sheetKind === 'pokemon'
+                    && placement.sideId === opposingTeam.sideId
+                    && opposingTeam.pokemon.some(member => member.sheetSlug === placement.sheetSlug))
+                  .map(placement => placement.sheetSlug)
+                : []
+              const result = executeBattleContestAcceptedMoveAppeal({
+                document: authoritativeDocument,
+                delivery,
+                actorPokemonSheetSlug: actorTeam && actorPlacement?.sheetKind === 'pokemon' ? actorPlacement.sheetSlug : null,
+                adjacentPokemonSheetSlugs,
+                spentDice: command.spentDice,
+                now,
+                random: repositories.random,
+              })
+              const accounting = assertBattleContestSingleSpendConvergence({
+                before: authoritativeDocument,
+                after: result.document,
+                delivery,
+                sourceOperation,
+              })
+              return Object.freeze({ result, accounting, delivery, encounter, map, sourceOperation })
+            })()
+          : null
+        const battleVoltageLifecycle = command.commandKind === 'apply-battle-voltage-lifecycle'
+          ? (() => {
+              const binding = authoritativeDocument.battle?.encounter ?? fail(409, 'contest.battle-encounter-required', 'Battle Voltage lifecycle requires immutable linked Encounter authority.')
+              const encounter = repositories.encounters.get(binding.link.encounterId) ?? fail(409, 'contest.battle-encounter-missing', 'The linked Encounter Document is unavailable; no Voltage changed.')
+              const map = repositories.maps.getBySlug(binding.link.linkedMapSlug) ?? fail(409, 'contest.battle-map-missing', 'The linked Encounter map is unavailable; no Voltage changed.')
+              const sourceOperation = repositories.livePlayOps.getStoredOpRecord(map.slug, command.sourceOperationId) ?? fail(409, 'contest.battle-source-missing', 'The accepted Encounter lifecycle operation is unavailable; no Voltage changed.')
+              const derived = deriveBattleContestVoltageLifecycleDelivery({
+                document: authoritativeDocument,
+                encounterDocument: encounter,
+                map,
+                sourceOperation,
+                sourceOperationId: command.sourceOperationId,
+                sourceResultId: command.sourceResultId,
+                contestOperationId: command.operationId,
+              })
+              const sceneId = map.activeScene ? encounterSceneId(map.slug, map.activeScene) : null
+              if (!Number.isSafeInteger(map.revision)) fail(409, 'contest.battle-authority-stale', 'The linked map lacks current revision authority; no Voltage changed.')
+              const currentSceneId = sceneId ?? fail(409, 'contest.battle-authority-stale', 'The linked map lacks current Scene authority; no Voltage changed.')
+              assertBattleContestRevisionCoupling(derived.delivery, binding.link, {
+                contestId: authoritativeDocument.contestId,
+                contestRevision: authoritativeDocument.revision,
+                encounterId: encounter.encounterId,
+                encounterDocumentRevision: encounter.revision,
+                linkedMapSlug: map.slug,
+                encounterRevision: Number(map.revision),
+                encounterSceneId: currentSceneId,
+              })
+              return Object.freeze({
+                result: executeBattleContestVoltageLifecycle({
+                  document: authoritativeDocument,
+                  delivery: derived.delivery,
+                  targetPokemonSheetSlug: derived.targetPokemonSheetSlug,
+                  sourcePokemonSheetSlug: derived.sourcePokemonSheetSlug,
+                  recalledPokemonSheetSlug: derived.recalledPokemonSheetSlug,
+                  sentOutPokemonSheetSlug: derived.sentOutPokemonSheetSlug,
+                  opposingActivePokemonSheetSlugs: derived.opposingActivePokemonSheetSlugs,
+                  now,
+                }),
+                delivery: derived.delivery,
+                encounter,
+                map,
+                sourceOperation,
+              })
+            })()
+          : null
+        const battleEnd = command.commandKind === 'end-battle-contest'
+          ? (() => {
+              const binding = authoritativeDocument.battle?.encounter ?? fail(409, 'contest.battle-encounter-required', 'Battle ending requires immutable linked Encounter authority.')
+              const encounter = repositories.encounters.get(binding.link.encounterId) ?? fail(409, 'contest.battle-encounter-missing', 'The linked Encounter Document is unavailable; the Contest was not ended.')
+              const map = repositories.maps.getBySlug(binding.link.linkedMapSlug) ?? fail(409, 'contest.battle-map-missing', 'The linked Encounter map is unavailable; the Contest was not ended.')
+              const sourceOperation = repositories.livePlayOps.getStoredOpRecord(map.slug, command.sourceOperationId) ?? fail(409, 'contest.battle-source-missing', 'The accepted Encounter end source is unavailable; the Contest was not ended.')
+              let encounterHistory
+              try { encounterHistory = parseEncounterHistory(map.encounterState?.history) }
+              catch { return fail(409, 'battle-contest.end-source-mismatch', 'The linked Encounter history is malformed; the Contest was not ended.') }
+              const roundMatches = encounterHistory.roundBoundaries.filter(row => row.eventId === command.sourceResultId)
+              const pokemonSheets = roundMatches.length > 0 ? [] : binding.teams.flatMap(team => team.pokemon.map(member => {
+                const storedPokemon = repositories.sheets.get('pokemon', member.sheetSlug) ?? fail(409, 'contest.battle-roster-missing', `Battle roster Pokémon ${member.sheetSlug} is unavailable; the Contest was not ended.`)
+                const currentHp = Number((storedPokemon.document as unknown as CharacterSheet).combat?.currentHp)
+                if (!Number.isSafeInteger(currentHp)) fail(409, 'contest.battle-roster-invalid', `Battle roster Pokémon ${member.sheetSlug} lacks authoritative current HP; the Contest was not ended.`)
+                return Object.freeze({ sheetSlug: member.sheetSlug, stored: storedPokemon, currentHp })
+              }))
+              const base = {
+                document: authoritativeDocument,
+                encounterDocument: encounter,
+                map,
+                sourceOperation,
+                sourceOperationId: command.sourceOperationId,
+                sourceResultId: command.sourceResultId,
+                contestOperationId: command.operationId,
+              }
+              const delivery = roundMatches.length > 0
+                ? deriveBattleContestRoundBudgetEndDelivery(base)
+                : deriveBattleContestAllPokemonKnockedOutEndDelivery({ ...base, pokemonHitPointsBySheetSlug: Object.fromEntries(pokemonSheets.map(row => [row.sheetSlug, row.currentHp])) })
+              const currentSceneId = (map.activeScene ? encounterSceneId(map.slug, map.activeScene) : null) ?? fail(409, 'contest.battle-authority-stale', 'The linked map lacks current Scene authority; the Contest was not ended.')
+              if (!Number.isSafeInteger(map.revision)) fail(409, 'contest.battle-authority-stale', 'The linked map lacks current revision authority; the Contest was not ended.')
+              assertBattleContestRevisionCoupling(delivery, binding.link, {
+                contestId: authoritativeDocument.contestId,
+                contestRevision: authoritativeDocument.revision,
+                encounterId: encounter.encounterId,
+                encounterDocumentRevision: encounter.revision,
+                linkedMapSlug: map.slug,
+                encounterRevision: Number(map.revision),
+                encounterSceneId: currentSceneId,
+              })
+              return Object.freeze({
+                result: executeBattleContestEnd({ document: authoritativeDocument, delivery, now, random: repositories.random }),
+                delivery, encounter, map, sourceOperation, pokemonSheets,
+              })
+            })()
+          : null
+        const battleHandoff = battleMoveAppeal ?? battleVoltageLifecycle ?? battleEnd
+        const battleSettlementCoordination = command.commandKind === 'commit-settlement' && authoritativeDocument.variantId === 'battle'
+          ? (() => {
+              const coordination = authoritativeDocument.settlement?.battleCoordination
+                ?? fail(409, 'battle-contest.settlement-source-mismatch', 'Battle settlement has no prepared combined Encounter authority.')
+              const encounterCommand = encounterSettlementCommandForBattleCoordination(coordination)
+              let prepared
+              try {
+                prepared = rebuildPreparedFinishEncounter(
+                  { role: 'gm', command: encounterCommand },
+                  { database: repositories.database, coordinatedBattleContestId: authoritativeDocument.contestId },
+                )
+              }
+              catch (error) {
+                if (error instanceof PrepareFinishEncounterUseCaseError) return fail(409, 'battle-contest.settlement-source-mismatch', error.message)
+                throw error
+              }
+              if (!prepared.plan || !prepared.authority) return fail(409, 'battle-contest.settlement-blocked', 'The linked Encounter settlement is no longer ready for the exact combined commit.')
+              assertBattleContestRewardsUnapplied({
+                document: authoritativeDocument,
+                readSheet: (kind, slug) => (repositories.sheets.get(kind, slug)?.document as unknown as TrainerSheet | CharacterSheet | undefined) ?? null,
+              })
+              const encounterSettlementRepository = createSqliteEncounterSettlementRepository(repositories.database)
+              const principalKey = `battle-contest:v1:${createHash('sha256').update(`${authoritativeDocument.contestId}\u0000${command.operationId}`).digest('hex')}`
+              const applied = encounterSettlementRepository.applyAtomicCommit({
+                principalKey,
+                command: encounterCommand,
+                plan: prepared.plan,
+                reauthorize: () => {
+                  const current = rebuildPreparedFinishEncounter(
+                    { role: 'gm', command: encounterCommand },
+                    { database: repositories.database, coordinatedBattleContestId: authoritativeDocument.contestId },
+                  )
+                  return current.authority ?? fail(409, 'battle-contest.settlement-source-mismatch', 'The linked Encounter authority changed before combined settlement commit.')
+                },
+                onWriteBoundary: dependencies.onBattleSettlementWriteBoundary,
+              })
+              if (applied.replayed) return fail(409, 'battle-contest.settlement-orphaned', 'Encounter settlement was already accepted without the matching Contest settlement operation.')
+              encounterSettlementPersistedEvents = applied.persistedRealtimeEvents
+              const contestUpdates = applySettlementWrites(authoritativeDocument, command.operationId, repositories, now)
+              authoritativeSheetUpdates.push(...contestUpdates)
+              dependencies.onBattleSettlementWriteBoundary?.('after-contest-reward-writes')
+              const contestSheetWrites = contestUpdates.map((update) => {
+                const storedSheet = repositories.sheets.get(update.kind, update.slug)
+                  ?? fail(409, 'battle-contest.settlement-source-mismatch', `Settlement sheet ${update.slug} disappeared after its Contest reward write.`)
+                return Object.freeze({
+                  kind: update.kind,
+                  slug: update.slug,
+                  revision: storedSheet.revision,
+                  definitionSha256: encounterSettlementAtomicDefinitionSha256(storedSheet.document),
+                })
+              })
+              return completeBattleContestSettlementCoordination({
+                document: authoritativeDocument,
+                acceptedByContestOperationId: command.operationId,
+                encounterPlan: prepared.plan,
+                encounterResult: applied.result,
+                contestSheetWrites,
+              })
+            })()
+          : null
         if (command.commandKind === 'apply-correction') assertReplacementController(command, authoritativeDocument, repositories)
-        terminal = executeContestEngineCommand(authoritativeDocument, command, { now, random: repositories.random, enrollment, introduction })
+        terminal = battleHandoff?.result.document ?? executeContestEngineCommand(authoritativeDocument, command, {
+          now,
+          random: repositories.random,
+          enrollment,
+          introduction,
+          ...(battleEncounter ? { battleEncounter: battleEncounter.binding } : {}),
+          ...(battleRecovery ? { battleRecovery: battleRecovery.receipt } : {}),
+          ...(battleSettlementCoordination ? { battleSettlementCoordination } : {}),
+        })
+        if (command.commandKind === 'prepare-settlement' && terminal.variantId === 'battle') {
+          const binding = terminal.battle?.encounter
+            ?? fail(409, 'battle-contest.settlement-source-mismatch', 'Battle settlement preparation requires the immutable linked Encounter authority.')
+          let prepared
+          try {
+            prepared = prepareFinishEncounter(
+              { role: 'gm', encounterId: binding.link.encounterId, now },
+              { database: repositories.database, coordinatedBattleContestId: terminal.contestId },
+            )
+          }
+          catch (error) {
+            if (error instanceof PrepareFinishEncounterUseCaseError) return fail(409, 'battle-contest.settlement-blocked', error.message)
+            throw error
+          }
+          const encounterCommand = prepared.view.command
+          if (!prepared.plan || !prepared.authority || !encounterCommand) return fail(409, 'battle-contest.settlement-blocked', 'Resolve every linked Encounter settlement gate before preparing the combined Battle settlement.')
+          const coordination = planBattleContestSettlementCoordination({
+            document: terminal,
+            preparedByContestOperationId: command.operationId,
+            encounterCommand,
+            encounterPlan: prepared.plan,
+          })
+          terminal = parseContestDocument({
+            ...terminal,
+            settlement: { ...terminal.settlement!, battleCoordination: coordination },
+          })
+        }
+        if (battleHandoff) {
+          const rereadEncounter = repositories.encounters.get(battleHandoff.encounter.encounterId) ?? fail(409, 'contest.battle-authority-stale', 'Encounter authority disappeared during handoff; no Contest consequence was applied.')
+          const rereadMap = repositories.maps.getBySlug(battleHandoff.map.slug) ?? fail(409, 'contest.battle-authority-stale', 'Encounter map authority disappeared during handoff; no Contest consequence was applied.')
+          const rereadSource = repositories.livePlayOps.getStoredOpRecord(battleHandoff.map.slug, battleHandoff.sourceOperation.opId) ?? fail(409, 'contest.battle-authority-stale', 'Encounter operation authority disappeared during handoff; no Contest consequence was applied.')
+          const sceneId = (rereadMap.activeScene ? encounterSceneId(rereadMap.slug, rereadMap.activeScene) : null) ?? fail(409, 'contest.battle-authority-stale', 'Encounter Scene authority disappeared during handoff; no Contest consequence was applied.')
+          if (persistableCanonicalJson(rereadEncounter) !== persistableCanonicalJson(battleHandoff.encounter)
+            || persistableCanonicalJson(rereadMap) !== persistableCanonicalJson(battleHandoff.map)
+            || persistableCanonicalJson(rereadSource) !== persistableCanonicalJson(battleHandoff.sourceOperation)) fail(409, 'contest.battle-authority-stale', 'Encounter authority changed during handoff; no Contest consequence was applied.')
+          if ('pokemonSheets' in battleHandoff && battleHandoff.pokemonSheets.some(snapshot => {
+            const reread = repositories.sheets.get('pokemon', snapshot.sheetSlug)
+            return !reread || persistableCanonicalJson(reread) !== persistableCanonicalJson(snapshot.stored)
+          })) fail(409, 'contest.battle-authority-stale', 'Battle roster HP authority changed during handoff; the Contest was not ended.')
+          assertBattleContestRevisionCoupling(battleHandoff.delivery, terminal.battle!.encounter!.link, {
+            contestId: authoritativeDocument.contestId,
+            contestRevision: authoritativeDocument.revision,
+            encounterId: rereadEncounter.encounterId,
+            encounterDocumentRevision: rereadEncounter.revision,
+            linkedMapSlug: rereadMap.slug,
+            encounterRevision: Number(rereadMap.revision),
+            encounterSceneId: sceneId,
+          })
+        }
+        if (battleRecovery) {
+          const currentEncounter = repositories.encounters.get(battleRecovery.encounterBefore.encounterId) ?? fail(409, 'contest.battle-encounter-missing', 'The linked Encounter Document disappeared before recovery commit.')
+          const currentMap = repositories.maps.getBySlug(battleRecovery.map.slug) ?? fail(409, 'contest.battle-map-missing', 'The linked Encounter map disappeared before recovery commit.')
+          assertBattleContestRecoveryAuthority({ contest: authoritativeDocument, encounter: currentEncounter, map: currentMap, receipt: battleRecovery.receipt })
+          const savedEncounter = repositories.encounters.replace({ expectedRevision: currentEncounter.revision, document: battleRecovery.encounterDocument })
+            ?? fail(409, 'contest.battle-encounter-missing', 'The linked Encounter Document disappeared before recovery commit.')
+          if (persistableCanonicalJson(savedEncounter.battleRecoveryReceipts) !== persistableCanonicalJson(terminal.battleRecoveryReceipts)) throw new Error('Battle recovery commit did not retain matching receipts in both linked documents.')
+          linkedEncounterRealtimeInputs = encounterDocumentRealtimeAppendInputs({ document: savedEncounter, kind: 'updated', previousRevision: currentEncounter.revision, operationId: command.operationId, timestamp: now })
+        }
         const resourcePlan = command.commandKind === 'use-intervention' ? contestInterventionResourcePlan(command, authoritativeDocument, repositories, now) : null
         if (resourcePlan) {
           const status = repositories.sheets.applyLivePlayUpdate({ kind: resourcePlan.kind, slug: resourcePlan.slug, expectedRevision: resourcePlan.expectedRevision, nextSheet: resourcePlan.sheet as unknown as Record<string, unknown>, sourceOperationId: command.operationId })
           if (status !== 'applied') fail(409, 'contest.revision-conflict', 'Trainer Feature resources changed during the Contest intervention.')
           authoritativeSheetUpdates = [{ kind: resourcePlan.kind, slug: resourcePlan.slug, sheet: repositories.sheets.get(resourcePlan.kind, resourcePlan.slug)!.document }]
         }
-        if (command.commandKind === 'commit-settlement') authoritativeSheetUpdates.push(...applySettlementWrites(stored.document, terminal, repositories, now))
+        if (command.commandKind === 'commit-settlement' && authoritativeDocument.variantId !== 'battle') authoritativeSheetUpdates.push(...applySettlementWrites(stored.document, command.operationId, repositories, now))
+        if (battleEncounter) {
+          try {
+            if (battleEncounter.sceneLifecycle.sheetReads.length > 0) repositories.sheets.assertRevisions(battleEncounter.sceneLifecycle.sheetReads)
+          } catch (error) {
+            if (error instanceof SheetRevisionConflictError) fail(409, 'contest.battle-encounter-roster-stale', 'A roster sheet changed during Battle Encounter creation; no authority was changed.')
+            throw error
+          }
+          for (const write of battleEncounter.sceneLifecycle.sheetWrites) {
+            const status = repositories.sheets.applyLivePlayUpdate({
+              kind: write.kind,
+              slug: write.slug,
+              expectedRevision: write.expectedRevision,
+              nextSheet: {
+                ...toPersistableSheetPayload(write.nextSheet as unknown as Record<string, unknown>),
+                slug: write.slug,
+                updatedAt: now,
+              },
+              sourceOperationId: command.operationId,
+            })
+            if (status !== 'applied') fail(409, 'contest.battle-encounter-roster-stale', `The ${write.kind} sheet ${write.slug} changed during Scene start; no authority was changed.`)
+            const acceptedSheet = repositories.sheets.get(write.kind, write.slug) ?? fail(404, 'contest.sheet-not-found', `${write.kind} sheet ${write.slug} disappeared during Battle Encounter creation.`)
+            authoritativeSheetUpdates.push({ kind: write.kind, slug: write.slug, sheet: acceptedSheet.document })
+          }
+          const createdMap = repositories.maps.create({ slug: battleEncounter.map.slug, map: battleEncounter.map, now })
+          const createdMode = repositories.mapModes.set({ slug: createdMap.slug, interactionMode: MAP_INTERACTION_MODES.LIVE_PLAY, updatedAt: now })
+          const createdEncounter = repositories.encounters.create(battleEncounter.encounter)
+          const rereadMap = repositories.maps.getBySlug(createdMap.slug)
+          const rereadEncounter = repositories.encounters.get(createdEncounter.encounterId)
+          const acceptedBinding = terminal.battle?.encounter ?? null
+          const rereadMode = repositories.mapModes.get(createdMap.slug)
+          if (!rereadMap || !rereadEncounter || !acceptedBinding
+            || rereadMap.revision !== 0
+            || rereadEncounter.revision !== 0
+            || persistableCanonicalJson(rereadEncounter) !== persistableCanonicalJson(battleEncounter.encounter)
+            || persistableCanonicalJson(rereadEncounter.battleContest) !== persistableCanonicalJson(acceptedBinding)
+            || rereadEncounter.encounterId !== acceptedBinding.link.encounterId
+            || rereadEncounter.linkedMapSlug !== acceptedBinding.link.linkedMapSlug
+            || rereadMap.slug !== acceptedBinding.link.linkedMapSlug
+            || rereadMap.playerVisible !== true
+            || rereadMap.folder !== battleEncounter.map.folder
+            || persistableCanonicalJson(rereadMap.placements) !== persistableCanonicalJson(battleEncounter.map.placements)
+            || persistableCanonicalJson(rereadMap.encounterState?.sides ?? {}) !== persistableCanonicalJson(battleEncounter.map.encounterState?.sides ?? {})
+            || rereadMap.initiative?.activeId !== acceptedBinding.openingActivePlacementId
+            || rereadMap.initiative?.round !== acceptedBinding.openingRound
+            || !rereadMap.activeScene
+            || encounterSceneId(rereadMap.slug, rereadMap.activeScene) !== acceptedBinding.sceneId
+            || rereadMode.interactionMode !== MAP_INTERACTION_MODES.LIVE_PLAY
+            || rereadMode.updatedAt !== now) {
+            throw new Error('Battle Contest link commit did not re-read the exact created Encounter authorities.')
+          }
+          linkedEncounterRealtimeInputs = [
+            ...mapLibraryCreatedRealtimeAppendInputs(rereadMap, command.clientId),
+            ...interactionModeRealtimeAppendInputs({ ...createdMode, clientId: command.clientId }),
+            ...encounterDocumentRealtimeAppendInputs({ document: rereadEncounter, kind: 'created', previousRevision: null, operationId: command.operationId, timestamp: now }),
+          ]
+        }
         repositories.contests.replace(stored.revision, terminal)
+        if (command.commandKind === 'commit-settlement' && terminal.variantId === 'battle') dependencies.onBattleSettlementWriteBoundary?.('after-contest-document-write')
       }
-      terminalResult = resultFor(terminal, command, false)
+      terminalResult = resultFor(terminal, command, (command.commandKind === 'score-battle-accepted-move' || command.commandKind === 'apply-battle-voltage-lifecycle' || command.commandKind === 'end-battle-contest') && terminal.revision === command.expectedRevision)
       repositories.contests.recordOperation(command, terminalResult, now)
+      if (command.commandKind === 'commit-settlement' && terminal.variantId === 'battle') dependencies.onBattleSettlementWriteBoundary?.('after-contest-operation-write')
       const contestEvents = contestRealtimeAppendInputs({ document: terminal, commandKind: command.commandKind, operationId: command.operationId, clientId: command.clientId, timestamp: now })
       const sheetUpdates = deduplicateAuthoritativeSheetDocumentUpdates(authoritativeSheetUpdates)
-      persistedEvents = repositories.realtime.appendMany([
+      const contestPersistedEvents = repositories.realtime.appendMany([
+        ...linkedEncounterRealtimeInputs,
         ...contestEvents,
         ...sheetUpdates.map(update => sheetDocumentUpdatedRealtimeAppendInput({ update, destination: 'specific', dedupeKey: `${command.operationId}:${update.kind}:${update.slug}` })),
       ])
+      persistedEvents = Object.freeze([...encounterSettlementPersistedEvents, ...contestPersistedEvents])
     })
   } catch (error) {
     if (error instanceof ContestUseCaseError) throw error
     if (error instanceof ContestContractError) throw new ContestUseCaseError(400, error.code, error.message, { field: error.field })
     if (error instanceof ContestRuleError) throw new ContestUseCaseError(error.statusCode, error.issue.code, error.message, error.issue)
     if (error instanceof ContestRepositoryError) throw new ContestUseCaseError(error.code === 'not-found' ? 404 : 409, `contest.${error.code}`, error.message, { currentRevision: error.currentRevision })
+    if (error instanceof BattleContestEncounterPlanningError) throw new ContestUseCaseError(error.statusCode, error.code, error.message)
+    if (error instanceof BattleAcceptedMoveDerivationError || error instanceof BattleContestAppealError || error instanceof BattleContestLifecycleDerivationError || error instanceof BattleContestVoltageLifecycleError || error instanceof BattleContestEndError || error instanceof BattleContestAccountingError || error instanceof BattleContestBlendContractError || error instanceof BattleContestRecoveryError || error instanceof BattleContestSettlementError) throw new ContestUseCaseError(409, error.code, error.message)
+    if (error instanceof EncounterSettlementRepositoryError) throw new ContestUseCaseError(409, `battle-contest.settlement-${error.code}`, error.message)
+    if (error instanceof PrepareFinishEncounterUseCaseError) throw new ContestUseCaseError(409, 'battle-contest.settlement-blocked', error.message)
     throw error
   }
   publishPersistedRealtimeEventsAfterCommit({ events: persistedEvents, operation: command.commandKind, publish: dependencies.publishPersistedRealtimeEvent ?? defaultPersistedRealtimeEventPublisher, reportFailure: dependencies.reportAfterCommitPublicationFailure ?? defaultPersistedRealtimePublicationFailureReporter })
   return Object.freeze({ result: terminalResult, projection: projectFor(terminal, actor) })
+}
+
+/** Public command ingress. All server-derived Battle handoffs are deliberately rejected here. */
+export const executeContestCommandUseCase = (value: unknown, actor: ContestActorV1, dependencies: ContestUseCaseDependencies = {}): ExecuteContestCommandResultV1 => executeContestCommand(value, actor, dependencies, false)
+
+export interface ScoreBattleContestAcceptedMoveInputV1 {
+  readonly contestId: string
+  readonly expectedRevision: number
+  readonly sourceOperationId: string
+  readonly sourceResolutionId: string
+  readonly spentDice: Readonly<Record<ContestStatId, number>>
+  readonly clientId?: string | null
+}
+
+/**
+ * Server-only blend coordinator ingress. It accepts source identities, never
+ * client-authored Move/result/roll/hit/Scene/round/actor/target mechanics.
+ */
+export const scoreBattleContestAcceptedMoveUseCase = (
+  input: ScoreBattleContestAcceptedMoveInputV1,
+  dependencies: ContestUseCaseDependencies = {},
+): ExecuteContestCommandResultV1 => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return fail(400, 'contest.invalid-handoff-request', 'Battle Move scoring input must be one server-owned object.')
+  const allowed = new Set(['contestId','expectedRevision','sourceOperationId','sourceResolutionId','spentDice','clientId'])
+  if (Object.keys(input).some(field => !allowed.has(field))) return fail(400, 'contest.invalid-handoff-request', 'Battle Move scoring accepts no client-authored result, roll, actor, target, Scene, round, map, or mechanics fields.')
+  const operationDigest = createHash('sha256')
+    .update(`${input.contestId}\n${input.sourceOperationId}\n${input.sourceResolutionId}`)
+    .digest('hex')
+    .slice(0, 40)
+  return executeContestCommand({
+    schemaVersion: 1,
+    commandKind: 'score-battle-accepted-move',
+    contestId: input.contestId,
+    operationId: `contest-op:v1:battle-move-${operationDigest}`,
+    expectedRevision: input.expectedRevision,
+    clientId: input.clientId ?? null,
+    sourceOperationId: input.sourceOperationId,
+    sourceResolutionId: input.sourceResolutionId,
+    spentDice: input.spentDice,
+  }, { role: 'gm' }, dependencies, true)
+}
+
+export interface ApplyBattleContestVoltageLifecycleInputV1 {
+  readonly contestId: string
+  readonly expectedRevision: number
+  readonly sourceOperationId: string
+  readonly sourceResultId: string
+  readonly clientId?: string | null
+}
+
+/**
+ * Server-only lifecycle coordinator ingress. Callers identify an accepted root
+ * operation and typed history event; cause, Pokémon, round, recipient, delta,
+ * and recall exception are reconstructed from persisted Encounter authority.
+ */
+export const applyBattleContestVoltageLifecycleUseCase = (
+  input: ApplyBattleContestVoltageLifecycleInputV1,
+  dependencies: ContestUseCaseDependencies = {},
+): ExecuteContestCommandResultV1 => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return fail(400, 'contest.invalid-handoff-request', 'Battle lifecycle input must be one server-owned object.')
+  const allowed = new Set(['contestId','expectedRevision','sourceOperationId','sourceResultId','clientId'])
+  if (Object.keys(input).some(field => !allowed.has(field))) return fail(400, 'contest.invalid-handoff-request', 'Battle lifecycle scoring accepts no client-authored cause, Pokémon, recipient, delta, exception, Scene, round, map, or mechanics fields.')
+  const operationDigest = createHash('sha256')
+    .update(`${input.contestId}\n${input.sourceOperationId}\n${input.sourceResultId}`)
+    .digest('hex').slice(0, 40)
+  return executeContestCommand({
+    schemaVersion: 1,
+    commandKind: 'apply-battle-voltage-lifecycle',
+    contestId: input.contestId,
+    operationId: `contest-op:v1:battle-lifecycle-${operationDigest}`,
+    expectedRevision: input.expectedRevision,
+    clientId: input.clientId ?? null,
+    sourceOperationId: input.sourceOperationId,
+    sourceResultId: input.sourceResultId,
+  }, { role: 'gm' }, dependencies, true)
+}
+
+export interface EndBattleContestInputV1 {
+  readonly contestId: string
+  readonly expectedRevision: number
+  readonly sourceOperationId: string
+  readonly sourceResultId: string
+  readonly clientId?: string | null
+}
+
+/**
+ * Server-only Battle ending ingress. The source identity is resolved against
+ * persisted round-boundary or final-knockout authority; clients cannot choose
+ * the end condition, round, scores, placements, or winner.
+ */
+export const endBattleContestUseCase = (
+  input: EndBattleContestInputV1,
+  dependencies: ContestUseCaseDependencies = {},
+): ExecuteContestCommandResultV1 => {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return fail(400, 'contest.invalid-handoff-request', 'Battle ending input must be one server-owned object.')
+  const allowed = new Set(['contestId','expectedRevision','sourceOperationId','sourceResultId','clientId'])
+  if (Object.keys(input).some(field => !allowed.has(field))) return fail(400, 'contest.invalid-handoff-request', 'Battle ending accepts no client-authored condition, round, score, placement, winner, HP, Scene, map, or mechanics fields.')
+  const operationDigest = createHash('sha256')
+    .update(`${input.contestId}\n${input.sourceOperationId}\n${input.sourceResultId}`)
+    .digest('hex').slice(0, 40)
+  return executeContestCommand({
+    schemaVersion: 1,
+    commandKind: 'end-battle-contest',
+    contestId: input.contestId,
+    operationId: `contest-op:v1:battle-end-${operationDigest}`,
+    expectedRevision: input.expectedRevision,
+    clientId: input.clientId ?? null,
+    sourceOperationId: input.sourceOperationId,
+    sourceResultId: input.sourceResultId,
+  }, { role: 'gm' }, dependencies, true)
 }
 
 export const loadContestUseCase = (contestId: string, actor: ContestActorV1, dependencies: ContestUseCaseDependencies = {}): ContestRoleProjectionV1 => {

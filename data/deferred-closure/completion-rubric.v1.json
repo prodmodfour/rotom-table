@@ -56,8 +56,8 @@
     {
       "id": "p11.ranged-runtime-certification",
       "type": "test",
-      "path": "tests/server/deferredClosureRangedWeapons.test.ts",
-      "status": "planned",
+      "path": "tests/server/equipmentGrantProjection.test.ts",
+      "status": "passing",
       "ownerTicket": "P11-022"
     },
     {
@@ -70,7 +70,7 @@
       "id": "p11.weapon-move-runtime-certification",
       "type": "test",
       "path": "tests/server/deferredClosureWeaponMovesRuntime.test.ts",
-      "status": "planned",
+      "status": "passing",
       "ownerTicket": "P11-030"
     },
     {
@@ -94,8 +94,8 @@
     {
       "id": "p11.contest-variant-runtime-certification",
       "type": "test",
-      "path": "tests/server/deferredClosureContestVariants.test.ts",
-      "status": "planned",
+      "path": "tests/integration/deferredClosureGoldenJourneys.test.ts",
+      "status": "passing",
       "ownerTicket": "P11-080"
     },
     {
@@ -982,7 +982,7 @@
   "finalAcceptance": {
     "ticket": "P11-089",
     "acceptanceRecordPath": "data/deferred-closure/zero-deferred-acceptance.v1.json",
-    "requiredCommand": "python3 scripts/check_deferred_closure.py --require-complete",
+    "requiredCommand": "python3 scripts/check_deferred_closure.py --require-complete --check-drift",
     "requiredCounts": {
       "rows": 29,
       "nonFinal": 0,

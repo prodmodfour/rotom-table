@@ -224,6 +224,16 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
   if (!isRecord(payload) || !nonEmptyString(payload.placementId)) {
     return failed('invalid-patch', 'map.placements patches require placementId')
   }
+  const applyEncounterHistory = (): LivePlayPatchesRejected | null => {
+    if (payload.currentEncounterState === undefined) return null
+    if (payload.command !== LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
+      && payload.command !== LIVE_PLAY_COMMAND_TYPES.DELETE_TOKEN) {
+      return failed('invalid-patch', 'only Pokémon send-out and recall patches may carry currentEncounterState')
+    }
+    try { map.encounterState = parseEncounterState(payload.currentEncounterState) }
+    catch { return failed('invalid-patch', 'map.placements patch currentEncounterState is malformed') }
+    return null
+  }
   if (
     payload.command === LIVE_PLAY_COMMAND_TYPES.SPAWN_TOKEN
     || payload.command === LIVE_PLAY_COMMAND_TYPES.SEND_OUT_POKEMON
@@ -233,7 +243,7 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     const next = clonePlacement(payload.current)
     if (index >= 0) map.placements.splice(index, 1, next)
     else map.placements.push(next)
-    return null
+    return applyEncounterHistory()
   }
 
   if (
@@ -245,7 +255,7 @@ const applyPlacementPatch = (map: TabletopMap, payload: unknown): LivePlayPatche
     if (map.initiative?.activeId === payload.placementId) {
       map.initiative = { ...map.initiative, activeId: null }
     }
-    return null
+    return applyEncounterHistory()
   }
 
   return failed('unknown-patch', 'map.placements patch command must be spawnToken, sendOutPokemon, deleteToken, or throwPokeball')

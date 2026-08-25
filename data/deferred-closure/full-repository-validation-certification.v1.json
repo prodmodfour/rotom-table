@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-full-repository-validation-v1",
+  "ticket": "P11-090",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/zero-deferred-acceptance.v1.json",
+    "sha256": "62b888e6c2bf583391bed8e528e52d55a24f98aa06ce26bff657f99598c149ef"
+  },
+  "environment": {
+    "nodeMajor": 24,
+    "cleanInstall": "npm-ci",
+    "vitestMaxWorkers": 1,
+    "vitestFileParallelism": false,
+    "playwrightWorkers": 1,
+    "productionBuild": true,
+    "liveplayOnly": true
+  },
+  "results": {
+    "qualityGate": "passed",
+    "shellSyntax": "passed",
+    "secretAndGeneratedPrivateFileGuardrails": "passed",
+    "generatedAndRegistryChecks": "passed",
+    "zeroDeferredStrictCheck": "passed",
+    "lintErrors": 0,
+    "lintWarnings": 116,
+    "typecheck": "passed",
+    "vitestFilesPassed": 1664,
+    "vitestTestsPassed": 11731,
+    "vitestTestsFailed": 0,
+    "nuxtTestFilesPassed": 2,
+    "nuxtTestsPassed": 7,
+    "playwrightTestsScheduled": 94,
+    "playwrightTestsPassed": 93,
+    "playwrightTestsSkipped": 1,
+    "playwrightTestsFailed": 0,
+    "productionBuild": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "regressionClosure": {
+    "initialFullSuiteFailures": 24,
+    "remainingAfterFocusedRepairs": 0,
+    "canonicalMoveHistoryUsesProgramIdentity": true,
+    "frozenEvidenceUsesAcceptedSuccessors": true,
+    "authorityGuardrailsRegeneratedDeterministically": true,
+    "desktopMobileOperationIdsIsolated": true,
+    "optionalBattleContextAvoidsCompatibility404": true,
+    "serialCampaignVisualBaselineIsolated": true,
+    "acceptedScreenshotsImmutableByDefault": true,
+    "changedMaterialExactRetryConflicts": true
+  },
+  "authorities": [
+    {
+      "path": "package.json",
+      "sha256": "44f5f8b560484aea3ab93eaff4d328cb41d6796ba35db1429f099f93e5f5a0b8"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "b9f6cea9927a816d4ff2c4dbb153abf4aa2ffc50a4fa42993dcfeb6f81be7a50"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "0b1638e8edb362d64807884aff8eba6a6489968f6d1711232642d5d963461f0c"
+    },
+    {
+      "path": "scripts/check_deferred_closure.py",
+      "sha256": "b349586b08877b2ead5b1fa7942c2046a632bb4579953ef00b919be38be4723f"
+    },
+    {
+      "path": "data/complete-play-loop/authority-guardrails.v1.json",
+      "sha256": "e94700c781a254b7175b7bf2db80e57e76b7a2f87fb1c81f1d0bd5526513658d"
+    },
+    {
+      "path": "playwright.config.ts",
+      "sha256": "be67ece60a8e4d2a29b73c4a2581ef6177fc91a1802bb1d58f7bbab3a857a503"
+    }
+  ],
+  "productionJourneyEvidence": [
+    {
+      "path": "tests/e2e/commerce-item-loop-certification.spec.ts",
+      "sha256": "a8e1ebac428b7d1a19251b54e212ed41abadcf8445d0162ff9721e57f57581bb"
+    },
+    {
+      "path": "tests/e2e/encounter-workspace-shell.spec.ts",
+      "sha256": "fd1d6e9fb0e5e6cd9add7c0b37d28387a257b300fe89ec9ac196cb1db35308ce"
+    },
+    {
+      "path": "tests/e2e/skill-check-liveplay.spec.ts",
+      "sha256": "22b92ae903417cd16586d27a7e930d2885de2c549af67df6052e56c91f0d21b2"
+    },
+    {
+      "path": "tests/e2e/contest-battle-encounter-link.spec.ts",
+      "sha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349"
+    },
+    {
+      "path": "tests/e2e/contests-acceptance.spec.ts",
+      "sha256": "e1d4388772cdcd920ab6130b133cfbd279080f751ba58a5f9a49983c8796d322"
+    }
+  ],
+  "commands": [
+    "bash scripts/quality-gate.sh",
+    "python3 scripts/check_deferred_closure.py --require-complete --check-drift",
+    "git diff --check"
+  ],
+  "nextTicket": "P11-091"
+}

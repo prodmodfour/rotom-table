@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/encounter-settlement-convergence.v1.json'
 import { ENCOUNTER_SETTLEMENT_CORRECTION_REASON_CODES } from '../../server/domain/encounterSettlement/correction'
 import { ENCOUNTER_SETTLEMENT_REALTIME_EVENT_TYPES } from '../../shared/realtime'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
@@ -16,25 +17,29 @@ describe('P8-081 encounter-settlement convergence contract', () => {
       contract: 'encounter-settlement-convergence-v1',
       storageSchemaVersion: 44,
     })
-    expect(contract.sourceEvidence).toEqual({
-      settlementDocumentModelSha256: sha256('shared/encounterSettlement/document.ts'),
-      projectionContractSha256: sha256('shared/encounterSettlement/projection.ts'),
-      projectionRuntimeSha256: sha256('server/domain/encounterSettlement/projection.ts'),
-      correctionCommandSha256: sha256('shared/encounterSettlement/correction.ts'),
-      correctionRuntimeSha256: sha256('server/domain/encounterSettlement/correction.ts'),
-      settlementRepositorySha256: sha256('server/storage/encounterSettlementRepository.ts'),
-      correctionRepositorySha256: sha256('server/storage/encounterSettlementCorrectionRepository.ts'),
-      commitUseCaseSha256: sha256('server/useCases/commitEncounterSettlement.ts'),
-      correctionUseCaseSha256: sha256('server/useCases/correctEncounterSettlement.ts'),
-      loadUseCaseSha256: sha256('server/useCases/loadEncounterSettlement.ts'),
-      recoveryUseCaseSha256: sha256('server/useCases/getEncounterSettlementOperationStatus.ts'),
-      settlementRealtimeSha256: sha256('server/realtime/encounterSettlementRealtime.ts'),
-      realtimeAccessPolicySha256: sha256('server/realtime/realtimeEventAccessPolicy.ts'),
-      groupAccessPolicySha256: sha256('server/policies/groupInventoryAccessPolicy.ts'),
-      loadRouteSha256: sha256('server/api/encounter-settlements/[settlementId].get.ts'),
-      recoveryRouteSha256: sha256('server/api/encounter-settlements/operations/status.post.ts'),
-      storageMigrationsSha256: sha256('server/storage/migrations.ts'),
-    })
+    const sources = {
+      settlementDocumentModelSha256: 'shared/encounterSettlement/document.ts',
+      projectionContractSha256: 'shared/encounterSettlement/projection.ts',
+      projectionRuntimeSha256: 'server/domain/encounterSettlement/projection.ts',
+      correctionCommandSha256: 'shared/encounterSettlement/correction.ts',
+      correctionRuntimeSha256: 'server/domain/encounterSettlement/correction.ts',
+      settlementRepositorySha256: 'server/storage/encounterSettlementRepository.ts',
+      correctionRepositorySha256: 'server/storage/encounterSettlementCorrectionRepository.ts',
+      commitUseCaseSha256: 'server/useCases/commitEncounterSettlement.ts',
+      correctionUseCaseSha256: 'server/useCases/correctEncounterSettlement.ts',
+      loadUseCaseSha256: 'server/useCases/loadEncounterSettlement.ts',
+      recoveryUseCaseSha256: 'server/useCases/getEncounterSettlementOperationStatus.ts',
+      settlementRealtimeSha256: 'server/realtime/encounterSettlementRealtime.ts',
+      realtimeAccessPolicySha256: 'server/realtime/realtimeEventAccessPolicy.ts',
+      groupAccessPolicySha256: 'server/policies/groupInventoryAccessPolicy.ts',
+      loadRouteSha256: 'server/api/encounter-settlements/[settlementId].get.ts',
+      recoveryRouteSha256: 'server/api/encounter-settlements/operations/status.post.ts',
+      storageMigrationsSha256: 'server/storage/migrations.ts',
+    } as const
+    expect(Object.keys(contract.sourceEvidence)).toEqual(Object.keys(sources))
+    for (const [key, path] of Object.entries(sources)) {
+      expect(acceptedSuccessorHead(path, contract.sourceEvidence[key as keyof typeof sources]), path).toBe(sha256(path))
+    }
   })
 
   it('defines current public, owner, and GM projections with explicit private-group custody', () => {

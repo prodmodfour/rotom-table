@@ -8,6 +8,17 @@
     "ability": 3,
     "item": 5
   },
+  "trainerParticipantCoverage": {
+    "ticket": "P11-059",
+    "status": "native",
+    "coveredRows": 44,
+    "trainerFeatureScope": "selected-paired-performer",
+    "pokemonAbilityAndItemScope": "exact-pokemon-provider",
+    "sharedContestDiceScope": "trainer-pokemon-entry",
+    "ordinaryFeatureAndAbilityLedgersReused": true,
+    "exactReplayAndRollbackCertified": true,
+    "runtimeProseParsing": false
+  },
   "rows": [
     {
       "kind": "feature",

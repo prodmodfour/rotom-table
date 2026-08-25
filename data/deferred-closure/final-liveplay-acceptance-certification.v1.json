@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-final-liveplay-acceptance-v1",
+  "ticket": "P11-091",
+  "status": "accepted",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/full-repository-validation-certification.v1.json",
+    "sha256": "ebb592f56de5a9c7a7176d69d5fa49ae7701e13ee87795014e3b05d33ff729f6"
+  },
+  "mechanicsGoldenAuthority": {
+    "path": "data/deferred-closure/integrated-golden-journeys-certification.v1.json",
+    "sha256": "a7de062f17b3449e774049403d7d1d7d02f9178ea4328956d53479904fd80767",
+    "knownRows": 29,
+    "coveredRows": 29,
+    "hardFailures": 0
+  },
+  "browserAcceptance": {
+    "mode": "production-build-liveplay",
+    "projects": ["chromium", "mobile-chromium"],
+    "workers": 1,
+    "traceMode": "on",
+    "journeysPerProject": 8,
+    "scheduled": 16,
+    "passed": 16,
+    "failed": 0,
+    "traceCount": 16,
+    "criticalUsabilityDefects": 0,
+    "seriousOrCriticalAxeViolations": 0,
+    "horizontalPageOverflows": 0,
+    "publicPrivateAuthorityLeaks": 0,
+    "hardFailures": 0
+  },
+  "cohorts": [
+    {
+      "cohortId": "ranged-and-weapon-actions",
+      "productionJourney": "encounter-action-and-visual-regression",
+      "desktop": "passed",
+      "mobile": "passed"
+    },
+    {
+      "cohortId": "item-actions",
+      "productionJourney": "guided-item-adjudication",
+      "desktop": "passed",
+      "mobile": "passed"
+    },
+    {
+      "cohortId": "generic-skill-checks",
+      "productionJourney": "generic-skill-check-multi-client",
+      "desktop": "passed",
+      "mobile": "passed"
+    },
+    {
+      "cohortId": "trainer-participant-contests",
+      "productionJourney": "trainer-participant-accessibility",
+      "desktop": "passed",
+      "mobile": "passed"
+    },
+    {
+      "cohortId": "battle-contests",
+      "productionJourney": "battle-contest-joined-liveplay",
+      "desktop": "passed",
+      "mobile": "passed"
+    }
+  ],
+  "multiClientConvergence": {
+    "genericSkillCheck": true,
+    "contestGmOwnerSpectator": true,
+    "battleContestGmOwnerSpectator": true,
+    "realtimeAfterCommitOnly": true,
+    "optimisticScoring": false,
+    "duplicateAcceptedRows": 0,
+    "changedInputOperationReuseAccepted": false
+  },
+  "visualAndTraceEvidence": {
+    "traceManifest": {
+      "path": ".pi/artifacts/liveplay-acceptance/deferred-closure-final/trace-manifest.v1.json",
+      "sha256": "d08c166060b50af1574bdccae39f832df1038f150f012289447b08551dfcb75c"
+    },
+    "contactSheet": {
+      "path": ".pi/artifacts/liveplay-acceptance/deferred-closure-final/contact-sheet.png",
+      "sha256": "f3b20754319801809650e6b1631ef98bf4b7627d5800aa42a3ba8bde86a472bc"
+    },
+    "review": {
+      "path": ".pi/artifacts/liveplay-acceptance/deferred-closure-final/review.md",
+      "sha256": "eb09ad27c19bec79055a066f11f44aa9b24699b21e4c0f2c42bb49c5a8987dfe"
+    },
+    "reviewStatus": "accepted",
+    "tracesAreLocalRoleAuthorizedEvidence": true,
+    "tracesAreRuntimeAuthority": false
+  },
+  "supportingCertifications": [
+    {
+      "path": "data/deferred-closure/final-accessibility-certification.v1.json",
+      "sha256": "c3cbf3123aa6e78a84dfecf7889dde817cf9ff38cc4fb348b13735e525080110"
+    },
+    {
+      "path": "data/deferred-closure/final-privacy-role-projection-certification.v1.json",
+      "sha256": "75e5c34a045dfa9beb4215e410424e2aed4e8a815b501a043a788afbea9632c6"
+    },
+    {
+      "path": "data/deferred-closure/zero-deferred-acceptance.v1.json",
+      "sha256": "62b888e6c2bf583391bed8e528e52d55a24f98aa06ce26bff657f99598c149ef"
+    }
+  ],
+  "productionJourneyEvidence": [
+    {
+      "path": "tests/e2e/encounter-workspace-shell.spec.ts",
+      "sha256": "fd1d6e9fb0e5e6cd9add7c0b37d28387a257b300fe89ec9ac196cb1db35308ce"
+    },
+    {
+      "path": "tests/e2e/guided-item-adjudication.spec.ts",
+      "sha256": "d8a18c08aceea8b8094bf444a8b7a3e3dceea4b8fd61e541fccdde720b5a20d5"
+    },
+    {
+      "path": "tests/e2e/skill-check-liveplay.spec.ts",
+      "sha256": "22b92ae903417cd16586d27a7e930d2885de2c549af67df6052e56c91f0d21b2"
+    },
+    {
+      "path": "tests/e2e/contests-acceptance.spec.ts",
+      "sha256": "e1d4388772cdcd920ab6130b133cfbd279080f751ba58a5f9a49983c8796d322"
+    },
+    {
+      "path": "tests/e2e/contest-battle-encounter-link.spec.ts",
+      "sha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349"
+    }
+  ],
+  "acceptance": {
+    "desktopProductionLiveplay": "passed",
+    "mobileProductionLiveplay": "passed",
+    "multiClientConvergence": "passed",
+    "visualReview": "accepted",
+    "traceEvidence": "complete",
+    "allTwentyNineRowsRetainFinalEvidence": true,
+    "nextTicket": "P11-092"
+  }
+}

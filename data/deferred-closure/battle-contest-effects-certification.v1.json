@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-effects-v1",
+  "ticket": "P11-070",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-accepted-move-appeals-certification.v1.json",
+    "sha256": "e398c1d0f60487c976dfcf875cc55d35c7bcfefe1ed3b929bbfb049ddb90fdb0"
+  },
+  "reviewedMigration": {
+    "path": "scripts/reviewed-data/deferred-closure-battle-contest-effects.v1.json",
+    "sha256": "40d01d6f12cfa51574b6cb177d33db8ca9370a14ed2d0c2b4d198ffe000c8d4d"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "f084b844598e352f20fdc9a7c9d890d085604fc6bf496dfa3c8c980e8c3953d7",
+    "rowId": "battle",
+    "completionState": "structured",
+    "structuredSemanticsVersion": 1,
+    "effectSemantics": "canonical-contest-effect-handler",
+    "unknownEffectPolicy": "reject"
+  },
+  "authorities": [
+    {
+      "id": "battle-effect-catalog-gate",
+      "path": "shared/contests/catalog.ts",
+      "sha256": "56018ba2fc8fe1ddc32db502cc359b5e7cd7e99f5220772cd4b0568fe727946f",
+      "guarantees": ["exact-22-effect-inventory", "unknown-effect-rejection", "linked-map-adjacency-policy", "encounter-round-timing-policy"]
+    },
+    {
+      "id": "shared-canonical-effect-handlers",
+      "path": "shared/contests/effectResolution.ts",
+      "sha256": "8aceb5412a3da08a7185640d4d8bc7fc853ebb017bc95cd7f62d2a9096fae846",
+      "guarantees": ["ordinary-and-battle-shared-scoring", "explicit-actor-and-adjacent-target-scopes", "canonical-voltage-caps", "trainer-team-indirect-fumble", "terminal-effect-transitions"]
+    },
+    {
+      "id": "projection-independent-type-relationship",
+      "path": "shared/contests/typeRelationship.ts",
+      "sha256": "fac6a95efe72c7d9fff0988ff100d74552168e4d03241b24e2ab9aae1eb88ba8",
+      "guarantees": ["matching-allied-opposed-authority", "no-audience-coupling", "canonical-dice-modifier"]
+    },
+    {
+      "id": "shared-appeal-assembly",
+      "path": "shared/contests/appealAssembly.ts",
+      "sha256": "902358bcaba91cc7e3f557353e6f487a48915d8ca9bda5653d8a8004996e6eef",
+      "guarantees": ["active-and-adjacent-voltage-inputs", "effect-specific-base-dice", "reliable-history", "get-ready-multiplier"]
+    },
+    {
+      "id": "effect-reconciled-contest-document",
+      "path": "shared/contests/document.ts",
+      "sha256": "c7bcba178e73de01e925bb9b198cba618558fc2ee2b771835fd8e7ac67e09b7b",
+      "guarantees": ["exact-internal-adjacent-performer-evidence", "opposing-team-target-validation", "ordered-effect-reconciliation", "assembly-and-consequence-forgery-rejection", "legacy-p11-069-read-compatibility"]
+    },
+    {
+      "id": "battle-effect-execution",
+      "path": "server/domain/contests/battleAppeal.ts",
+      "sha256": "0848d4b247f8c00a4f0481ac62dd8838a4944515583a19a6a615f0867eda5884",
+      "guarantees": ["all-opposing-on-field-pokemon-adjacent", "actor-and-adjacent-effect-scopes", "saving-grace-protection", "same-pokemon-get-ready-and-reliable-history", "no-encounter-writes"]
+    },
+    {
+      "id": "linked-map-adjacency-coordinator",
+      "path": "server/useCases/contests.ts",
+      "sha256": "8c244cd55d3f149bffbf01be3ba845a454c1b157f80f321142d5238b70773f82",
+      "guarantees": ["server-derived-current-placements", "immutable-side-membership", "map-revision-read-set", "contest-only-commit"]
+    },
+    {
+      "id": "battle-effect-operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "121471c2380439442e11e0ac7f82e669e9878ad48d14858446b1a58c1a3a9cc3",
+      "guarantees": ["effect-target-semantics", "round-relative-semantics", "legacy-evidence-policy", "remaining-ticket-boundaries"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleEffectsRuntime.test.ts",
+      "sha256": "b03d63a4dcb4f6c8eeea09a0743ad7e5afa7c75de6439ae1d9fbccce79452dd8",
+      "scenarioIds": ["exact-22-handler-inventory", "shared-roll-scoring", "actor-and-adjacent-voltage", "attention-grabber-transfer", "trainer-team-sabotage-and-tease", "saving-grace-protection", "terminal-voltage-effects"]
+    },
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "ed83ad85b489f3f2f6fa86ab0118edcdbcaa3a247117d1325df3431ed989832b",
+      "scenarioIds": ["linked-map-adjacency-required", "singular-opponent-effect", "plural-opponent-effect", "ordered-effect-transitions", "indirect-team-fumble", "effect-forgery-rejection", "zero-encounter-writes"]
+    }
+  ],
+  "validation": {
+    "focusedEffectHandlerTests": 6,
+    "acceptedMoveRuntimeTests": 10,
+    "contestRuntimeAndContractTests": 198,
+    "nuxtTypecheck": "passed"
+  },
+  "acceptance": {
+    "canonicalEffectHandlers": 22,
+    "unsupportedCanonicalEffects": 0,
+    "minimumOpposingOnFieldPokemon": 1,
+    "maximumOpposingOnFieldPokemon": 6,
+    "actorVoltageTargetScope": "acting-pokemon",
+    "adjacentVoltageTargetScope": "all-opposing-on-field-pokemon",
+    "indirectFumbleTargetScope": "opposing-trainer-team",
+    "roundAuthority": "accepted-encounter-round",
+    "clientAuthoredAdjacencyFields": 0,
+    "encounterDocumentWrites": 0,
+    "encounterMapWrites": 0,
+    "legacyAppealsRescored": 0,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-071"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-pokemon-voltage-v1",
+  "ticket": "P11-071",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-effects-certification.v1.json",
+    "sha256": "7014f9211471525fd1b3629fb80b5fdea55cfa2571571e25c32a159f459f1a0b"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "f084b844598e352f20fdc9a7c9d890d085604fc6bf496dfa3c8c980e8c3953d7",
+    "rowId": "battle",
+    "completionState": "structured",
+    "voltageScope": "per-pokemon",
+    "appealUses": "active-pokemon-only"
+  },
+  "authorities": [
+    {
+      "id": "per-pokemon-voltage-document",
+      "path": "shared/contests/document.ts",
+      "sha256": "c7bcba178e73de01e925bb9b198cba618558fc2ee2b771835fd8e7ac67e09b7b",
+      "guarantees": ["exact-roster-performer-ledgers", "zero-shared-team-compatibility-value", "zero-through-five-bounds", "ordered-actor-and-adjacent-reconciliation", "forgery-rejection"]
+    },
+    {
+      "id": "active-pokemon-voltage-consumption",
+      "path": "server/domain/contests/battleAppeal.ts",
+      "sha256": "0848d4b247f8c00a4f0481ac62dd8838a4944515583a19a6a615f0867eda5884",
+      "guarantees": ["acting-pokemon-starting-voltage-only", "on-field-opponents-only", "reserve-values-retained", "performer-scoped-transitions", "canonical-caps"]
+    },
+    {
+      "id": "active-placement-authority",
+      "path": "server/useCases/contests.ts",
+      "sha256": "8c244cd55d3f149bffbf01be3ba845a454c1b157f80f321142d5238b70773f82",
+      "guarantees": ["actor-currently-placed", "opponent-currently-placed", "enrolled-side-coupling", "client-placement-rejection"]
+    },
+    {
+      "id": "role-safe-voltage-projections",
+      "path": "shared/contests/projections.ts",
+      "sha256": "2d70ff606e124f3dfd5d8190408385d675364eea9ebde403d1a2f1628d4e266a",
+      "guarantees": ["spectator-display-values-only", "owner-exact-own-entry-only", "gm-full-contest-authority", "diagnostic-only-handoff-evidence", "public-performer-and-provider-id-removal"]
+    },
+    {
+      "id": "privacy-safe-contest-cockpit-consumption",
+      "path": "src/pages/contests/[contestId].vue",
+      "sha256": "4f1ace3c5dbf932a4ab7f44e56d7fe17b978d9f5b0e6c915067b7b854458789a",
+      "guarantees": ["public-sanitized-appeal-rendering", "owner-own-appeal-authority", "gm-full-appeal-authority", "stable-safe-contributor-keys"]
+    },
+    {
+      "id": "pokemon-voltage-operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "121471c2380439442e11e0ac7f82e669e9878ad48d14858446b1a58c1a3a9cc3",
+      "guarantees": ["active-only-assembly", "reserve-retention", "role-privacy", "ko-recall-successor-boundary"]
+    }
+  ],
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleAcceptedMoveAppealsRuntime.test.ts",
+      "sha256": "ed83ad85b489f3f2f6fa86ab0118edcdbcaa3a247117d1325df3431ed989832b",
+      "scenarioIds": ["all-roster-ledgers-initialized", "actor-voltage-transition", "opposing-active-voltage-transition", "reserve-ledgers-independent", "shared-team-voltage-zero", "spectator-sanitization", "owner-own-ledger", "gm-full-ledgers", "ledger-forgery-rejection"]
+    },
+    {
+      "path": "tests/server/contestBattleEffectsRuntime.test.ts",
+      "sha256": "b03d63a4dcb4f6c8eeea09a0743ad7e5afa7c75de6439ae1d9fbccce79452dd8",
+      "scenarioIds": ["bounded-voltage", "multi-active-targets", "attention-transfer-caps", "terminal-transitions"]
+    }
+  ],
+  "validation": {
+    "focusedEffectHandlerTests": 6,
+    "acceptedMoveRuntimeTests": 10,
+    "contestRuntimeAndContractTests": 198,
+    "nuxtTypecheck": "passed"
+  },
+  "acceptance": {
+    "minimumPokemonLedgersPerTeam": 3,
+    "maximumPokemonLedgersPerTeam": 6,
+    "minimumVoltage": 0,
+    "maximumVoltage": 5,
+    "sharedTeamVoltage": 0,
+    "appealVoltageContributors": "active-pokemon-only",
+    "reserveVoltageContributors": 0,
+    "publicSheetSlugFields": 0,
+    "publicPerformerIdFields": 0,
+    "publicProviderIdFields": 0,
+    "publicTeamPoolFields": 0,
+    "ownerOpponentExactLedgerFields": 0,
+    "diagnosticHandoffReceiptFields": 1,
+    "variantCompletionState": "structured",
+    "nextTicket": "P11-072"
+  }
+}

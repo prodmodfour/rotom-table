@@ -9,6 +9,8 @@ Rotom Table runs Pokémon Contests as ordinary liveplay campaign activity. Conte
 - [Canonical-data maintenance](canonical-data-maintenance.md) — reviewed migration and coverage checks.
 - [Operations and recovery](operations-recovery.md) — liveplay hosting, restart, exact retry, backup, and troubleshooting.
 - [Accessibility and acceptance](accessibility-and-acceptance.md) — keyboard, touch, screen reader, reflow, privacy, and validation evidence.
+- [Trainer Participant runtime](trainer-participant-runtime.md) — native paired enrollment, methods, shared dice, performer turns, Voltage, projections, settlement, and fixtures.
+- [Battle Contest runtime](battle-contest-runtime.md) — native dual-engine setup, handoffs, Appeals, lifecycle, recovery, joined cockpit, and combined settlement.
 
 ## Authority in one diagram
 
@@ -29,4 +31,4 @@ Documentary books, parser inputs, PDFs, and websites are provenance only. Runtim
 
 ## Alpha acceptance
 
-`data/contests/alpha-acceptance.v1.json` is the machine-readable P10-100 closure record. It binds the reviewed catalog, deterministic fixtures, authority/runtime implementation, browser journey, guides, and repository validation status. Candidate status permits only the final quality-gate rerun and archival to remain; accepted status requires all 100 tickets complete, the plan archived, every validation passed, zero blocked canonical rows, and zero critical Contest debt.
+`data/contests/alpha-acceptance.v1.json` is the frozen machine-readable P10-100 closure record. It binds the reviewed catalog, deterministic fixtures, authority/runtime implementation, browser journey, guides, and repository validation status. Plan 11 preserves that accepted history through `data/deferred-closure/successor-chain.v1.json` and natively activates Trainer Participant and Battle only after their ordered executable certificates and current fixture heads pass. Current runtime status comes from app-owned `data/reference/contests.json`, not by editing the historical acceptance record.

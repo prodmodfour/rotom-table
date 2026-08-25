@@ -2,6 +2,12 @@
 
 P11-052 closes the generic Skill Check surface across reconnect, restart, concurrent delivery, campaign attention, and terminal campaign history. The runtime continues to use the schema-v1 `SkillCheckDocument` and schema-v50 SQLite tables established by P11-045.
 
+## Liveplay workflow
+
+The GM opens Generic Skill Checks in the Encounter Director, selects one through 32 current Trainer/Pokémon subjects and one canonical Skill per subject, then declares public/private text, DC or opposed policy, visibility, concealment, situational modifier, and expiry. Each controlled subject accepts or declines through its own Profile projection. The GM resolves only after the document is ready; the server owns every d6, modifier, comparison, result, and journal row. Spectators receive pending counts and permitted aggregates only.
+
+The browser submits strict intent and issued identities, never a roll, total, winner, or correction result. See [Deferred mechanics closure](deferred-mechanics-closure.md) for player, GM, contributor, and operator context.
+
 ## Atomic command and recovery boundary
 
 Every request, response, resolve, cancellation, and server timeout is represented by a strict command with a canonical command hash, operation identity, expected document revision, and principal key. A mutation performs the plus-one document replacement and operation-journal insert in one synchronous `BEGIN IMMEDIATE` transaction.

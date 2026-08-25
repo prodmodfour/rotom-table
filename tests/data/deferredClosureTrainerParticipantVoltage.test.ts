@@ -11,7 +11,7 @@ describe('P11-058 Trainer Participant paired Voltage certification', () => {
   it('binds method, document, engine, projection, recovery, fixture, operator, and evidence bytes', () => {
     expect(certification).toMatchObject({ schemaVersion: 1, certificationId: 'deferred-closure-trainer-participant-voltage-v1', ticket: 'P11-058', status: 'certified', runtimeProseParsing: false })
     expect(sha256(certification.predecessor.path)).toBe(certification.predecessor.sha256)
-    expect(sha256(certification.canonicalVariantAuthority.path)).toBe(certification.canonicalVariantAuthority.sha256)
+    expect(acceptedSuccessorHead(certification.canonicalVariantAuthority.path, certification.canonicalVariantAuthority.sha256)).toBe(sha256(certification.canonicalVariantAuthority.path))
     expect(new Set(certification.authorities.map(authority => authority.path)).size).toBe(certification.authorities.length)
     for (const authority of certification.authorities) {
       expect(acceptedSuccessorHead(authority.path, authority.sha256), authority.id).toBe(sha256(authority.path))

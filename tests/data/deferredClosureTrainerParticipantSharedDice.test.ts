@@ -17,7 +17,7 @@ describe('P11-054 Trainer Participant shared dice certification', () => {
       runtimeProseParsing: false,
     })
     expect(sha256(certification.predecessor.path)).toBe(certification.predecessor.sha256)
-    expect(sha256(certification.canonicalVariantAuthority.path)).toBe(certification.canonicalVariantAuthority.sha256)
+    expect(acceptedSuccessorHead(certification.canonicalVariantAuthority.path, certification.canonicalVariantAuthority.sha256)).toBe(sha256(certification.canonicalVariantAuthority.path))
     expect(new Set(certification.authorities.map(authority => authority.path)).size).toBe(certification.authorities.length)
     for (const authority of certification.authorities) {
       expect(acceptedSuccessorHead(authority.path, authority.sha256), authority.id).toBe(sha256(authority.path))
@@ -31,10 +31,10 @@ describe('P11-054 Trainer Participant shared dice certification', () => {
     }
   })
 
-  it('certifies one referenced preparation pool, pair-wide spend, journaled allocation, and no lifecycle activation', () => {
+  it('preserves the historical shared-pool certificate under the accepted native activation successor', () => {
     const row = contests.variants.find(variant => variant.id === 'trainer-participant')
     expect(row).toMatchObject({
-      completionState: 'structured',
+      completionState: 'native',
       sharedContestDicePool: certification.canonicalVariantAuthority.sharedContestDicePool,
       featurePolicy: {
         coordinatorMayTarget: ['trainer', 'pokemon'],

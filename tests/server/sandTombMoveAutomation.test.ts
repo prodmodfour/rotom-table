@@ -296,7 +296,11 @@ describe('Sand Tomb shared Vortex automation', () => {
       nextSheet: { combat: { currentHp: expect.any(Number) } },
     })
     expect(lifecycle.currentEncounterState.effects.some(isVortexEffect)).toBe(false)
-    expect(lifecycle.reductions).toHaveLength(2)
+    expect(lifecycle.reductions).toHaveLength(3)
+    expect(lifecycle.currentEncounterState.history.lifecycleKnockouts).toContainEqual(expect.objectContaining({
+      targetPlacementId: 'target-token',
+      cause: 'damage-over-time',
+    }))
     expect(lifecycle.events.at(-1)).toMatchObject({
       kind: 'effect-removed',
       reasonCode: VORTEX_REASON_CODES.targetKnockedOut,

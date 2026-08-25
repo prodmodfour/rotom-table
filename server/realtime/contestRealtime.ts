@@ -8,7 +8,7 @@ import type { AppendRealtimeEventInput } from '../storage/realtimeEventRepositor
 const eventTypeFor: Readonly<Record<ContestCommandKind, ContestRealtimeEventType>> = Object.freeze({
   'create-contest': 'contest.created', 'update-settings': 'contest.setup.changed', 'set-participant-method': 'contest.setup.changed', 'enroll-contestant': 'contest.setup.changed', 'remove-contestant': 'contest.setup.changed',
   'start-introduction': 'contest.setup.changed', 'declare-introduction': 'contest.introduction.accepted', 'restart-introduction': 'contest.setup.changed',
-  'start-performance': 'contest.performance.started', 'select-rotation-performer': 'contest.rotation.performer-selected', 'declare-appeal': 'contest.appeal.accepted', 'use-intervention': 'contest.intervention.accepted', 'pass-intervention': 'contest.intervention.passed',
+  'create-battle-encounter': 'contest.performance.started', 'score-battle-accepted-move': 'contest.appeal.accepted', 'apply-battle-voltage-lifecycle': 'contest.voltage.changed', 'end-battle-contest': 'contest.performance.completed', 'start-performance': 'contest.performance.started', 'select-rotation-performer': 'contest.rotation.performer-selected', 'declare-appeal': 'contest.appeal.accepted', 'use-intervention': 'contest.intervention.accepted', 'pass-intervention': 'contest.intervention.passed',
   'set-paused': 'contest.setup.changed', 'apply-correction': 'contest.corrected', 'declare-prize': 'contest.prize.declared', 'prepare-settlement': 'contest.settlement.prepared',
   'commit-settlement': 'contest.completed', 'cancel-contest': 'contest.cancelled',
 })
@@ -29,7 +29,7 @@ export const contestRealtimeAppendInputs = (input: {
   const types = [...new Set<ContestRealtimeEventType>([
     primaryType,
     ...(operationHistory.some(row => row.type === 'round-advanced' || row.type === 'festival-elimination') ? ['contest.round.advanced' as const] : []),
-    ...(operationHistory.some(row => row.type === 'performance-completed') ? ['contest.performance.completed' as const] : []),
+    ...(operationHistory.some(row => row.type === 'performance-completed' || row.type === 'battle-ended-round-budget' || row.type === 'battle-ended-all-pokemon-ko') ? ['contest.performance.completed' as const] : []),
   ])]
   const profiles = [...new Set(input.document.contestants.flatMap(row => row.controller.kind === 'profile' ? [row.controller.profileId] : []))]
   return Object.freeze(types.flatMap(type => [

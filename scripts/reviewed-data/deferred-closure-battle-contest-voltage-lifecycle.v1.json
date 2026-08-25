@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "deferred-closure:battle-contest-voltage-lifecycle:v1",
+  "ticket": "P11-072",
+  "status": "reviewed",
+  "reviewedAt": "2026-08-24",
+  "target": {
+    "path": "data/reference/contests.json",
+    "beforeSha256": "f084b844598e352f20fdc9a7c9d890d085604fc6bf496dfa3c8c980e8c3953d7",
+    "afterSha256": "eba1cce2536912c7b9fd6cc8662949a950671505c7282364b6c776b6fe73d65c",
+    "afterBytes": 31305,
+    "afterGitBlob": "6aedc61ab5f10aef3cb3f86832ac2d66c3f42661"
+  },
+  "sources": [
+    {
+      "path": "books/markdown/core/08-pokemon-contests.md",
+      "sha256": "d4cbfef280d2b96bede24648b1ca69a8bfcbdad639d8a5537ce8518387285111",
+      "subjects": [
+        "attack-knockout Voltage",
+        "damage-over-time knockout redirection",
+        "recall Voltage and canonical exceptions"
+      ]
+    },
+    {
+      "path": "data/reference/features.json",
+      "sha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4",
+      "subjects": [
+        "Quick Switch identity",
+        "Round Trip identity"
+      ]
+    }
+  ],
+  "voltagePolicy": {
+    "scope": "per-pokemon",
+    "appealUses": "active-pokemon-only",
+    "attackKoDelta": 2,
+    "damageOverTimeKoRecipient": "opposing-active-pokemon",
+    "recallDelta": -2,
+    "recallLossExceptions": [
+      "Baton Pass",
+      "U-Turn",
+      "Volt Switch",
+      "Juggler-equivalent-switch"
+    ],
+    "jugglerRecallExceptionProviderIds": [
+      "feature:Quick Switch",
+      "feature:Round Trip"
+    ]
+  },
+  "review": {
+    "runtimeProseParsing": false,
+    "attackKoRecipient": "attacking-pokemon",
+    "damageOverTimeKoRecipient": "single-opposing-active-pokemon",
+    "recallRecipient": "recalled-pokemon",
+    "jugglerEquivalentProvidersAreExplicit": true,
+    "unknownProviderExceptionsFailClosed": true
+  }
+}

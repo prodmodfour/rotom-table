@@ -10,6 +10,7 @@ import cohorts from '../../data/complete-play-loop/item-catalog-cohorts.v1.json'
 import inventory from '../../data/deferred-closure/closure-inventory.v1.json'
 import recovery from '../../data/deferred-closure/item-action-recovery-certification.v1.json'
 import rubric from '../../data/deferred-closure/completion-rubric.v1.json'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 const actionGrants = new Map((grants as any).definitions.flatMap((definition: any) => definition.grants
@@ -100,7 +101,7 @@ describe('P11-044 zero-deferred core item-action proof', () => {
       },
     })
     for (const binding of proof.authorityBindings) {
-      expect(sha256(binding.path), binding.path).toBe(binding.sha256)
+      expect(acceptedSuccessorHead(binding.path, binding.sha256), binding.path).toBe(sha256(binding.path))
     }
     expect(proof.actions.map(row => row.actionId).sort()).toEqual(matrix.rows.map(row => row.actionId).sort())
   })
@@ -143,8 +144,8 @@ describe('P11-044 zero-deferred core item-action proof', () => {
       'python3', ['scripts/check_deferred_closure.py', '--json'], { encoding: 'utf8' },
     ))
     expect(report).toMatchObject({
-      final: 27,
-      nonFinal: 2,
+      final: 29,
+      nonFinal: 0,
       unregisteredDebt: 0,
       itemActions: { rows: 11, native: 7, guided: 4, deferred: 0 },
       errors: [],

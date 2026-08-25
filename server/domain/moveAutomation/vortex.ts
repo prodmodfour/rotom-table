@@ -312,7 +312,7 @@ const targetCleanup = (event: EncounterEvent): {
   readonly placementId: string
   readonly reasonCode: string
 } | null => {
-  if (event.kind === 'move-ko') {
+  if (event.kind === 'move-ko' || event.kind === 'lifecycle-ko') {
     return { placementId: event.targetPlacementId, reasonCode: VORTEX_REASON_CODES.targetKnockedOut }
   }
   if (event.kind === 'recall') {

@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-battle-contest-introductions-v1",
+  "ticket": "P11-067",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/battle-contest-setup-certification.v1.json",
+    "sha256": "0fad08cbb517670d526217e30ad9d1a7ff0646ba1b54d4d92a2a1c6ce551e365"
+  },
+  "canonicalVariantAuthority": {
+    "path": "data/reference/contests.json",
+    "sha256": "7f09db8c157af6bdc96e0f5931c0b8396e104e10dba4a51593bee2de5ce673d4",
+    "rowId": "battle",
+    "completionState": "structured",
+    "structuredSemanticsVersion": 1,
+    "introductionPolicy": {
+      "skillCheckPerTrainer": 1,
+      "contestDicePoolScope": "trainer-team",
+      "usableBy": "any-team-pokemon",
+      "affectsInitiative": false
+    }
+  },
+  "authorities": [
+    {
+      "id": "battle-introduction-document-and-custody-contract",
+      "path": "shared/contests/document.ts",
+      "sha256": "89982e16cc0f12a07d73d44fd44365258e9d296d2545499fe55ef86b87998724",
+      "guarantees": ["one-team-level-introduction-pool", "no-contest-letter-or-initiative", "enrolled-team-pokemon-spend-authority", "contiguous-before-after-receipts", "exact-retry-and-changed-input-conflict", "stage-and-variant-fail-closed-validation"]
+    },
+    {
+      "id": "battle-introduction-engine",
+      "path": "server/domain/contests/engine.ts",
+      "sha256": "1979f20570029bd699b143da3ab025c5d9e5d5926d16533abb7590b71565197d",
+      "guarantees": ["one-introduction-per-trainer-team", "generated-dice-written-once-to-team-pool", "no-standard-matching-appeal", "no-letter-assignment", "restart-removes-team-contributions", "ordinary-performance-gate-blocked-before-encounter-link"]
+    },
+    {
+      "id": "battle-introduction-sheet-provider-and-retry-authority",
+      "path": "server/useCases/contests.ts",
+      "sha256": "34d87ea2bf1175e9188ccc6eb669633956fa69cbbc71b95d6d5fff628c14e067",
+      "guarantees": ["frozen-trainer-skill-rank", "retained-trainer-provider-intersection", "pokemon-only-provider-exclusion", "controller-authorisation", "transactional-operation-hash-idempotency"]
+    },
+    {
+      "id": "battle-introduction-role-projections",
+      "path": "shared/contests/projections.ts",
+      "sha256": "7b5dca15abe3afcabe7dd2584da9f18210d9181ca108462bab1ccb5bed4f10ea",
+      "guarantees": ["public-sanitized-team-identity", "owner-own-team-authority-only", "gm-both-team-authority", "no-opponent-pool", "no-public-operation-id"]
+    },
+    {
+      "id": "battle-introduction-workshop",
+      "path": "src/pages/contests/[contestId].vue",
+      "sha256": "1b2bb0cff48beef1434075e0d72dab5bb74c67a9cbd4a1c621dc6d0685319436",
+      "guarantees": ["pending-trainer-primary-decision", "read-only-authority-roll-preview", "one-five-stat-strip-per-authorized-team", "non-color-accepted-state", "explicit-no-initiative-copy", "locked-encounter-handoff", "keyboard-focus-and-narrow-reflow"]
+    },
+    {
+      "id": "battle-introduction-operator-contract",
+      "path": "docs/contests/battle-contest-runtime.md",
+      "sha256": "bc268c4f53479f0ce2712c284b3ba2e80459b7b8eb7bdfe2d25e1b3f9ae70c84",
+      "guarantees": ["team-pool-custody", "provider-boundary", "single-spend-receipts", "no-initiative-policy", "role-privacy", "structured-not-native-status"]
+    },
+    {
+      "id": "ordinary-contest-regression-fixtures",
+      "path": "data/contests/variant-matrix.v1.json",
+      "sha256": "cdbd675e4b5c3437d1101fe1b8c940ba3be90d50343db690043cdd7f05e509b5",
+      "guarantees": ["eighteen-ordinary-scenarios", "current-canonical-source-hash", "additive-battle-spend-journal-shape", "same-seeded-outcomes-and-settlement"]
+    }
+  ],
+  "designEvidence": {
+    "workflow": "ui-design-workflow-storyboard",
+    "flow": {
+      "path": ".pi/artifacts/ui-storyboards/battle-contest-introductions/flow.md",
+      "sha256": "a885952ab8f63b6590134e4df1c40692b3dc2944755e077b2d00118be8132288"
+    },
+    "frames": [
+      {
+        "id": "f01-gm-first-introduction",
+        "path": ".pi/artifacts/ui-storyboards/battle-contest-introductions/f01-gm-first-introduction/v002.png",
+        "sha256": "4ac2a1e81055011193c45182bca98d742c036e63e0f588b1145498c2ded6ec2e",
+        "score": 10,
+        "hardFailures": 0
+      },
+      {
+        "id": "f02-gm-pools-ready",
+        "path": ".pi/artifacts/ui-storyboards/battle-contest-introductions/f02-gm-pools-ready/v001.png",
+        "sha256": "63488996f6fa9b4e75ffb4b75bae3055dd4e75429e69a43fd78ecf5dc4d71c9c",
+        "score": 10,
+        "hardFailures": 0
+      }
+    ],
+    "continuityReview": {
+      "path": ".pi/artifacts/ui-storyboards/battle-contest-introductions/continuity-review.md",
+      "sha256": "8085d3e2c6583597934e12df0019b2795a3e48847590f89f75a17d7c104a4a3a",
+      "status": "accepted",
+      "hardFailures": 0
+    },
+    "contactSheet": {
+      "path": ".pi/artifacts/ui-storyboards/battle-contest-introductions/contact-sheet.png",
+      "sha256": "235372e0642a073af4a25f7577569b0b16d1bde444695bd90a9e7cdf703879e2"
+    }
+  },
+  "liveplayEvidence": {
+    "mode": "production-liveplay",
+    "project": "chromium",
+    "status": "passed",
+    "screenshots": [
+      { "state": "first-trainer-pending", "path": ".pi/artifacts/ui-validation/battle-contest-introductions/chromium-pending.png", "sha256": "bbcb9e28054857832a3e2de51259d8e12825973ef581172be72977b7acbc7c0a" },
+      { "state": "team-pools-ready", "path": ".pi/artifacts/ui-validation/battle-contest-introductions/chromium-ready.png", "sha256": "3521871e4f33d82f386445f8f46c4e3088c74b80e968efe0eb01269caee261a0" },
+      { "state": "team-pools-ready-320", "path": ".pi/artifacts/ui-validation/battle-contest-introductions/chromium-ready-320.png", "sha256": "5580d181152a750511735fc9ab700038665fba904f5c2220d2d2be0e53144486" }
+    ],
+    "review": { "path": ".pi/artifacts/ui-validation/battle-contest-introductions/review.md", "sha256": "cde0148b99f1fd11d1cc1013e601fd96f5ad55be7e82f0cef3509293fc44db0c" },
+    "seriousOrCriticalAxeViolations": 0,
+    "maximumNarrowPageWidth": 322,
+    "publicPrivateAuthorityLeaks": 0
+  },
+  "evidence": [
+    {
+      "path": "tests/server/contestBattleIntroductionsRuntime.test.ts",
+      "sha256": "f7403d21ba29cafa254cacdafe9b78f7509be1c03aa07c65a90838fb557f8ec8",
+      "scenarioIds": ["per-trainer-introduction-team-pool", "no-letter-or-initiative", "controller-command", "exact-retry-and-changed-conflict", "ordinary-performance-block", "role-projection-privacy"]
+    },
+    {
+      "path": "tests/shared/contestBattleTeamDice.test.ts",
+      "sha256": "cc2e30d6e4a539e2110f007c00fc888dc86839c532402341a49a01dd4868bf18",
+      "scenarioIds": ["cross-team-member-single-pool-depletion", "contiguous-receipt-state", "exact-retry", "changed-identity-conflict", "overspend", "opponent-rejection"]
+    },
+    {
+      "path": "tests/components/contestBattleIntroductionsWorkshop.test.ts",
+      "sha256": "09005235081855c87b54dc71730c720b114810461cf19109068adb7851fca22c",
+      "scenarioIds": ["pool-custody-hierarchy", "five-stat-team-strip", "no-performance-action", "locked-encounter-handoff", "role-copy", "accessible-narrow-reflow"]
+    },
+    {
+      "path": "tests/data/deferredClosureBattleContestIntroductions.test.ts",
+      "sha256": "b14c4134f230be9164d5c6b78a0cc71056e83c32640dc97936bbf5787a2b22ff",
+      "scenarioIds": ["contiguous-predecessor-and-authority-hashes", "canonical-introduction-policy", "accepted-storyboard-continuity", "structured-status-and-privacy"]
+    },
+    {
+      "path": "tests/server/contestTrainerParticipantAppealsRuntime.test.ts",
+      "sha256": "8f733d8e5055fc7785dd81f11ffbcb9ce71eb2247fe7fc9e28c1c3031e7df1ca",
+      "scenarioIds": ["ordinary-alternating-regression", "ordinary-settlement-preview-handoff", "settlement-exact-retry"]
+    },
+    {
+      "path": "tests/e2e/contest-battle-introductions.spec.ts",
+      "sha256": "96661b9ea9a35c16c4c5b0f98eac8a4c592933b587b6c476fa6fba588ca95a14",
+      "scenarioIds": ["production-liveplay-pending-to-ready", "keyboard-focus-handoff", "two-team-pool-custody", "no-performance-before-link", "320px-reflow", "axe", "public-projection-privacy"]
+    }
+  ],
+  "acceptance": {
+    "introductionsPerTrainer": 1,
+    "poolScope": "trainer-team",
+    "usableBy": "any-team-pokemon",
+    "assignsContestLetters": false,
+    "matchingAppealBonus": false,
+    "exactRetry": true,
+    "changedRetryConflicts": true,
+    "publicPoolProjectionFields": 0,
+    "opponentPoolProjectionFields": 0,
+    "publicOperationIdFields": 0,
+    "targetStateScores": [10, 10],
+    "hardVisualFailures": 0,
+    "focusedTests": 40,
+    "ordinaryRegressionScenarios": 18,
+    "typecheck": "passed",
+    "productionLiveplay": "passed",
+    "seriousOrCriticalAxeViolations": 0,
+    "variantCompletionState": "structured",
+    "introductionCompletionState": "native",
+    "nextTicket": "P11-068"
+  }
+}

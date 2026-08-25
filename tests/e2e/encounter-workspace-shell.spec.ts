@@ -241,6 +241,8 @@ test('participant fixture supports turn, group expansion, screen-reader hierarch
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa'])
     .analyze()
   expect(results.violations.filter(value => ['serious', 'critical'].includes(value.impact ?? ''))).toEqual([])
+  const persistedSkillCheckStatus = page.getByRole('button', { name: 'Dismiss Skill Check status' })
+  if (await persistedSkillCheckStatus.count()) await persistedSkillCheckStatus.click()
   expect(await page.locator('.encounter-workspace-shell *').count()).toBeLessThanOrEqual(performanceBudgets.runtime.maximumWorkspaceDomNodes)
   expect(await page.locator('.encounter-action-dock .encounter-offer-card').count()).toBeLessThanOrEqual(performanceBudgets.runtime.maximumRenderedActionOffers)
   expect(await page.locator('.encounter-event-feed [data-presentation-id]').count()).toBeLessThanOrEqual(performanceBudgets.runtime.maximumRenderedHistoryEntries)

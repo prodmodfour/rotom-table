@@ -21,6 +21,7 @@ export const CONTEST_VALIDATION_CODES = Object.freeze([
   'contest.duplicate-pokemon',
   'contest.rotation-performer-required',
   'contest.rotation-team-size',
+  'contest.battle-team-size',
   'contest.trainer-participant-stage-unavailable',
   'contest.method-required',
   'contest.method-unavailable',

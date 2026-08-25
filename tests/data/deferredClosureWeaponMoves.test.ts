@@ -66,7 +66,7 @@ describe('P11-005 reviewed weapon Move definitions', () => {
         available: false,
         typeId: null,
         effectId: null,
-        unavailableCode: 'contest.move-identity-missing',
+        unavailableCode: 'weapon-move-no-canonical-contest-identity',
       })
     }
   })

@@ -224,7 +224,7 @@ Follow `docs/breeding/accessibility-responsive-and-table-distance.md`. Minimum c
 - shared-display readability and private-field omission;
 - desktop/mobile visual baselines within reviewed tolerance.
 
-A visible UI change must follow `.pi/skills/ui-design-workflow/SKILL.md`; substantive visual work requires a target-state mockup unless explicitly excluded by the skill.
+A visible UI change must follow the global `ui-design-workflow` pi skill; substantive visual work requires a target-state mockup unless explicitly excluded by the skill.
 
 ## Documentation QA
 

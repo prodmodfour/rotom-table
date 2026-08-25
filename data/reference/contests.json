@@ -728,7 +728,7 @@
     {
       "id": "trainer-participant",
       "label": "Trainer Participant Contest",
-      "completionState": "structured",
+      "completionState": "native",
       "structuredSemanticsVersion": 1,
       "compatibleBaseVariantIds": [
         "standard",
@@ -788,8 +788,28 @@
     {
       "id": "battle",
       "label": "Battle Contest",
-      "completionState": "structured",
+      "completionState": "native",
       "structuredSemanticsVersion": 1,
+      "blendContract": {
+        "contractId": "battle-contest-blend:v1",
+        "linkIdentity": "battle-contest-link:v1:<stable-id>",
+        "linkAuthority": "coordination-ledger-only",
+        "contestAuthority": "contest-document-scoring-only",
+        "encounterAuthority": "encounter-document-linked-map-mechanics-only",
+        "acceptedResultAuthority": "persisted-live-play-operation-plus-encounter-history",
+        "handoffKinds": [
+          "accepted-move",
+          "knockout",
+          "switch",
+          "turn-start",
+          "round-boundary",
+          "encounter-ended"
+        ],
+        "revisionCoupling": "exact-contest-encounter-document-and-map-read-set",
+        "idempotency": "operation-command-hash-plus-handoff-sha256",
+        "crossDocumentWrites": "forbidden",
+        "atomicity": "document-local-plans-with-shared-transaction-for-combined-transitions"
+      },
       "trainerCount": 2,
       "rosterPolicy": {
         "pokemonPerTrainerMinimum": 3,
@@ -802,6 +822,7 @@
         "minimum": 6,
         "maximum": 12
       },
+      "contestTypePolicy": "fixed-selected-at-setup",
       "introductionPolicy": {
         "skillCheckPerTrainer": 1,
         "contestDicePoolScope": "trainer-team",
@@ -817,6 +838,44 @@
         ],
         "contestAdjacency": "all-opposing-pokemon-on-field"
       },
+      "contestEffectPolicy": {
+        "semantics": "canonical-contest-effect-handler",
+        "supportedEffectIds": [
+          "attention-grabber",
+          "big-show",
+          "catching-up",
+          "desperation",
+          "double-time",
+          "excitement",
+          "exhausting-act",
+          "gamble",
+          "get-ready",
+          "good-show",
+          "incentives",
+          "inversed-appeal",
+          "reflective-appeal",
+          "reliable",
+          "sabotage",
+          "safe-option",
+          "saving-grace",
+          "seen-nothing-yet",
+          "special-attention",
+          "steady-performance",
+          "tease",
+          "unsettling"
+        ],
+        "unknownEffectPolicy": "reject",
+        "actorVoltageTarget": "acting-pokemon",
+        "adjacentVoltageTargets": "all-opposing-pokemon-on-field",
+        "indirectFumbleTarget": "opposing-trainer-team",
+        "onFieldPokemonMinimumPerTrainer": 1,
+        "onFieldPokemonMaximumPerTrainer": 6,
+        "onFieldPokemonAuthority": "linked-map-placements",
+        "roundIdentity": "encounter-round",
+        "getReadyTarget": "same-pokemon-next-encounter-round",
+        "savingGraceProtection": "same-active-pokemon-through-encounter-round",
+        "reliableHistory": "same-pokemon-previous-accepted-move"
+      },
       "voltagePolicy": {
         "scope": "per-pokemon",
         "appealUses": "active-pokemon-only",
@@ -828,6 +887,10 @@
           "U-Turn",
           "Volt Switch",
           "Juggler-equivalent-switch"
+        ],
+        "jugglerRecallExceptionProviderIds": [
+          "feature:Quick Switch",
+          "feature:Round Trip"
         ]
       },
       "replacementPolicy": {
@@ -840,6 +903,15 @@
         ],
         "score": "appeal-points",
         "winner": "highest-appeal-points"
+      },
+      "settlementPolicy": {
+        "experienceRecipients": "all-declared-team-pokemon",
+        "experienceUnits": "standard-team-placement-formula",
+        "experienceLevelBasis": "each-recipient-own-level",
+        "ribbonRecipients": "all-declared-winning-team-pokemon",
+        "prizeRecipient": "winning-trainer-unless-explicit-enrolled-target",
+        "encounterReconciliation": "exact-preview-one-combined-transaction",
+        "duplicateSourcePolicy": "exact-retry-or-reject"
       }
     }
   ],

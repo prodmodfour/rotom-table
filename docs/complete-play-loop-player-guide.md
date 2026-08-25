@@ -41,6 +41,18 @@ Campaign shows resume work first, then one recommended action and grouped follow
 
 Next day is GM-only. After advancement and treatment decisions are resolved, the GM reviews a fresh preflight and the dashboard reloads remaining work.
 
+## Use closed Encounter and Contest mechanics
+
+A validly equipped Weighted Rope, Slingshot, Throwing Hammers, Hunting Bow, Super Lucky Throwing Stars, or Twin-Needled Bow appears through the ordinary Action Dock. Review the offered range, line of sight, target, hands, action/frequency cost, and reason text. Supplemental weapon Moves use the same server authority; the browser never supplies accuracy, damage, or effects. If an offer disappears after an equipment, rank, target, or map change, reload instead of recreating it manually.
+
+Native shield, collar, cannon, and net actions commit their source, effect, resources, history, and receipt together. Fishing and Snag conversion may wait for bounded GM adjudication; a pending card is not an accepted outcome and must not be submitted again with changed material.
+
+When a generic Skill Check targets your controlled Trainer or Pokémon, accept or decline the exact request shown. Rotom Table rolls after the required responses and reveals only the result allowed by the GM's visibility policy. You cannot inspect another subject's response, hidden DC, private modifier, notes, journal, or operation evidence.
+
+In a Trainer Participant Contest, choose only the currently offered Trainer or Pokémon performer and spend from the projected shared pool. In a Battle Contest, keep acting through the Encounter Workspace. When your team owns the pending accepted-Move Appeal, allocate zero through three of your visible team dice. Opponents and spectators cannot inspect your pool: an opposing owner receives only their own pool, and a spectator receives none. Scores never update optimistically.
+
+See [Deferred mechanics closure](deferred-mechanics-closure.md) for the complete surface and privacy summary.
+
 ## Recover safely
 
 When a command times out or the connection drops:

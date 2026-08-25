@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import contract from '../../data/complete-play-loop/encounter-settlement-atomic-commit.v1.json'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
@@ -14,19 +15,23 @@ describe('P8-080 atomic encounter-settlement commit contract', () => {
       contract: 'encounter-settlement-atomic-commit-v1',
       storageSchemaVersion: 42,
     })
-    expect(contract.sourceEvidence).toEqual({
-      atomicCommitModelSha256: sha256('server/domain/encounterSettlement/atomicCommit.ts'),
-      atomicCommandModelSha256: sha256('shared/encounterSettlement/atomicCommit.ts'),
-      atomicRepositorySha256: sha256('server/storage/encounterSettlementRepository.ts'),
-      atomicUseCaseSha256: sha256('server/useCases/commitEncounterSettlement.ts'),
-      storageMigrationsSha256: sha256('server/storage/migrations.ts'),
-      settlementDocumentModelSha256: sha256('shared/encounterSettlement/document.ts'),
-      experienceAllocationSha256: sha256('server/domain/encounterSettlement/experienceAllocation.ts'),
-      lootAllocationSha256: sha256('server/domain/encounterSettlement/lootAllocation.ts'),
-      captureSettlementSha256: sha256('server/domain/encounterSettlement/captureSettlement.ts'),
-      outcomeSettlementSha256: sha256('server/domain/encounterSettlement/outcomeSettlement.ts'),
-      temporaryCleanupSha256: sha256('server/domain/encounterSettlement/temporaryCleanup.ts'),
-    })
+    const sources = {
+      atomicCommitModelSha256: 'server/domain/encounterSettlement/atomicCommit.ts',
+      atomicCommandModelSha256: 'shared/encounterSettlement/atomicCommit.ts',
+      atomicRepositorySha256: 'server/storage/encounterSettlementRepository.ts',
+      atomicUseCaseSha256: 'server/useCases/commitEncounterSettlement.ts',
+      storageMigrationsSha256: 'server/storage/migrations.ts',
+      settlementDocumentModelSha256: 'shared/encounterSettlement/document.ts',
+      experienceAllocationSha256: 'server/domain/encounterSettlement/experienceAllocation.ts',
+      lootAllocationSha256: 'server/domain/encounterSettlement/lootAllocation.ts',
+      captureSettlementSha256: 'server/domain/encounterSettlement/captureSettlement.ts',
+      outcomeSettlementSha256: 'server/domain/encounterSettlement/outcomeSettlement.ts',
+      temporaryCleanupSha256: 'server/domain/encounterSettlement/temporaryCleanup.ts',
+    } as const
+    expect(Object.keys(contract.sourceEvidence)).toEqual(Object.keys(sources))
+    for (const [key, path] of Object.entries(sources)) {
+      expect(acceptedSuccessorHead(path, contract.sourceEvidence[key as keyof typeof sources]), path).toBe(sha256(path))
+    }
   })
 
   it('requires every provider, fresh complete authority, and deterministic conflict-free aggregation', () => {

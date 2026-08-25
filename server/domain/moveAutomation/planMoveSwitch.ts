@@ -195,6 +195,8 @@ export const planAuthoritativeMoveSwitch = (input: {
         reasonCode: 'move.switch.recall-and-send-out',
         recalledPlacementId: recalled.id,
         sentOutPlacementId: input.transition.sentOutPlacement.id,
+        sideId: recalled.sideId ?? null,
+        causalProviderId: input.transition.causalProviderId ?? null,
       }) as EncounterSwitchEvent
     : parseEncounterEvent({
         schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
@@ -205,6 +207,7 @@ export const planAuthoritativeMoveSwitch = (input: {
         reasonCode: 'move.switch.recall-only',
         placementId: recalled.id,
         sideId: recalled.sideId ?? null,
+        causalProviderId: input.transition.causalProviderId ?? null,
       }) as EncounterRecallEvent
   const previousEncounterState = parseEncounterState(
     previousMap.encounterState ?? createEmptyEncounterState(),

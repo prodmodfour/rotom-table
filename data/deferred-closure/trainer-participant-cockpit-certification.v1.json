@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "deferred-closure-trainer-participant-cockpit-v1",
+  "ticket": "P11-062",
+  "status": "certified",
+  "runtimeProseParsing": false,
+  "predecessor": {
+    "path": "data/deferred-closure/trainer-participant-settlement-certification.v1.json",
+    "sha256": "fd5920d56e169878a489d7294c17c998295ceb8dddb41abac115f0e40188ac4e"
+  },
+  "authorities": [
+    {
+      "id": "paired-liveplay-cockpit",
+      "path": "src/pages/contests/[contestId].vue",
+      "sha256": "30fc62c96184d13c35aeec6eac59dcc936fcc07bc7578356341313f669e05de5",
+      "guarantees": ["trainer-or-pokemon-primary-choice", "exact-legal-performer-projection-consumption", "separate-performer-voltage", "one-shared-contest-dice-surface", "exact-partner-effect-target", "exact-intervention-performer-target", "role-safe-stage-score-and-settlement-labels", "keyboard-focus-and-narrow-reflow"]
+    },
+    {
+      "id": "cockpit-operator-contract",
+      "path": "docs/contests/trainer-participant-runtime.md",
+      "sha256": "bfae2a14ac649974656cc7f36abeecd8015313397c596309d926e1bc24008da8",
+      "guarantees": ["decision-hierarchy-documented", "accessibility-and-privacy-boundaries-documented"]
+    }
+  ],
+  "designEvidence": {
+    "workflow": "ui-design-workflow",
+    "targetState": {
+      "path": ".pi/artifacts/ui-mockups/trainer-participant-contest-cockpit/v002.png",
+      "sha256": "0c3894f59417c2aa0920b77b540fee4682d0c605bd897e52e032ec77ccab2e79",
+      "viewport": [1522, 1033]
+    },
+    "review": {
+      "path": ".pi/artifacts/ui-mockups/trainer-participant-contest-cockpit/v002-review.md",
+      "sha256": "bb035f2c19c76ccf565b6baad76f289dc4c74c7f331ff742f3a0c73b6d963d84",
+      "score": 10,
+      "hardFailures": 0,
+      "status": "accepted"
+    }
+  },
+  "evidence": [
+    {
+      "path": "tests/components/contestTrainerParticipantCockpit.test.ts",
+      "sha256": "17139464b4460b00d98f74aaa334215fdd2cdfd9d1c7a3f9204dedf01a81c7a3",
+      "scenarioIds": ["paired-choice-copy-and-pressed-state", "shared-dice-and-partner-target", "exact-intervention-target", "versioned-live-encounter-context", "non-color-selected-and-unavailable", "mobile-one-column-reflow", "no-visible-raw-authority"]
+    }
+  ],
+  "acceptance": {
+    "targetStateReviewScore": 10,
+    "hardVisualFailures": 0,
+    "minimumControlPx": 44,
+    "selectedStateUsesTextAndIcon": true,
+    "unavailableStateHasReason": true,
+    "publicRawSheetLabels": 0,
+    "desktopAndNarrowLayouts": true,
+    "nextTicket": "P11-063"
+  }
+}

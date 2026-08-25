@@ -7,6 +7,7 @@ import {
   ENCOUNTER_SETTLEMENT_CAPTURE_ROSTER_DESTINATIONS,
 } from '../../server/domain/encounterSettlement/captureSettlement'
 import { TRAINER_TEAM_LIMIT } from '../../src/utils/trainerPokemonLinks'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
@@ -18,14 +19,18 @@ describe('P8-077 encounter settlement capture contract', () => {
       status: 'current-semantics',
       contract: 'encounter-settlement-captures-v1',
     })
-    expect(contract.sourceEvidence).toEqual({
-      rewardPackageContractSha256: sha256('data/complete-play-loop/encounter-settlement-reward-package.v1.json'),
-      captureSettlementModelSha256: sha256('server/domain/encounterSettlement/captureSettlement.ts'),
-      acceptedCaptureCommandSha256: sha256('server/useCases/applyThrowPokeballCommand.ts'),
-      captureMutationRulesSha256: sha256('src/utils/pokeballCapture.ts'),
-      trainerRosterRulesSha256: sha256('src/utils/trainerPokemonLinks.ts'),
-      playerProfileContractSha256: sha256('shared/playerProfiles.ts'),
-    })
+    const sources = {
+      rewardPackageContractSha256: 'data/complete-play-loop/encounter-settlement-reward-package.v1.json',
+      captureSettlementModelSha256: 'server/domain/encounterSettlement/captureSettlement.ts',
+      acceptedCaptureCommandSha256: 'server/useCases/applyThrowPokeballCommand.ts',
+      captureMutationRulesSha256: 'src/utils/pokeballCapture.ts',
+      trainerRosterRulesSha256: 'src/utils/trainerPokemonLinks.ts',
+      playerProfileContractSha256: 'shared/playerProfiles.ts',
+    } as const
+    expect(Object.keys(contract.sourceEvidence)).toEqual(Object.keys(sources))
+    for (const [key, path] of Object.entries(sources)) {
+      expect(acceptedSuccessorHead(path, contract.sourceEvidence[key as keyof typeof sources]), path).toBe(sha256(path))
+    }
   })
 
   it('requires accepted capture evidence and never duplicates a sheet', () => {

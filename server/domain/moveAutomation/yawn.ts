@@ -74,7 +74,7 @@ const endingTarget = (event: EncounterEvent): {
   readonly placementId: string | null
   readonly reasonCode: string
 } | null => {
-  if (event.kind === 'move-ko') {
+  if (event.kind === 'move-ko' || event.kind === 'lifecycle-ko') {
     return {
       placementId: event.targetPlacementId,
       reasonCode: 'yawn.cleanup.target-knocked-out',

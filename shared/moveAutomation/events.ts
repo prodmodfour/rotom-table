@@ -39,6 +39,7 @@ export const ENCOUNTER_EVENT_KINDS = [
   'move-hit',
   'move-damaged',
   'move-ko',
+  'lifecycle-ko',
   'move-completed',
   'placement-entering',
   'placement-leaving',
@@ -64,6 +65,12 @@ export const ENCOUNTER_EVENT_MOVE_OUTCOMES = [
   'miss',
   'hit',
   'mixed',
+] as const
+
+/** Non-attack knockout classifications emitted only after authoritative lifecycle HP reduction. */
+export const ENCOUNTER_EVENT_LIFECYCLE_KO_CAUSES = [
+  'damage-over-time',
+  'other',
 ] as const
 
 export const ENCOUNTER_EVENT_MOVEMENT_MODES = [
@@ -98,6 +105,8 @@ export type EncounterEventDamageClass =
   (typeof ENCOUNTER_EVENT_DAMAGE_CLASSES)[number]
 export type EncounterEventMoveOutcome =
   (typeof ENCOUNTER_EVENT_MOVE_OUTCOMES)[number]
+export type EncounterEventLifecycleKoCause =
+  (typeof ENCOUNTER_EVENT_LIFECYCLE_KO_CAUSES)[number]
 export type EncounterEventMovementMode =
   (typeof ENCOUNTER_EVENT_MOVEMENT_MODES)[number]
 
@@ -208,6 +217,20 @@ export interface EncounterMoveKoEvent
   readonly hitIndex: number | null
 }
 
+/**
+ * A knockout caused by lifecycle-owned HP reduction rather than a Move strike.
+ * The effect-operation identity and triggering event form immutable causal
+ * evidence; clients never author this event.
+ */
+export interface EncounterLifecycleKoEvent
+  extends EncounterEventEnvelope<'lifecycle-ko'> {
+  readonly targetPlacementId: string
+  readonly sourceEffectOperationId: string
+  /** Exact causal Encounter round; null only outside an active round. */
+  readonly round: number | null
+  readonly cause: EncounterEventLifecycleKoCause
+}
+
 export interface EncounterMoveCompletedEvent
   extends EncounterEventEnvelope<'move-completed'> {
   readonly move: EncounterMoveIdentity
@@ -273,18 +296,23 @@ export interface EncounterSwitchEvent
   extends EncounterEventEnvelope<'switch'> {
   readonly recalledPlacementId: string
   readonly sentOutPlacementId: string
+  readonly sideId: EncounterSideId | null
+  /** Server-authored Feature provider that caused the switch, when any. */
+  readonly causalProviderId: string | null
 }
 
 export interface EncounterRecallEvent
   extends EncounterEventEnvelope<'recall'> {
   readonly placementId: string
   readonly sideId: EncounterSideId | null
+  readonly causalProviderId: string | null
 }
 
 export interface EncounterSendOutEvent
   extends EncounterEventEnvelope<'send-out'> {
   readonly placementId: string
   readonly sideId: EncounterSideId | null
+  readonly causalProviderId: string | null
 }
 
 export interface EncounterEffectAddedEvent
@@ -315,6 +343,7 @@ export type EncounterEvent =
   | EncounterMoveHitEvent
   | EncounterMoveDamagedEvent
   | EncounterMoveKoEvent
+  | EncounterLifecycleKoEvent
   | EncounterMoveCompletedEvent
   | EncounterPlacementEnteringEvent
   | EncounterPlacementLeavingEvent
@@ -406,6 +435,13 @@ const MOVE_KO_FIELDS = [
   'targetPlacementId',
   'hitIndex',
 ] as const
+const LIFECYCLE_KO_FIELDS = [
+  ...COMMON_FIELDS,
+  'targetPlacementId',
+  'sourceEffectOperationId',
+  'round',
+  'cause',
+] as const
 const MOVE_COMPLETED_FIELDS = [
   ...COMMON_FIELDS,
   'move',
@@ -437,16 +473,19 @@ const PLACEMENT_MOVING_FIELDS = [
   'to',
   'finalDestination',
 ] as const
-const SWITCH_FIELDS = [
+const LEGACY_SWITCH_FIELDS = [
   ...COMMON_FIELDS,
   'recalledPlacementId',
   'sentOutPlacementId',
 ] as const
-const PLACEMENT_LIFECYCLE_FIELDS = [
+const PROVIDER_SWITCH_FIELDS = [...LEGACY_SWITCH_FIELDS, 'causalProviderId'] as const
+const SWITCH_FIELDS = [...PROVIDER_SWITCH_FIELDS, 'sideId'] as const
+const LEGACY_PLACEMENT_LIFECYCLE_FIELDS = [
   ...COMMON_FIELDS,
   'placementId',
   'sideId',
 ] as const
+const PLACEMENT_LIFECYCLE_FIELDS = [...LEGACY_PLACEMENT_LIFECYCLE_FIELDS, 'causalProviderId'] as const
 const EFFECT_ADDED_FIELDS = [...COMMON_FIELDS, 'effect'] as const
 const EFFECT_REMOVED_FIELDS = [...COMMON_FIELDS, 'effectId'] as const
 const RESOURCE_FIELDS = [
@@ -466,11 +505,13 @@ const CELL_FIELDS = ['x', 'y', 'z'] as const
 const MOVEMENT_IDENTITY_FIELDS = ['movementId', 'mode', 'step', 'stepCount'] as const
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:[._:/-][a-z0-9]+)*$/
+const LIVE_PLAY_OPERATION_ID_PATTERN = /^op_[A-Za-z0-9_-]{8,96}$/
 const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001f\u007f]/
 const ARRAY_INDEX_PATTERN = /^(0|[1-9][0-9]*)$/
 const EVENT_KIND_SET = new Set<string>(ENCOUNTER_EVENT_KINDS)
 const DAMAGE_CLASS_SET = new Set<string>(ENCOUNTER_EVENT_DAMAGE_CLASSES)
 const MOVE_OUTCOME_SET = new Set<string>(ENCOUNTER_EVENT_MOVE_OUTCOMES)
+const LIFECYCLE_KO_CAUSE_SET = new Set<string>(ENCOUNTER_EVENT_LIFECYCLE_KO_CAUSES)
 const MOVEMENT_MODE_SET = new Set<string>(ENCOUNTER_EVENT_MOVEMENT_MODES)
 
 const fail = (
@@ -710,6 +751,14 @@ const parseStableId = (value: unknown, path: string): string => {
   return id
 }
 
+const parseSourceOperationId = (value: unknown, path: string): string => {
+  const id = parseBoundedText(value, path)
+  if (!STABLE_ID_PATTERN.test(id) && !LIVE_PLAY_OPERATION_ID_PATTERN.test(id)) {
+    fail('invalid-encounter-event', path, 'must be a stable identifier or live-play operation ID.')
+  }
+  return id
+}
+
 const parsePlacementId = (value: unknown, path: string): string =>
   parseBoundedText(value, path)
 
@@ -812,7 +861,7 @@ const parseCommon = <Kind extends EncounterEventKind>(
     schemaVersion: ENCOUNTER_EVENT_SCHEMA_VERSION,
     eventId,
     kind,
-    sourceOperationId: parseStableId(
+    sourceOperationId: parseSourceOperationId(
       record.sourceOperationId,
       `${path}.sourceOperationId`,
     ),
@@ -1109,6 +1158,33 @@ const parseDetachedEvent = (value: unknown, path: string): EncounterEvent => {
     }
   }
 
+  if (kind === 'lifecycle-ko') {
+    assertExactFields(record, LIFECYCLE_KO_FIELDS, path)
+    return {
+      ...parseCommon(record, kind, path),
+      targetPlacementId: parsePlacementId(
+        record.targetPlacementId,
+        `${path}.targetPlacementId`,
+      ),
+      sourceEffectOperationId: parseStableId(
+        record.sourceEffectOperationId,
+        `${path}.sourceEffectOperationId`,
+      ),
+      round: record.round === null ? null : parseInteger(
+        record.round,
+        `${path}.round`,
+        1,
+        ENCOUNTER_EVENT_LIMITS.round,
+      ),
+      cause: parseEnum<EncounterEventLifecycleKoCause>(
+        record.cause,
+        LIFECYCLE_KO_CAUSE_SET,
+        `${path}.cause`,
+        'damage-over-time or other',
+      ),
+    }
+  }
+
   if (kind === 'move-completed') {
     assertExactFields(record, MOVE_COMPLETED_FIELDS, path)
     const attackedTargetIds = parsePlacementIds(
@@ -1227,7 +1303,9 @@ const parseDetachedEvent = (value: unknown, path: string): EncounterEvent => {
   }
 
   if (kind === 'switch') {
-    assertExactFields(record, SWITCH_FIELDS, path)
+    const hasCausalProvider = Object.prototype.hasOwnProperty.call(record, 'causalProviderId')
+    const hasSide = Object.prototype.hasOwnProperty.call(record, 'sideId')
+    assertExactFields(record, hasSide ? SWITCH_FIELDS : hasCausalProvider ? PROVIDER_SWITCH_FIELDS : LEGACY_SWITCH_FIELDS, path)
     const recalledPlacementId = parsePlacementId(
       record.recalledPlacementId,
       `${path}.recalledPlacementId`,
@@ -1247,15 +1325,23 @@ const parseDetachedEvent = (value: unknown, path: string): EncounterEvent => {
       ...parseCommon(record, kind, path),
       recalledPlacementId,
       sentOutPlacementId,
+      sideId: hasSide ? parseSideId(record.sideId, `${path}.sideId`) : null,
+      causalProviderId: hasCausalProvider && record.causalProviderId !== null
+        ? parseBoundedText(record.causalProviderId, `${path}.causalProviderId`)
+        : null,
     }
   }
 
   if (kind === 'recall' || kind === 'send-out') {
-    assertExactFields(record, PLACEMENT_LIFECYCLE_FIELDS, path)
+    const hasCausalProvider = Object.prototype.hasOwnProperty.call(record, 'causalProviderId')
+    assertExactFields(record, hasCausalProvider ? PLACEMENT_LIFECYCLE_FIELDS : LEGACY_PLACEMENT_LIFECYCLE_FIELDS, path)
     return {
       ...parseCommon(record, kind, path),
       placementId: parsePlacementId(record.placementId, `${path}.placementId`),
       sideId: parseSideId(record.sideId, `${path}.sideId`),
+      causalProviderId: hasCausalProvider && record.causalProviderId !== null
+        ? parseBoundedText(record.causalProviderId, `${path}.causalProviderId`)
+        : null,
     }
   }
 

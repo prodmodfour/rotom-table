@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import grants from '../../data/complete-play-loop/equipment-grants.v1.json'
@@ -43,24 +43,33 @@ describe('P11-008 completion rubric and evidence registry', () => {
     ]))
     expect(rubric.finalAcceptance).toMatchObject({
       ticket: 'P11-089',
-      requiredCommand: 'python3 scripts/check_deferred_closure.py --require-complete',
+      requiredCommand: 'python3 scripts/check_deferred_closure.py --require-complete --check-drift',
       requiredCounts: { rows: 29, nonFinal: 0, unregisteredDebt: 0, blocked: 0 },
     })
   })
 
-  it('keeps passing evidence real and planned evidence ticket-owned', () => {
+  it('keeps every registered evidence row passing and executable', () => {
     for (const entry of rubric.evidenceRegistry) {
-      if (entry.status === 'passing') expect(existsSync(entry.path), entry.path).toBe(true)
-      else expect(entry).toMatchObject({ status: 'planned', ownerTicket: expect.stringMatching(/^P11-0\d\d$/) })
+      expect(entry.status, entry.id).toBe('passing')
+      expect(existsSync(entry.path), entry.path).toBe(true)
     }
   })
 
-  it('passes the progress gate but refuses final acceptance while registered debt remains', () => {
-    const report = JSON.parse(execFileSync('python3', ['scripts/check_deferred_closure.py', '--json'], { encoding: 'utf8' }))
-    expect(report).toMatchObject({ rows: 29, final: 27, nonFinal: 2, unregisteredDebt: 0, errors: [] })
-    const final = spawnSync('python3', ['scripts/check_deferred_closure.py', '--require-complete'], { encoding: 'utf8' })
-    expect(final.status).not.toBe(0)
-    expect(`${final.stdout}${final.stderr}`).toContain('non-final state')
+  it('passes both progress and strict successor-aware final acceptance', () => {
+    const progress = JSON.parse(execFileSync('python3', ['scripts/check_deferred_closure.py', '--json'], { encoding: 'utf8' }))
+    expect(progress).toMatchObject({ rows: 29, final: 29, nonFinal: 0, unregisteredDebt: 0, errors: [] })
+    const final = JSON.parse(execFileSync('python3', [
+      'scripts/check_deferred_closure.py', '--require-complete', '--check-drift', '--json',
+    ], { encoding: 'utf8' }))
+    expect(final).toMatchObject({
+      rows: 29,
+      final: 29,
+      nonFinal: 0,
+      unregisteredDebt: 0,
+      requireComplete: true,
+      checkDrift: true,
+      errors: [],
+    })
   })
 
   it('uses the grants, canonical Contest rows, and inventory as finality surfaces', () => {
