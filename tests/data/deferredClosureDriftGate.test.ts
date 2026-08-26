@@ -10,6 +10,7 @@ import contests from '../../data/reference/contests.json'
 import { CAPABILITY_WEAPON_MOVES } from '../../shared/capabilityAutomation/weaponMoves'
 import { CAPABILITY_WEAPON_MOVE_HANDLER_ID } from '../../server/domain/moveAutomation/handlers/capabilityWeaponMoves'
 import { REGISTERED_MOVE_HANDLER_REGISTRY } from '../../server/domain/moveAutomation/handlers/registry'
+import { LATEST_STORAGE_SCHEMA_VERSION } from '../../server/storage/migrations'
 import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
@@ -84,8 +85,9 @@ describe('P11-088 Deferred Mechanics Closure drift and forbidden-gap gate', () =
       }
     }
     const migrations = source('server/storage/migrations.ts')
-    expect(migrations).toContain('export const LATEST_STORAGE_SCHEMA_VERSION = 50')
-    expect(migrations).not.toContain('version: 51')
+    expect(migrations).toContain(`export const LATEST_STORAGE_SCHEMA_VERSION = ${LATEST_STORAGE_SCHEMA_VERSION}`)
+    for (const version of [47, 48, 49, 50]) expect(migrations).toContain(`version: ${version}`)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBeGreaterThanOrEqual(50)
   })
 
   it('runs one successor-aware static checker and binds every generator command into the quality gate', () => {

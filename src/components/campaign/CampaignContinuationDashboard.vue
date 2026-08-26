@@ -4,6 +4,7 @@ import {
   PhArrowsClockwise,
   PhCheckCircle,
   PhClipboardText,
+  PhCalendarCheck,
   PhEgg,
   PhFirstAid,
   PhLightning,
@@ -23,6 +24,7 @@ const props = defineProps<{
   status: CampaignContinuationLoadStatus
   error: string | null
   hasSelectedProfile: boolean
+  gm: boolean
 }>()
 
 const emit = defineEmits<{
@@ -89,6 +91,7 @@ const reasonLabel: Readonly<Record<CampaignAttentionReason, string>> = {
   'skill-check-response': 'Skill Check response',
   'skill-check-resolution': 'Skill Check GM review',
   'continuation-review': 'Campaign follow-up',
+  'session-preparation-decision': 'Session preparation decision',
 }
 
 const reasonDescription: Readonly<Record<CampaignAttentionReason, string>> = {
@@ -112,6 +115,7 @@ const reasonDescription: Readonly<Record<CampaignAttentionReason, string>> = {
   'skill-check-response': 'A requested Skill Check still needs a subject response.',
   'skill-check-resolution': 'A ready or declined Skill Check needs GM review.',
   'continuation-review': 'A campaign continuation remains to be reviewed.',
+  'session-preparation-decision': 'A private GM preparation decision remains unresolved.',
 }
 
 const actionLabel = (item: CampaignAttentionItem, intent: CampaignAttentionItem['legalActions'][number]['intent']): string => {
@@ -132,6 +136,7 @@ const actionLabel = (item: CampaignAttentionItem, intent: CampaignAttentionItem[
     'review-recovery': 'Review recovery',
     'review-equipment': 'Review equipment',
     'continue-campaign': 'Continue campaign',
+    'review-session-preparation': 'Review session prep',
   }
   return labels[intent] ?? reasonLabel[item.reason]
 }
@@ -245,10 +250,28 @@ const settlementStateLabel = computed(() => {
               Review settlement
               <PhArrowRight :size="18" weight="bold" aria-hidden="true" />
             </NuxtLink>
-            <span v-else class="resume-card__empty resume-card__empty--clear">
-              <PhCheckCircle :size="18" weight="fill" aria-hidden="true" />
-              Clear
-            </span>
+            <span v-else class="resume-card__empty resume-card__empty--clear"><PhCheckCircle :size="18" weight="fill" aria-hidden="true" />Clear</span>
+          </article>
+
+          <article v-if="gm" class="resume-card resume-card--preparation">
+            <div class="resume-card__body">
+              <PhCalendarCheck :size="26" weight="duotone" aria-hidden="true" />
+              <div>
+                <p>Ready session</p>
+                <h2>{{ projection.readyPreparation?.label ?? 'No ready preparation' }}</h2>
+                <small v-if="projection.readyPreparation">
+                  {{ projection.readyPreparation.state === 'ready' ? 'Ready for Builder' : 'Launch in progress' }}
+                  · {{ projection.readyPreparation.sceneCount }} {{ projection.readyPreparation.sceneCount === 1 ? 'scene' : 'scenes' }} remaining
+                  <template v-if="projection.additionalReadyPreparations"> · +{{ projection.additionalReadyPreparations }} more</template>
+                </small>
+                <small v-else>Review a session preparation to make it launchable.</small>
+              </div>
+            </div>
+            <NuxtLink v-if="projection.readyPreparation" :to="projection.readyPreparation.href" class="resume-card__link resume-card__link--ready">
+              Open Session prep
+              <PhArrowRight :size="18" weight="bold" aria-hidden="true" />
+            </NuxtLink>
+            <NuxtLink v-else to="/session-prep" class="resume-card__link">Open Session prep<PhArrowRight :size="18" weight="bold" aria-hidden="true" /></NuxtLink>
           </article>
         </section>
 
@@ -437,7 +460,7 @@ const settlementStateLabel = computed(() => {
 .continuation__primary,
 .continuation__rail,
 .attention-groups { display: grid; align-content: start; gap: var(--rt-space-4, 1rem); }
-.resume-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--rt-space-3, .75rem); }
+.resume-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--rt-space-3, .75rem); }
 .resume-card {
   display: grid;
   border: 1px solid var(--rt-rule, var(--rule-soft));
@@ -472,6 +495,8 @@ const settlementStateLabel = computed(() => {
 }
 .resume-card__empty { color: var(--rt-text-muted, var(--ink-muted)); }
 .resume-card__empty--clear { justify-content: flex-start; color: var(--rt-success, var(--good)); }
+.resume-card--preparation:has(.resume-card__link--ready) { border-color: var(--rt-success, var(--good)); }
+.resume-card--preparation .resume-card__body > svg, .resume-card__link--ready { color: var(--rt-success, var(--good)); }
 .recommendation {
   --recommendation-signal: var(--rt-pending, var(--warn));
   position: relative;
@@ -592,6 +617,7 @@ const settlementStateLabel = computed(() => {
   outline: 3px solid var(--rt-focus, #59d8ff);
   outline-offset: 3px;
 }
+@media (max-width: 1100px) { .resume-grid { grid-template-columns: 1fr 1fr; } .resume-card--preparation { grid-column: 1 / -1; } }
 @media (max-width: 980px) {
   .continuation__layout { grid-template-columns: 1fr; }
   .continuation__rail { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -602,6 +628,7 @@ const settlementStateLabel = computed(() => {
   .continuation__refresh { width: 100%; }
   .resume-grid,
   .continuation__rail { grid-template-columns: 1fr; }
+  .resume-card--preparation { grid-column: auto; }
   .recommendation { grid-template-columns: auto minmax(0, 1fr); }
   .recommendation__actions { grid-column: 1 / -1; }
   .recommendation__action { width: 100%; }

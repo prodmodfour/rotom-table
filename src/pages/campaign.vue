@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref } from 'vue'
-import { PhArrowRight, PhCalendarBlank } from '@phosphor-icons/vue'
+import { PhArrowRight, PhCalendarBlank, PhToolbox } from '@phosphor-icons/vue'
 import AppNavigation from '~/components/AppNavigation.vue'
 import CampaignContinuationDashboard from '~/components/campaign/CampaignContinuationDashboard.vue'
 import CampaignOnboardingCard from '~/components/campaign/CampaignOnboardingCard.vue'
@@ -51,9 +51,19 @@ useHead({ title: 'Campaign · Rotom Table' })
       :status="dashboard.status.value"
       :error="dashboard.error.value"
       :has-selected-profile="profiles.hasSelectedProfile.value"
+      :gm="isGm"
       @refresh="dashboard.refresh"
     >
       <template #campaign-tools>
+        <section v-if="isGm" class="toolkit-entry" aria-labelledby="campaign-toolkit-title">
+          <div class="toolkit-entry__heading"><PhToolbox :size="24" weight="duotone" aria-hidden="true" /><div><p>GM Workshop</p><h2 id="campaign-toolkit-title">Campaign Toolkit</h2></div></div>
+          <nav aria-label="Campaign Toolkit shortcuts">
+            <NuxtLink to="/session-prep">Session prep</NuxtLink>
+            <NuxtLink to="/generate">Wild encounter</NuxtLink>
+            <NuxtLink to="/npc-trainers">NPC Trainers</NuxtLink>
+            <NuxtLink to="/encounter-tables">Encounter tables</NuxtLink>
+          </nav>
+        </section>
         <CampaignOnboardingCard />
         <CampaignContestActivityCard :profile-id="profiles.selectedProfileId.value" />
         <CampaignSkillCheckHistoryCard
@@ -126,6 +136,9 @@ useHead({ title: 'Campaign · Rotom Table' })
   background: var(--rt-bg-canvas, var(--paper));
   color: var(--rt-text, var(--ink));
 }
+.toolkit-entry { display: grid; gap: .65rem; border: 1px solid var(--rt-rule, var(--rule-soft)); background: var(--rt-surface-1, var(--paper-soft)); padding: var(--rt-space-4, 1rem); }
+.toolkit-entry__heading { display: flex; align-items: center; gap: .65rem; }.toolkit-entry__heading > svg { color: var(--rt-focus, var(--info)); }.toolkit-entry__heading p,.toolkit-entry__heading h2 { margin: 0; }.toolkit-entry__heading p { color: var(--rt-text-muted, var(--ink-muted)); font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }.toolkit-entry__heading h2 { margin-top: .15rem; color: var(--rt-text-strong, var(--ink-bright)); font: 700 1.4rem/1.05 var(--font-book); }
+.toolkit-entry nav { display: grid; }.toolkit-entry a { min-height: 44px; display: flex; align-items: center; border-top: 1px solid var(--rt-rule, var(--rule-soft)); color: var(--rt-text-strong, var(--ink-bright)); text-decoration: none; }.toolkit-entry a:hover { color: var(--rt-focus, var(--info)); }.toolkit-entry a:focus-visible { outline: 3px solid var(--rt-focus, #59d8ff); outline-offset: 2px; }
 .next-day-tool {
   display: grid;
   gap: var(--rt-space-3, .75rem);

@@ -173,18 +173,41 @@ export const SHEET_API_PATHS = {
   deleteFolder: '/api/sheets/delete-folder',
 } as const
 
+export const GM_TOOLKIT_API_PATHS = {
+  npcArchetypes: '/api/gm-toolkit/npc-archetypes',
+  npcGeneration: '/api/gm-toolkit/npc-generation',
+  npcPackage: (packageId: string) => `/api/gm-toolkit/packages/npc/${encodeURIComponent(packageId)}`,
+  wildPackage: (packageId: string) => `/api/gm-toolkit/packages/wild/${encodeURIComponent(packageId)}`,
+  builderHandoff: '/api/gm-toolkit/builder-handoff',
+  sessionPreparations: '/api/gm-toolkit/session-preparations/list',
+  sessionPreparation: (preparationId: string) => `/api/gm-toolkit/session-preparations/${encodeURIComponent(preparationId)}`,
+  mutateSessionPreparation: '/api/gm-toolkit/session-preparations/mutate',
+} as const
+
 export const ENCOUNTER_API_PATHS = {
   list: '/api/encounters/list',
-  folders: '/api/encounters/folders',
+  table: (tableId: string) => `/api/encounters/table/${encodeURIComponent(tableId)}`,
   generate: '/api/encounters/generate',
-  spawn: '/api/encounters/spawn',
   create: '/api/encounters/create',
-  createFolder: '/api/encounters/create-folder',
   save: '/api/encounters/save',
+  archive: '/api/encounters/archive',
+  restore: '/api/encounters/restore',
+  copy: '/api/encounters/copy',
+  import: '/api/encounters/import',
+  export: (tableId: string) => `/api/encounters/export/${encodeURIComponent(tableId)}`,
+  /** @deprecated Filesystem folder CRUD is not liveplay authority. */
+  folders: '/api/encounters/folders',
+  /** @deprecated Filesystem folder CRUD is not liveplay authority. */
+  createFolder: '/api/encounters/create-folder',
+  /** @deprecated Filesystem folder CRUD is not liveplay authority. */
   move: '/api/encounters/move',
+  /** @deprecated Filesystem folder CRUD is not liveplay authority. */
   moveFolder: '/api/encounters/move-folder',
+  /** @deprecated Destructive deletion was replaced by archive. */
   rename: '/api/encounters/rename',
+  /** @deprecated Destructive deletion was replaced by archive. */
   deleteTable: '/api/encounters/delete',
+  /** @deprecated Filesystem folder CRUD is not liveplay authority. */
   deleteFolder: '/api/encounters/delete-folder',
 } as const
 

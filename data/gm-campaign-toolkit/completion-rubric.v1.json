@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "rubricId": "gm-campaign-toolkit-completion-v1",
+  "ticket": "P12-002",
+  "status": "reviewed",
+  "footprint": {
+    "path": "data/gm-campaign-toolkit/generation-preparation-footprint.v1.json",
+    "sha256": "161be4cb987549b3947ba65262d325fcfd28dd5538286d633528e4ef2a2f9862",
+    "rowCount": 40,
+    "finalityRegistry": "data/gm-campaign-toolkit/footprint-finality.v1.json"
+  },
+  "completionStates": {
+    "Native": "The surface is served by Plan 12 liveplay authority.",
+    "Migrated": "Legacy data or semantics are carried by a deterministic source-bound transform.",
+    "Preserved": "An existing behavior is retained intact inside the new authority with parity evidence.",
+    "Retired": "No runtime route, import, script, recipe, or UI reaches the legacy behavior.",
+    "Documentary": "The source remains provenance material and is provably unreachable at runtime."
+  },
+  "temporaryStates": ["Pending", "Blocked"],
+  "forbiddenFinalTokens": [
+    "Pending",
+    "Blocked",
+    "visible-with-reason",
+    "prose-only",
+    "reference-only",
+    "generator-private-sheet",
+    "filesystem-authority",
+    "browser-randomness"
+  ],
+  "zeroGapRules": {
+    "everyFootprintRowRegisteredExactlyOnce": true,
+    "everyFinalRowHasAuthorityPaths": true,
+    "everyRetiredOrDocumentaryRowHasRuntimeUnreachableProof": true,
+    "concreteMechanicMayBeDowngradedToProse": false,
+    "unknownCanonicalIdentityFailsClosed": true,
+    "clientRedactionCountsAsPrivacyAuthority": false,
+    "previewMayCreateDurableRows": false,
+    "exactRetryMayCreateAdditionalAuthority": false
+  },
+  "requiredAcceptance": [
+    "table-authority",
+    "wild-generation",
+    "npc-generation",
+    "session-preparation",
+    "builder-launch-slice",
+    "recovery-migration-backup-performance",
+    "accessibility-privacy-golden-liveplay",
+    "full-repository-validation"
+  ]
+}

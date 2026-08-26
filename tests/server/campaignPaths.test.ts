@@ -27,7 +27,7 @@ describe('campaign path configuration', () => {
     expect(paths.CAMPAIGN_ROOT).toBe(resolve(process.cwd()))
     expect(paths.CAMPAIGN_MAPS_ROOT).toBe(resolve(process.cwd(), 'data/maps'))
     expect(paths.CAMPAIGN_POKEDEX_OVERRIDES_PATH).toBe(resolve(process.cwd(), 'data/reference-overrides/pokedex.json'))
-    expect(paths.CAMPAIGN_ENCOUNTER_TABLES_ROOT).toBe(resolve(process.cwd(), 'encounter_tables'))
+    expect(paths).not.toHaveProperty('CAMPAIGN_ENCOUNTER_TABLES_ROOT')
   })
 
   it('resolves relative ROTOM_CAMPAIGN_ROOT values from the app checkout', async () => {

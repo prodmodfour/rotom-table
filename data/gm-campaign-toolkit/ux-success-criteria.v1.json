@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "criteriaId": "gm-campaign-toolkit-ux-success-v1",
+  "ticket": "P12-007",
+  "status": "reviewed",
+  "tasks": {
+    "findReviewedTable": { "targetSeconds": 20, "maximumErrors": 0 },
+    "requestAndUnderstandWildPreview": { "targetSeconds": 45, "maximumErrors": 0 },
+    "commitPackageToPreparation": { "targetSeconds": 30, "maximumErrors": 0 },
+    "generateAndReviewNpcPackage": { "targetSeconds": 90, "maximumErrors": 1 },
+    "readyAndOpenBuilder": { "targetSeconds": 60, "maximumErrors": 0 }
+  },
+  "decisionAnatomy": ["owner-or-object", "headline", "one-sentence-prompt", "bounded-options", "disabled-reasons", "primary-secondary-cancel-actions", "revision-or-timing"],
+  "requirements": {
+    "onePrimaryDecision": true,
+    "validationVisibleBeforeCommit": true,
+    "previewClearlyInert": true,
+    "conflictNamesSafeRecovery": true,
+    "unavailableActionsRemainVisibleWithReason": true,
+    "rawIdentifiersHidden": true,
+    "keyboardComplete": true,
+    "screenReaderAnnouncements": ["preview-ready", "commit-accepted", "conflict", "correction", "launch-ready"],
+    "minimumPrimaryTargetPx": 44,
+    "zoomPercent": 200
+  },
+  "implementationAcceptance": {
+    "tickets": ["P12-085", "P12-086", "P12-087", "P12-088"],
+    "status": "accepted",
+    "navigation": {
+      "sourcePath": "src/utils/appNavigation.ts",
+      "sourceSha256": "81be54870bc4b3ac8dc3f22a2310c57d693fe61e8e2d26122c2ba425f2f94d35",
+      "destinationLabel": "Campaign Toolkit",
+      "gmOnly": true
+    },
+    "accessibility": {
+      "maximumSeriousOrCriticalAxeViolations": 0,
+      "keyboardComplete": true,
+      "focusRestored": true,
+      "reducedMotion": true
+    },
+    "responsive": {
+      "minimumPrimaryTargetPx": 44,
+      "minimumCssWidthAtTwoHundredPercentZoom": 160,
+      "horizontalEssentialContentOverflow": "none"
+    }
+  }
+}

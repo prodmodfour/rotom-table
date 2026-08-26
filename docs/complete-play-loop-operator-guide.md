@@ -6,7 +6,7 @@ Rotom Table is liveplay-only. Do not operate a parallel local-host campaign or t
 
 Use a private campaign root outside the application checkout. The default SQLite path is `<campaign-root>/rotom-table.sqlite`; include its WAL/SHM sidecars in coordinated backup procedures. Hosted writes require the explicit production opt-in documented in `.env.vps.example` and an outer private access gate.
 
-The current application schema is 50. Schema 44 remains the historical Complete Play Loop baseline; v45 adds onboarding, v46 adds Contests, v47 adds replay-safe Encounter equipment actions, v48 adds fishing declarations, v49 adds Snag conversion, and v50 adds generic Skill Check documents and operation journals. Startup applies every migration in order and refuses an unknown future version without writing. Never skip a schema version or manually weaken a CHECK constraint.
+The current application schema is 56. Schema 44 remains the historical Complete Play Loop baseline; v45–v50 add onboarding, Contests, Encounter equipment actions, fishing, Snag conversion, and generic Skill Checks. The GM Campaign Toolkit continues the same chain: v51 campaign tables, v52 wild generation/packages, v53 the backup-safe preview-signing secret, v54 NPC archetypes, v55 NPC generation/packages, and v56 session preparations. Startup applies every migration in order and refuses an unknown future version without writing. Never skip a schema version or manually weaken a CHECK constraint.
 
 ## Before deployment
 
@@ -41,9 +41,9 @@ The quality gate installs exact dependencies, so run it only when network, memor
 4. Start one application instance, allow migrations to finish, and check health.
 5. Run the private liveplay smoke checklist.
 6. Confirm current Campaign continuation and one retained-command status check before normal play.
-7. When present, reload one generic Skill Check, one source-bound shield/net effect, and one linked Battle Contest/Encounter from persisted authority.
+7. When present, reload one generic Skill Check, one source-bound shield/net effect, one linked Battle Contest/Encounter, and one GM Campaign Toolkit table/package/preparation from persisted authority.
 
-A restart must not rerun item, capture, Skill Check, Contest, or Encounter rolls; reapply equipment effects; recreate a Battle link; duplicate settlement/campaign-day commit; or duplicate correction. Durable journals answer exact retries. Follow the stopped-service closed-SQLite procedure and Plan 11 smoke checks in [Private VPS backups](private-vps-backups.md); never repair SQLite or JSON manually.
+A restart must not rerun item, capture, Skill Check, Contest, Encounter, wild-generation, or NPC-generation rolls; reapply equipment effects; recreate a Battle or Builder link; duplicate a package, launch, settlement/campaign-day commit; or duplicate correction. Durable journals answer exact retries. Follow the stopped-service closed-SQLite procedure and Plan 11 smoke checks in [Private VPS backups](private-vps-backups.md); never repair SQLite or JSON manually.
 
 ## Monitoring symptoms
 
@@ -94,6 +94,7 @@ GM/owner/public projections are rebuilt over HTTP after reconnect. Realtime even
 
 ## Existing deployment references
 
+- [GM Campaign Toolkit guide](gm-campaign-toolkit/gm-guide.md)
 - [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md)
 - [Private VPS live-play smoke](private-vps-live-play-smoke.md)
 - [Concurrency and failure acceptance](complete-play-loop-concurrency-reconnect-failure.md)

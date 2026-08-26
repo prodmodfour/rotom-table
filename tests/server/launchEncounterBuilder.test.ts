@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createHash } from 'node:crypto'
 import { createEmptyEncounterHistory } from '#shared/moveAutomation/encounterHistory'
 import { MAP_INTERACTION_MODES } from '#shared/mapInteractionMode'
 import { ENCOUNTER_BUILDER_SCHEMA_VERSION, type LaunchEncounterBuilderRequest } from '#shared/encounterDocuments/builder'
+import type { WildGenerationCommitProjectionV1, WildGenerationPreviewProjectionV1 } from '#shared/gmToolkit/generation'
 import { launchEncounterBuilderUseCase } from '~~/server/useCases/launchEncounterBuilder'
+import { manageWildGenerationUseCase } from '~~/server/useCases/manageWildGeneration'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import { createSqliteMapRepository } from '~~/server/storage/mapRepository'
 import { createSqliteSheetRepository } from '~~/server/storage/sheetRepository'
@@ -10,17 +13,12 @@ import { createSqliteMapInteractionModeRepository } from '~~/server/storage/mapI
 import { createSqliteRealtimeEventRepository } from '~~/server/storage/realtimeEventRepository'
 import { createSqliteEncounterDocumentRepository } from '~~/server/storage/encounterDocumentRepository'
 import { createSqliteEncounterLaunchOperationRepository } from '~~/server/storage/encounterLaunchOperationRepository'
-import type { CharacterSheet } from '~/types/characterSheet'
+import { createSqliteGmWildGenerationRepository } from '~~/server/storage/gmWildGenerationRepository'
 import type { TabletopMap } from '~/types/map'
-import type { EncounterTable } from '~/types/encounterTable'
 
 const databases: RotomDatabase[] = []
 afterEach(() => { for (const database of databases.splice(0)) database.close() })
 
-const encounterTable: EncounterTable = {
-  name: 'Pond', min_level: 5, max_level: 8,
-  entries: [{ weight: 1, species: 'Bulbasaur' }],
-}
 const mapFixture = (): TabletopMap => ({
   schemaVersion: 2, revision: 0, slug: 'pond-map', name: 'Pond Map', folder: '',
   dimensions: { x: 8, y: 2, z: 8 }, groundLevelY: 0, playerVisible: true,
@@ -37,25 +35,26 @@ const mapFixture = (): TabletopMap => ({
   },
   createdAt: 10, updatedAt: 10,
 })
-const generatedSheet = (species: string, level: number, slug: string): CharacterSheet => ({
-  slug, nickname: species, species, level, capabilities: { overland: 4 }, stats: {},
-} as CharacterSheet)
 
-const request = (overrides: Partial<LaunchEncounterBuilderRequest> = {}): LaunchEncounterBuilderRequest => ({
+const request = (packageResult: WildGenerationCommitProjectionV1, overrides: Partial<LaunchEncounterBuilderRequest> = {}): LaunchEncounterBuilderRequest => ({
   schemaVersion: ENCOUNTER_BUILDER_SCHEMA_VERSION,
   launchId: 'launch-1', encounterId: 'night-pond', name: 'Night Pond', recipe: 'wild-pack',
-  mapSlug: 'pond-map', clientId: 'gm-client', startInitiative: true,
+  mapSlug: 'pond-map', expectedMapRevision: 0, clientId: 'gm-client', startInitiative: true,
   presentation: { stage: 'standard', tactical: 'on-demand' },
-  source: { region: 'vale', table: 'pond', outRoot: 'data/sheets/encounters' },
-  cast: [
-    { castId: 'cast-1', species: 'Bulbasaur', level: 5, roll: 11, sideId: 'wild', role: 'leader', hidden: true },
-    { castId: 'cast-2', species: 'Ivysaur', level: 8, roll: 72, sideId: 'wild', role: 'support', hidden: false },
-  ],
+  handoff: { kind: 'wild-package', documentId: packageResult.packageId, expectedRevision: 0, sceneId: null },
+  cast: packageResult.sheets.map((sheet, index) => ({
+    castId: `cast-${index + 1}`,
+    sheet: { kind: sheet.kind, slug: sheet.slug, expectedRevision: sheet.revision },
+    sourceCandidateId: sheet.candidateId,
+    sideId: 'wild',
+    role: index === 0 ? 'leader' : 'support',
+    hidden: index === 0,
+  })),
   publicStakes: 'Protect the pond', gmStakes: 'The leader may flee', notes: 'Reveal after the bell.',
   ...overrides,
 })
 
-const harness = (options: { failSpecies?: string } = {}) => {
+const harness = () => {
   const database = openRotomDatabase({ path: ':memory:' })
   databases.push(database)
   const maps = createSqliteMapRepository<TabletopMap>(database)
@@ -64,139 +63,110 @@ const harness = (options: { failSpecies?: string } = {}) => {
   const realtime = createSqliteRealtimeEventRepository({ database, clock: () => 222 })
   const encounters = createSqliteEncounterDocumentRepository(database)
   const launches = createSqliteEncounterLaunchOperationRepository(database)
+  const wild = createSqliteGmWildGenerationRepository(database)
   maps.create({ slug: 'pond-map', map: mapFixture(), now: 10 })
   modes.set({ slug: 'pond-map', interactionMode: MAP_INTERACTION_MODES.SETUP_EDIT, updatedAt: 11 })
-  let placementSequence = 0
-  const runPokegenSheet = vi.fn(async (species: string, level: number, prefix: string, sequence: number) => {
-    if (species === options.failSpecies) return { ok: false, stderr: 'reviewed species failed', content: undefined }
-    const slug = `${prefix}-${species.toLowerCase()}-lv${level}-${sequence}`
-    return { ok: true, stderr: '', content: JSON.stringify(generatedSheet(species, level, slug)) }
-  })
+  const generationDeps = {
+    database,
+    now: () => '2026-08-25T14:00:00.000Z',
+    signingKey: 'test-only-gm-toolkit-signing-key-that-is-long-enough',
+    seedForCommand: () => createHash('sha256').update('p12-forest-vertical-slice-1').digest('hex'),
+    publishPersistedRealtimeEvent: () => undefined,
+    publishToolkitInvalidation: () => undefined,
+  }
+  const preview = manageWildGenerationUseCase({
+    schemaVersion: 1, mode: 'preview', operationId: 'wild-operation-builder-001',
+    tableId: 'encounter-table:v1:thickerby-vale-forest', expectedTableRevision: 0, requestedSlots: 3,
+    party: { trainerRefs: [] }, environment: { timeOfDay: null, weather: null },
+    policy: { shinyChancePercent: 0, heldItemName: null }, exploration: null,
+  }, generationDeps) as WildGenerationPreviewProjectionV1
+  const generated = manageWildGenerationUseCase({
+    schemaVersion: 1, mode: 'commit', operationId: preview.operationId, previewToken: preview.previewToken,
+    selectedCandidateIds: preview.candidates.slice(0, 2).map(row => row.candidateId), folder: 'generated/wild',
+  }, generationDeps) as WildGenerationCommitProjectionV1
+  const baselineEvents = realtime.readAfter({ afterSequence: 0 }).events.length
   const dependencies = {
     database, mapRepository: maps, sheetRepository: sheets, mapInteractionModeRepository: modes,
     realtimeEventRepository: realtime, encounterRepository: encounters, launchOperationRepository: launches,
-    projectRoot: '/repo', encounterRoot: '/repo/encounter_tables', now: () => 111,
-    random: () => 0,
-    pathExists: (path: string) => path === '/repo/encounter_tables/vale/pond.json',
-    readTextFile: (path: string) => {
-      if (path.endsWith('/pond.json')) return JSON.stringify(encounterTable)
-      throw new Error(`unexpected read: ${path}`)
-    },
-    uniqueOutputDir: (parent: string, baseName: string) => `${parent}/${baseName}`,
-    runPokegenSheet,
-    createPlacementId: () => `spawn-${++placementSequence}`,
+    wildGenerationRepository: wild, now: () => 111,
     publishPersistedRealtimeEvent: vi.fn(),
   }
-  return { database, maps, sheets, modes, realtime, encounters, launches, runPokegenSheet, dependencies }
+  return { database, maps, sheets, modes, realtime, encounters, launches, wild, generated, baselineEvents, dependencies }
 }
 
-describe('launchEncounterBuilderUseCase', () => {
-  it('atomically launches the exact reviewed cast with sides, roles, privacy, story, and a replay-safe receipt', async () => {
+describe('package-based launchEncounterBuilderUseCase', () => {
+  it('atomically launches immutable accepted sheets with roles, privacy, story, and an exact receipt', async () => {
     const kit = harness()
-    const first = await launchEncounterBuilderUseCase(request(), kit.dependencies)
-
+    const first = await launchEncounterBuilderUseCase(request(kit.generated), kit.dependencies)
     expect(first).toEqual({
-      ok: true, launchId: 'launch-1', encounterId: 'night-pond', encounterRevision: 0,
+      ok: true, exactRetry: false, launchId: 'launch-1', encounterId: 'night-pond', encounterRevision: 0,
       mapSlug: 'pond-map', mapRevision: 1, spawned: 2,
     })
-    expect(kit.runPokegenSheet.mock.calls.map(call => call.slice(0, 2))).toEqual([
-      ['Bulbasaur', 5], ['Ivysaur', 8],
-    ])
     const map = kit.maps.getBySlug('pond-map')!
-    expect(map.placements.map(placement => ({ id: placement.id, sideId: placement.sideId }))).toEqual([
-      { id: 'spawn-1', sideId: 'wild' }, { id: 'spawn-2', sideId: 'wild' },
-    ])
-    expect(map.initiative).toMatchObject({ activeId: 'spawn-2', round: 1 })
+    expect(map.placements).toHaveLength(2)
+    expect(map.placements.every(row => row.sideId === 'wild')).toBe(true)
+    expect(map.initiative?.round).toBe(1)
     expect(kit.modes.get('pond-map').interactionMode).toBe(MAP_INTERACTION_MODES.LIVE_PLAY)
-    const document = kit.encounters.get('night-pond')!
-    expect(document).toMatchObject({
+    const participantIds = map.placements.map(row => row.id)
+    expect(kit.encounters.get('night-pond')).toMatchObject({
       lifecycle: 'active', recipe: 'wild-pack', presentation: { stage: 'standard', tactical: 'on-demand' },
-      hiddenParticipantIds: ['spawn-1'],
-      castRoles: [{ participantId: 'spawn-1', role: 'leader' }, { participantId: 'spawn-2', role: 'support' }],
-      stakes: { public: 'Protect the pond', gm: 'The leader may flee' },
-      notes: 'Reveal after the bell.',
+      hiddenParticipantIds: [participantIds[0]],
+      castRoles: [{ participantId: participantIds[0], role: 'leader' }, { participantId: participantIds[1], role: 'support' }],
+      stakes: { public: 'Protect the pond', gm: 'The leader may flee' }, notes: 'Reveal after the bell.',
     })
-    expect(document.objectives[0]?.label).toContain('pack')
     expect(kit.sheets.list('pokemon')).toHaveLength(2)
-    expect(kit.launches.get('launch-1')?.result).toEqual(first)
-    const realtime = kit.realtime.readAfter({ afterSequence: 0 }).events
-    expect(realtime.map(event => event.event.channel)).toEqual(expect.arrayContaining([
-      'encounter:night-pond', 'encounters', 'map:pond-map', 'maps',
-    ]))
-    expect(JSON.stringify(realtime.filter(event => event.event.channel.startsWith('encounter')))).not.toContain('Reveal after the bell')
+    const afterFirst = kit.realtime.readAfter({ afterSequence: 0 }).events.length
+    expect(afterFirst).toBeGreaterThan(kit.baselineEvents)
 
-    const replay = await launchEncounterBuilderUseCase(request(), kit.dependencies)
-    expect(replay).toEqual(first)
-    expect(kit.runPokegenSheet).toHaveBeenCalledTimes(2)
+    const replay = await launchEncounterBuilderUseCase(request(kit.generated), kit.dependencies)
+    expect(replay).toEqual({ ...first, exactRetry: true })
     expect(kit.maps.getBySlug('pond-map')?.placements).toHaveLength(2)
+    expect(kit.realtime.readAfter({ afterSequence: 0 }).events).toHaveLength(afterFirst)
   })
 
-  it('can prepare the integrated cast without starting initiative and rejects an already-active launch', async () => {
+  it('can prepare cast without initiative and fails stale package-sheet or map revisions closed', async () => {
     const prepared = harness()
-    const preparedRequest = request({
-      launchId: 'launch-prepared', encounterId: 'prepared-pond', startInitiative: false,
-      cast: [request().cast[0]!],
-    })
-    await launchEncounterBuilderUseCase(preparedRequest, prepared.dependencies)
+    await launchEncounterBuilderUseCase(request(prepared.generated, { startInitiative: false }), prepared.dependencies)
     expect(prepared.maps.getBySlug('pond-map')?.initiative).toMatchObject({ activeId: null, round: 0 })
 
-    const active = harness()
-    const current = active.maps.getBySlug('pond-map')!
-    active.maps.saveSetupMap({ ...current, initiative: { activeId: 'active-existing', round: 1 } })
-    await expect(launchEncounterBuilderUseCase(request(), active.dependencies)).rejects.toMatchObject({ statusCode: 409 })
-    expect(active.sheets.list('pokemon')).toEqual([])
-    expect(active.encounters.get('night-pond')).toBeNull()
+    const staleMap = harness()
+    await expect(launchEncounterBuilderUseCase(request(staleMap.generated, { expectedMapRevision: 2 }), staleMap.dependencies)).rejects.toMatchObject({ statusCode: 409 })
+    expect(staleMap.maps.getBySlug('pond-map')?.placements).toEqual([])
+
+    const staleSheet = harness()
+    const staleRequest = request(staleSheet.generated)
+    const changed = { ...staleRequest, cast: [{ ...staleRequest.cast[0]!, sheet: { ...staleRequest.cast[0]!.sheet, expectedRevision: 1 } }] }
+    await expect(launchEncounterBuilderUseCase(changed, staleSheet.dependencies)).rejects.toMatchObject({ statusCode: 409 })
+    expect(staleSheet.maps.getBySlug('pond-map')?.placements).toEqual([])
   })
 
-  it('rolls back every map, sheet, document, event, and receipt write when one reviewed row cannot launch', async () => {
-    const kit = harness({ failSpecies: 'Ivysaur' })
-
-    await expect(launchEncounterBuilderUseCase(request(), kit.dependencies)).rejects.toMatchObject({ statusCode: 409 })
-    expect(kit.maps.getBySlug('pond-map')).toMatchObject({ revision: 0, placements: [] })
-    expect(kit.sheets.list('pokemon')).toEqual([])
-    expect(kit.encounters.get('night-pond')).toBeNull()
-    expect(kit.launches.get('launch-1')).toBeNull()
-    expect(kit.realtime.readAfter({ afterSequence: 0 }).events).toEqual([])
-    expect(kit.modes.get('pond-map').interactionMode).toBe(MAP_INTERACTION_MODES.SETUP_EDIT)
-  })
-
-  it('rolls back launch receipt, document, mode, map, and sheets when durable publication cannot be recorded', async () => {
+  it('rolls back map, document, mode, event, and receipt when any in-transaction step fails', async () => {
     const kit = harness()
-    await expect(launchEncounterBuilderUseCase(request(), {
+    await expect(launchEncounterBuilderUseCase(request(kit.generated), {
       ...kit.dependencies,
-      realtimeEventRepository: {
-        database: kit.database,
-        appendMany: () => { throw new Error('durable launch event failed') },
-      },
-    })).rejects.toThrow('durable launch event failed')
+      afterMapWrite: () => { throw new Error('injected launch interruption') },
+    })).rejects.toThrow('injected launch interruption')
     expect(kit.maps.getBySlug('pond-map')).toMatchObject({ revision: 0, placements: [] })
-    expect(kit.modes.get('pond-map').interactionMode).toBe(MAP_INTERACTION_MODES.SETUP_EDIT)
-    expect(kit.sheets.list('pokemon')).toEqual([])
     expect(kit.encounters.get('night-pond')).toBeNull()
     expect(kit.launches.get('launch-1')).toBeNull()
+    expect(kit.realtime.readAfter({ afterSequence: 0 }).events).toHaveLength(kit.baselineEvents)
+    expect(kit.modes.get('pond-map').interactionMode).toBe(MAP_INTERACTION_MODES.SETUP_EDIT)
   })
 
-  it('rejects unknown sides and conflicting launch identities without partial state', async () => {
-    const kit = harness()
-    const unknownSide = request({
-      cast: [{ ...request().cast[0]!, sideId: 'missing-side' }],
-    })
-    await expect(launchEncounterBuilderUseCase(unknownSide, kit.dependencies)).rejects.toMatchObject({ statusCode: 409 })
-    expect(kit.maps.getBySlug('pond-map')?.placements).toEqual([])
-    expect(kit.sheets.list('pokemon')).toEqual([])
+  it('rejects unknown sides, changed launch material, and enriched payloads without partial state', async () => {
+    const unknown = harness()
+    await expect(launchEncounterBuilderUseCase(request(unknown.generated, {
+      cast: [{ ...request(unknown.generated).cast[0]!, sideId: 'missing-side' }],
+    }), unknown.dependencies)).rejects.toMatchObject({ statusCode: 409 })
+    expect(unknown.maps.getBySlug('pond-map')?.placements).toEqual([])
 
-    await launchEncounterBuilderUseCase(request(), kit.dependencies)
-    await expect(launchEncounterBuilderUseCase(request({ name: 'Different intent' }), kit.dependencies)).rejects.toMatchObject({
-      statusCode: 409,
-      message: 'Encounter launch ID was already used for different intent.',
-    })
+    const kit = harness()
+    await launchEncounterBuilderUseCase(request(kit.generated), kit.dependencies)
+    await expect(launchEncounterBuilderUseCase(request(kit.generated, { name: 'Different intent' }), kit.dependencies)).rejects.toMatchObject({ statusCode: 409 })
     expect(kit.maps.getBySlug('pond-map')?.placements).toHaveLength(2)
-  })
 
-  it('rejects malformed or enriched builder payloads before generation', async () => {
-    const kit = harness()
-    await expect(launchEncounterBuilderUseCase({ ...request(), mechanics: { damage: 99 } }, kit.dependencies)).rejects.toMatchObject({ statusCode: 400 })
-    await expect(launchEncounterBuilderUseCase({ ...request(), cast: [] }, kit.dependencies)).rejects.toMatchObject({ statusCode: 400 })
-    expect(kit.runPokegenSheet).not.toHaveBeenCalled()
+    const malformed = harness()
+    await expect(launchEncounterBuilderUseCase({ ...request(malformed.generated), mechanics: { damage: 99 } }, malformed.dependencies)).rejects.toMatchObject({ statusCode: 400 })
+    await expect(launchEncounterBuilderUseCase({ ...request(malformed.generated), cast: [] }, malformed.dependencies)).rejects.toMatchObject({ statusCode: 400 })
   })
 })

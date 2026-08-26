@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "fixtureIndexId": "gm-campaign-toolkit-fixtures-v1",
+  "ticket": "P12-010",
+  "status": "reviewed",
+  "fixtures": [
+    { "path": "data/gm-campaign-toolkit/fixtures/deterministic-generation.v1.json", "tickets": ["P12-005", "P12-049"] },
+    { "path": "data/gm-campaign-toolkit/fixtures/failure-recovery.v1.json", "tickets": ["P12-006", "P12-071", "P12-075", "P12-076", "P12-077", "P12-078"] },
+    { "path": "data/gm-campaign-toolkit/performance-scale-budgets.v1.json", "tickets": ["P12-008", "P12-081", "P12-082"] },
+    { "path": "data/gm-campaign-toolkit/legality-policies.v1.json", "tickets": ["P12-009", "P12-025", "P12-026", "P12-027", "P12-030", "P12-041", "P12-042", "P12-043"] },
+    { "path": "data/gm-campaign-toolkit/fixtures/session-preparation.v1.json", "tickets": ["P12-051", "P12-053", "P12-055", "P12-056", "P12-059", "P12-061", "P12-062"] },
+    { "path": "data/gm-campaign-toolkit/fixtures/builder-launch.v1.json", "tickets": ["P12-063", "P12-064", "P12-065", "P12-066", "P12-067", "P12-068", "P12-069", "P12-070", "P12-071", "P12-072"] }
+  ],
+  "checks": ["npm run check:gm-toolkit-footprint", "npm run check:gm-toolkit-fixtures"]
+}

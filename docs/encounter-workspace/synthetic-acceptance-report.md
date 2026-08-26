@@ -33,7 +33,7 @@ npx vitest run tests/data/encounterWorkspaceSyntheticAcceptance.test.ts \
   tests/shared/encounterWorkspaceActions.test.ts \
   --maxWorkers=1 --no-file-parallelism
 
-npx playwright test tests/e2e/encounter-builder.spec.ts \
+npx playwright test tests/e2e/gm-campaign-toolkit-liveplay.spec.ts \
   tests/e2e/encounter-workspace-shell.spec.ts \
   tests/e2e/encounter-design-system.spec.ts \
   --project=chromium --project=mobile-chromium --workers=1

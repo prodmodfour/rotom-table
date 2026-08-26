@@ -21,6 +21,13 @@ export interface CampaignUnfinishedSettlementSummaryV1 {
   readonly href: string
 }
 
+export interface CampaignReadyPreparationSummaryV1 {
+  readonly label: string
+  readonly state: 'ready' | 'in-progress'
+  readonly sceneCount: number
+  readonly href: string
+}
+
 export interface CampaignEggSummaryV1 {
   readonly active: number
   readonly incubating: number
@@ -38,6 +45,8 @@ export interface CampaignContinuationProjectionV1 {
   readonly additionalActiveEncounters: number
   readonly unfinishedSettlement: CampaignUnfinishedSettlementSummaryV1 | null
   readonly additionalUnfinishedSettlements: number
+  readonly readyPreparation: CampaignReadyPreparationSummaryV1 | null
+  readonly additionalReadyPreparations: number
   readonly eggs: CampaignEggSummaryV1
 }
 
@@ -101,6 +110,18 @@ const settlement = (value: unknown, path: string): CampaignUnfinishedSettlementS
     href: href(input.href, `${path}.href`),
   })
 }
+const readyPreparation = (value: unknown, path: string): CampaignReadyPreparationSummaryV1 | null => {
+  if (value === null) return null
+  const input = object(value, path)
+  exact(input, ['label', 'state', 'sceneCount', 'href'], path)
+  if (input.state !== 'ready' && input.state !== 'in-progress') throw new Error(`${path}.state must be ready or in-progress.`)
+  return Object.freeze({
+    label: text(input.label, `${path}.label`, 160),
+    state: input.state,
+    sceneCount: integer(input.sceneCount, `${path}.sceneCount`),
+    href: href(input.href, `${path}.href`),
+  })
+}
 const eggSummary = (value: unknown, path: string): CampaignEggSummaryV1 => {
   const input = object(value, path)
   exact(input, ['active', 'incubating', 'ready', 'needsAdjudication', 'hatching', 'href'], path)
@@ -126,7 +147,8 @@ export const parseCampaignContinuationProjection = (
   exact(input, [
     'schemaVersion', 'snapshotId', 'attention', 'activeEncounter',
     'additionalActiveEncounters', 'unfinishedSettlement',
-    'additionalUnfinishedSettlements', 'eggs',
+    'additionalUnfinishedSettlements', 'readyPreparation',
+    'additionalReadyPreparations', 'eggs',
   ], path)
   if (input.schemaVersion !== CAMPAIGN_CONTINUATION_SCHEMA_VERSION) {
     throw new Error(`${path}.schemaVersion must be 1.`)
@@ -142,6 +164,8 @@ export const parseCampaignContinuationProjection = (
     additionalActiveEncounters: integer(input.additionalActiveEncounters, `${path}.additionalActiveEncounters`),
     unfinishedSettlement: settlement(input.unfinishedSettlement, `${path}.unfinishedSettlement`),
     additionalUnfinishedSettlements: integer(input.additionalUnfinishedSettlements, `${path}.additionalUnfinishedSettlements`),
+    readyPreparation: readyPreparation(input.readyPreparation, `${path}.readyPreparation`),
+    additionalReadyPreparations: integer(input.additionalReadyPreparations, `${path}.additionalReadyPreparations`),
     eggs: eggSummary(input.eggs, `${path}.eggs`),
   })
 }

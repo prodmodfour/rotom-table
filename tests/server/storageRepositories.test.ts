@@ -75,6 +75,20 @@ const tableNames = (database: RotomDatabase): string[] => database.connection.pr
   ORDER BY name ASC
 `).all().map((row) => String(row.name))
 
+const gmToolkitTableNames = [
+  'gm_encounter_table_ops',
+  'gm_encounter_tables',
+  'gm_generated_packages',
+  'gm_npc_archetype_ops',
+  'gm_npc_archetypes',
+  'gm_npc_generation_ops',
+  'gm_npc_packages',
+  'gm_session_preparation_ops',
+  'gm_session_preparations',
+  'gm_toolkit_secrets',
+  'gm_wild_generation_ops',
+]
+
 const mapDocument = (overrides: Partial<TabletopMap> = {}): TabletopMap => ({
   schemaVersion: 2,
   slug: 'training-yard',
@@ -114,7 +128,7 @@ describe('SQLite storage foundation', () => {
     expect(existsSync(database.path)).toBe(true)
     expect(database.journalMode?.toLowerCase()).toBe('wal')
     expect(getStorageSchemaVersion(database.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(database)).toEqual([
+    expect(tableNames(database).filter(name => !name.startsWith('gm_'))).toEqual([
       'ability_declaration_offers',
       'ability_resolution_ops',
       'breeding_archive_import_requests',
@@ -187,11 +201,12 @@ describe('SQLite storage foundation', () => {
       'trainer_species_acquisition_source_operations',
       'trainer_species_acquisitions',
     ])
+    expect(tableNames(database).filter(name => name.startsWith('gm_'))).toEqual(gmToolkitTableNames)
 
     const reopened = openRotomDatabase({ path: database.path })
     openDatabases.push(reopened)
     expect(getStorageSchemaVersion(reopened.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
-    expect(tableNames(reopened)).toEqual([
+    expect(tableNames(reopened).filter(name => !name.startsWith('gm_'))).toEqual([
       'ability_declaration_offers',
       'ability_resolution_ops',
       'breeding_archive_import_requests',
@@ -264,6 +279,7 @@ describe('SQLite storage foundation', () => {
       'trainer_species_acquisition_source_operations',
       'trainer_species_acquisitions',
     ])
+    expect(tableNames(reopened).filter(name => name.startsWith('gm_'))).toEqual(gmToolkitTableNames)
   })
 
   it('reads and writes map, sheet, and shared interaction-mode state through repository interfaces', () => {

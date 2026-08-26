@@ -3,6 +3,7 @@ import type { PokemonEggDocumentV1 } from '../../shared/breeding/egg'
 import type { CampaignAttentionProjectionV1 } from '../../shared/campaignAttention/projection'
 import type { EncounterSettlementDocument } from '../../shared/encounterSettlement/document'
 import type { EncounterWorkspaceSummary } from '../../shared/encounterWorkspace/library'
+import type { SessionPreparationDocumentV1 } from '../../shared/gmToolkit/sessionPreparation'
 import { normalizePlayerProfile, type PlayerProfile } from '../../shared/playerProfiles'
 import { openRotomDatabase } from '../../server/storage/database'
 import {
@@ -54,6 +55,12 @@ const egg = (eggId: string, ownerTrainerSlug: string, status: 'incubating' | 're
   ownerTrainerSlug,
   status,
 } as unknown as PokemonEggDocumentV1)
+const preparation = (id: string, lifecycle: 'ready' | 'launched', scenes = 2): SessionPreparationDocumentV1 => ({
+  preparationId: id, title: id === 'session-preparation:v1:forest' ? 'Forest Session' : 'Later Session', lifecycle,
+  scheduledFor: id.endsWith('forest') ? '2026-08-26T12:00:00.000Z' : null,
+  updatedAt: '2026-08-26T11:00:00.000Z', scenes: Array.from({ length: scenes }, (_, index) => ({ sceneId: `scene:${id}:${index}` })),
+  launches: lifecycle === 'launched' ? [{ sceneId: `scene:${id}:0` }] : [],
+} as unknown as SessionPreparationDocumentV1)
 
 const profile: PlayerProfile = normalizePlayerProfile({
   schemaVersion: 1,
@@ -72,12 +79,15 @@ describe('campaign continuation projection', () => {
         settlement('settlement-old', 'harbor-duel', 'blocked'),
         settlement('settlement-new', 'forest-watch', 'ready'),
       ],
+      preparations: [preparation('session-preparation:v1:later', 'launched'), preparation('session-preparation:v1:forest', 'ready')],
       eggs: [egg('egg-one', 'trainer-alpha', 'incubating'), egg('egg-two', 'trainer-beta', 'ready')],
     })
     expect(projected.activeEncounter).toMatchObject({ label: 'Harbor duel', state: 'active', href: '/play/harbor-duel' })
     expect(projected.additionalActiveEncounters).toBe(1)
     expect(projected.unfinishedSettlement).toMatchObject({ label: 'Forest watch', state: 'ready-to-finish', openWorkCount: 0 })
     expect(projected.additionalUnfinishedSettlements).toBe(1)
+    expect(projected.readyPreparation).toMatchObject({ label: 'Forest Session', state: 'ready', sceneCount: 2, href: '/session-prep?preparation=session-preparation%3Av1%3Aforest' })
+    expect(projected.additionalReadyPreparations).toBe(1)
     expect(projected.eggs).toMatchObject({ active: 2, incubating: 1, ready: 1 })
     expect(projected.snapshotId).toMatch(/^campaign-continuation-snapshot:v1:[a-f0-9]{64}$/)
   })
@@ -89,10 +99,13 @@ describe('campaign continuation projection', () => {
       attention: attention('owner'),
       workspaces: [workspace('harbor-duel')],
       settlements: [settlement('settlement-one', 'harbor-duel', 'blocked')],
+      preparations: [preparation('session-preparation:v1:forest', 'ready')],
       eggs: [egg('egg-one', 'trainer-alpha', 'incubating'), egg('egg-two', 'trainer-beta', 'ready')],
     })
     expect(projected.eggs).toMatchObject({ active: 1, incubating: 1, ready: 0 })
     expect(projected.unfinishedSettlement?.openWorkCount).toBeNull()
+    expect(projected.readyPreparation).toBeNull()
+    expect(JSON.stringify(projected)).not.toContain('Forest Session')
     expect(JSON.stringify(projected)).not.toContain('trainer-alpha')
     expect(JSON.stringify(projected)).not.toContain('trainer-beta')
   })

@@ -37,6 +37,8 @@ const continuation = (overrides: Partial<CampaignContinuationProjectionV1> = {})
   additionalActiveEncounters: 0,
   unfinishedSettlement: null,
   additionalUnfinishedSettlements: 0,
+  readyPreparation: null,
+  additionalReadyPreparations: 0,
   eggs: { active: 0, incubating: 0, ready: 0, needsAdjudication: 0, hatching: 0, href: '/breeding' },
   ...overrides,
 })

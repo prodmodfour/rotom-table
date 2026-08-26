@@ -26,12 +26,12 @@ describe('P11-082 migration and upgrade certification', () => {
   })
 
   it('binds exactly the four contiguous Plan 11 storage versions', () => {
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(50)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBeGreaterThanOrEqual(50)
     expect(certification.storageAuthority).toEqual({
       baselineVersion: 46,
       latestVersion: 50,
       plan11Versions: [47, 48, 49, 50],
-      migrationNames: STORAGE_MIGRATIONS.slice(46).map(row => row.name),
+      migrationNames: STORAGE_MIGRATIONS.filter(row => row.version >= 47 && row.version <= 50).map(row => row.name),
       transaction: 'begin-immediate-all-versions-or-rollback',
     })
   })

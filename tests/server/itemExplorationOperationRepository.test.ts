@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { openRotomDatabase, type RotomDatabase } from '../../server/storage/database'
 import { createSqliteItemExplorationOperationRepository } from '../../server/storage/itemExplorationOperationRepository'
+import { LATEST_STORAGE_SCHEMA_VERSION } from '../../server/storage/migrations'
 import type {
   ItemExplorationOperationCommandV1,
   ItemExplorationOperationResultV1,
@@ -40,7 +41,7 @@ const result = (): ItemExplorationOperationResultV1 => ({
 describe('item exploration operation repository', () => {
   it('persists canonical principal-bound commands, results, and private evidence at current schema', () => {
     const database = open()
-    expect(database.connection.prepare('PRAGMA user_version').get()).toEqual({ user_version: 50 })
+    expect(database.connection.prepare('PRAGMA user_version').get()).toEqual({ user_version: LATEST_STORAGE_SCHEMA_VERSION })
     const repository = createSqliteItemExplorationOperationRepository(database)
     const stored = repository.insert({
       commandSha256: 'a'.repeat(64),

@@ -97,6 +97,8 @@ const projection = (resolvedTeam: boolean) => {
       label: 'Old lighthouse', state: 'needs-review', openWorkCount: 2, href: '/play/old-lighthouse',
     },
     additionalUnfinishedSettlements: 0,
+    readyPreparation: { label: 'Forest Session', state: 'ready', sceneCount: 2, href: '/session-prep' },
+    additionalReadyPreparations: 0,
     eggs: { active: 2, incubating: 1, ready: 1, needsAdjudication: 0, hatching: 0, href: '/breeding' },
   }
 }

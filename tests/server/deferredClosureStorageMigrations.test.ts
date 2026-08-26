@@ -27,6 +27,12 @@ const applyThrough = (connection: DatabaseSync, version: number): void => {
   connection.exec('PRAGMA foreign_keys = ON')
 }
 
+const expectedUpgradeFrom = (version: number) => ({
+  fromVersion: version,
+  toVersion: LATEST_STORAGE_SCHEMA_VERSION,
+  appliedVersions: STORAGE_MIGRATIONS.filter(row => row.version > version).map(row => row.version),
+})
+
 const tableNames = (connection: DatabaseSync): string[] => connection.prepare(`
   SELECT name FROM sqlite_schema
   WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
@@ -100,15 +106,11 @@ const rowJson = (connection: DatabaseSync, table: string, key: string, value: st
 )
 
 describe('P11-082 Deferred Mechanics Closure storage migrations', () => {
-  it('creates every Plan 11 table and index on a fresh database at contiguous schema v50', () => {
+  it('retains every Plan 11 table and index on a fresh current-schema database', () => {
     const connection = open()
-    expect(applyStorageMigrations(connection)).toEqual({
-      fromVersion: 0,
-      toVersion: 50,
-      appliedVersions: Array.from({ length: 50 }, (_, index) => index + 1),
-    })
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(50)
-    expect(getStorageSchemaVersion(connection)).toBe(50)
+    expect(applyStorageMigrations(connection)).toEqual(expectedUpgradeFrom(0))
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(56)
+    expect(getStorageSchemaVersion(connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
     expect(tableNames(connection)).toEqual(expect.arrayContaining([
       'equipment_action_operations',
       'item_guided_requests',
@@ -134,11 +136,7 @@ describe('P11-082 Deferred Mechanics Closure storage migrations', () => {
     const contestBefore = rowJson(connection, 'contests', 'contest_id', contest.contestId)
     const guidedBefore = rowJson(connection, 'item_guided_requests', 'request_id', requestId)
 
-    expect(applyStorageMigrations(connection)).toEqual({
-      fromVersion: 46,
-      toVersion: 50,
-      appliedVersions: [47, 48, 49, 50],
-    })
+    expect(applyStorageMigrations(connection)).toEqual(expectedUpgradeFrom(46))
     expect(rowJson(connection, 'contests', 'contest_id', contest.contestId)).toBe(contestBefore)
     expect(rowJson(connection, 'item_guided_requests', 'request_id', requestId)).toBe(guidedBefore)
     const stored = connection.prepare('SELECT document_json FROM contests WHERE contest_id = ?').get(contest.contestId) as { document_json: string }
@@ -147,10 +145,10 @@ describe('P11-082 Deferred Mechanics Closure storage migrations', () => {
   })
 
   it.each([
-    { version: 47, kind: 'loyalty-consequence' as const, suffix: '7', equipment: true, expected: [48, 49, 50] },
-    { version: 48, kind: 'fishing-adjudication' as const, suffix: '8', equipment: true, expected: [49, 50] },
-    { version: 49, kind: 'snag-conversion-adjudication' as const, suffix: '9', equipment: true, expected: [50] },
-  ])('preserves exact v$version Plan 11 rows while applying later versions', ({ version, kind, suffix, equipment, expected }) => {
+    { version: 47, kind: 'loyalty-consequence' as const, suffix: '7', equipment: true },
+    { version: 48, kind: 'fishing-adjudication' as const, suffix: '8', equipment: true },
+    { version: 49, kind: 'snag-conversion-adjudication' as const, suffix: '9', equipment: true },
+  ])('preserves exact v$version Plan 11 rows while applying later versions', ({ version, kind, suffix, equipment }) => {
     const connection = open()
     applyThrough(connection, version)
     const requestId = insertGuided(connection, kind, suffix)
@@ -158,7 +156,7 @@ describe('P11-082 Deferred Mechanics Closure storage migrations', () => {
     const guidedBefore = rowJson(connection, 'item_guided_requests', 'request_id', requestId)
     const equipmentBefore = rowJson(connection, 'equipment_action_operations', 'operation_id', 'p11-migration-equipment-operation')
 
-    expect(applyStorageMigrations(connection)).toEqual({ fromVersion: version, toVersion: 50, appliedVersions: expected })
+    expect(applyStorageMigrations(connection)).toEqual(expectedUpgradeFrom(version))
     expect(rowJson(connection, 'item_guided_requests', 'request_id', requestId)).toBe(guidedBefore)
     expect(rowJson(connection, 'equipment_action_operations', 'operation_id', 'p11-migration-equipment-operation')).toBe(equipmentBefore)
     expect(connection.prepare('PRAGMA foreign_key_check').all()).toEqual([])
@@ -181,15 +179,16 @@ describe('P11-082 Deferred Mechanics Closure storage migrations', () => {
 
   it('refuses downgrade-by-opening a future schema before any migration write', () => {
     const connection = open()
-    applyThrough(connection, 50)
+    applyThrough(connection, LATEST_STORAGE_SCHEMA_VERSION)
     connection.exec(`CREATE TABLE future_authority (id TEXT PRIMARY KEY, payload TEXT NOT NULL);`)
     connection.prepare('INSERT INTO future_authority VALUES (?, ?)').run('future-row', 'retain-me')
-    connection.exec('PRAGMA user_version = 51')
+    const futureVersion = LATEST_STORAGE_SCHEMA_VERSION + 1
+    connection.exec(`PRAGMA user_version = ${futureVersion}`)
     const tablesBefore = tableNames(connection)
     expect(() => applyStorageMigrations(connection)).toThrow(
-      'SQLite schema version 51 is newer than this Rotom Table build supports (50)',
+      `SQLite schema version ${futureVersion} is newer than this Rotom Table build supports (${LATEST_STORAGE_SCHEMA_VERSION})`,
     )
-    expect(getStorageSchemaVersion(connection)).toBe(51)
+    expect(getStorageSchemaVersion(connection)).toBe(futureVersion)
     expect(tableNames(connection)).toEqual(tablesBefore)
     expect(connection.prepare('SELECT * FROM future_authority').all()).toEqual([{ id: 'future-row', payload: 'retain-me' }])
   })

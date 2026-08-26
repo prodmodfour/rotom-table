@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "gm-campaign-toolkit-failure-recovery-v1",
+  "ticket": "P12-006",
+  "status": "reviewed",
+  "domains": ["tables", "wild-generation", "npc-generation", "session-preparation", "launch"],
+  "scenarios": [
+    { "id": "exact-retry", "delivery": "same-operation-same-material", "expected": { "sameReceipt": true, "additionalDraws": 0, "additionalWrites": 0, "additionalRealtime": 0 } },
+    { "id": "changed-input-conflict", "delivery": "same-operation-changed-material", "expected": { "status": 409, "writes": 0, "draws": 0 } },
+    { "id": "stale-revision", "fault": "consulted-document-revision-changed", "expected": { "status": 409, "rollback": "complete" } },
+    { "id": "offline-interruption", "fault": "response-lost-after-commit", "expected": { "recovery": "operation-status-or-exact-retry", "duplicates": 0 } },
+    { "id": "restart-pending", "fault": "process-restart-after-journal-before-settlement", "expected": { "recovery": "resume-journal", "redraw": false } },
+    { "id": "reconnect", "fault": "client-reconnect-after-remote-commit", "expected": { "convergence": true, "contentInInvalidation": false } },
+    { "id": "correction", "delivery": "new-bounded-correction-operation", "expected": { "originalJournalImmutable": true, "receiptRequired": true } },
+    { "id": "cancellation", "delivery": "new-cancel-operation", "expected": { "historyPreserved": true, "orphanRows": 0 } },
+    { "id": "concurrent-gm-tabs", "delivery": "two-tabs-same-revision", "expected": { "accepted": 1, "conflicted": 1, "lostUpdates": 0 } },
+    { "id": "interrupted-launch", "fault": "after-linked-preparation-write-before-transaction-commit", "expected": { "encounterDocuments": 0, "sheetChanges": 0, "mapChanges": 0, "launchOperations": 0, "preparationRevisionChanges": 0, "preparationLaunchEvidence": 0, "recordLaunchOperations": 0, "realtime": 0 } }
+  ]
+}

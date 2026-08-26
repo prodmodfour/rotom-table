@@ -64,7 +64,7 @@ When a reviewed mutable surface supersedes frozen evidence, add one contiguous a
 
 ## Operator workflow
 
-The current application schema is 50. Startup applies contiguous migrations, refuses future versions without writing, and stores Plan 11 equipment-action state (v47), fishing declarations (v48), Snag conversion state (v49), and generic Skill Checks (v50). Trainer Participant and Battle data remain in the existing Contest tables introduced at v46.
+The current application schema is 56. Startup applies contiguous migrations and refuses future versions without writing. Plan 11 equipment-action state (v47), fishing declarations (v48), Snag conversion state (v49), and generic Skill Checks (v50) retain their original authorities; GM Campaign Toolkit storage continues the chain through v56. Trainer Participant and Battle data remain in the existing Contest tables introduced at v46.
 
 Use the stopped-service, closed-SQLite backup procedure in [Private VPS backups](private-vps-backups.md). After restore, verify a representative Skill Check, readied shield/net effect, and linked Battle Contest when present; restart and reconnect GM plus an authorised owner. Never repair SQLite or JSON manually.
 

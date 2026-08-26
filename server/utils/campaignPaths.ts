@@ -27,7 +27,6 @@ export const CAMPAIGN_PLAYER_PROFILES_ROOT = campaignPath('data', 'player-profil
 export const CAMPAIGN_REFERENCE_OVERRIDES_ROOT = campaignPath('data', 'reference-overrides')
 export const CAMPAIGN_POKEDEX_OVERRIDES_PATH = campaignPath('data', 'reference-overrides', 'pokedex.json')
 export const CAMPAIGN_ASSETS_ROOT = campaignPath('assets')
-export const CAMPAIGN_ENCOUNTER_TABLES_ROOT = campaignPath('encounter_tables')
 
 export const pathIsInsideRoot = (root: string, target: string): boolean => {
   const resolvedRoot = resolve(root)

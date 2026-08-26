@@ -11,6 +11,7 @@ import { parseSkillCheckDocument } from '#shared/skillChecks/persistence'
 import { openRotomDatabase, type RotomDatabase } from '~~/server/storage/database'
 import {
   LATEST_STORAGE_SCHEMA_VERSION,
+  STORAGE_MIGRATIONS,
   applyStorageMigrations,
   getStorageSchemaVersion,
 } from '~~/server/storage/migrations'
@@ -97,10 +98,10 @@ const result = (revision = 1, state: SkillCheckOperationResultV1['state'] = 'pen
 })
 
 describe('P11-045 Skill Check storage migration and repository', () => {
-  it('creates the v50 tables and indexes on a fresh database', () => {
+  it('retains the v50 tables and indexes on a fresh current-schema database', () => {
     database = openRotomDatabase({ path: ':memory:', enableWal: false })
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(50)
-    expect(getStorageSchemaVersion(database.connection)).toBe(50)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(56)
+    expect(getStorageSchemaVersion(database.connection)).toBe(LATEST_STORAGE_SCHEMA_VERSION)
     const objects = database.connection.prepare(`
       SELECT name, type FROM sqlite_schema
       WHERE name LIKE 'skill_check%'
@@ -220,8 +221,8 @@ describe('P11-045 Skill Check storage migration and repository', () => {
     const mapBefore = database.connection.prepare('SELECT COUNT(*) AS count FROM maps').get()
     expect(applyStorageMigrations(database.connection)).toEqual({
       fromVersion: 49,
-      toVersion: 50,
-      appliedVersions: [50],
+      toVersion: LATEST_STORAGE_SCHEMA_VERSION,
+      appliedVersions: STORAGE_MIGRATIONS.filter(row => row.version > 49).map(row => row.version),
     })
     expect(database.connection.prepare('SELECT COUNT(*) AS count FROM maps').get()).toEqual(mapBefore)
     expect(database.connection.prepare(`SELECT name FROM sqlite_schema WHERE type = 'table' AND name = 'skill_checks'`).get())
@@ -251,8 +252,9 @@ describe('P11-045 Skill Check storage migration and repository', () => {
 
       const future = new DatabaseSync(path)
       try {
-        future.exec('PRAGMA user_version = 51')
-        expect(() => applyStorageMigrations(future)).toThrow('newer than this Rotom Table build supports (50)')
+        const futureVersion = LATEST_STORAGE_SCHEMA_VERSION + 1
+        future.exec(`PRAGMA user_version = ${futureVersion}`)
+        expect(() => applyStorageMigrations(future)).toThrow(`newer than this Rotom Table build supports (${LATEST_STORAGE_SCHEMA_VERSION})`)
       }
       finally { future.close() }
     }

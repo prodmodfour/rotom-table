@@ -13,7 +13,7 @@ Trainer Participant and Battle Contest state remains inside the existing schema-
 
 ## Fresh campaigns
 
-A fresh database runs all registered versions in one `BEGIN IMMEDIATE` transaction and ends at schema v50 with the equipment-action, guided-request, Contest, Skill Check, operation, and index authority present. Migration versions must remain contiguous and the declared latest version must equal the last registered migration.
+A fresh database runs all registered versions in one `BEGIN IMMEDIATE` transaction and currently ends at schema v56. The accepted P11 v47–v50 equipment-action, guided-request, Contest, Skill Check, operation, and index authority remains present; P12 adds the contiguous GM Campaign Toolkit v51–v56 layer without rewriting it. Migration versions must remain contiguous and the declared latest version must equal the last registered migration.
 
 ## Existing campaigns
 
@@ -29,7 +29,7 @@ The v48 and v49 rebuilds require the exact predecessor table definition. If the 
 
 ## Future-schema refusal
 
-A database whose `PRAGMA user_version` is newer than this build's schema v50 is refused before any write. The app does not downgrade it, delete future tables, reinterpret unknown documents, or offer a manual-repair fallback. Upgrade the application to a build that knows the schema, then retry.
+A database whose `PRAGMA user_version` is newer than this build's schema v56 is refused before any write. The app does not downgrade it, delete future tables, reinterpret unknown documents, or offer a manual-repair fallback. Upgrade the application to a build that knows the schema, then retry.
 
 ## Operator checks
 

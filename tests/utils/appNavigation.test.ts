@@ -11,6 +11,7 @@ import { BREEDING_WORKSHOP_PATH } from '#shared/breeding/workshop'
 import { CONTESTS_PATH } from '#shared/contests/routes'
 import { PLAYER_PROFILE_MANAGEMENT_PATH } from '~/utils/playerProfileRoutes'
 import { SHOP_LIBRARY_PATH } from '~/utils/shopRoutes'
+import { GM_CAMPAIGN_TOOLKIT_PATH } from '~/utils/gmToolkitRoutes'
 import {
   NO_PLAYER_PROFILE_NAV_LABEL,
   playerProfileNavStatusText,
@@ -39,6 +40,7 @@ describe('app navigation helpers', () => {
       BREEDING_WORKSHOP_PATH,
       CONTESTS_PATH,
       CAMPAIGN_PATH,
+      GM_CAMPAIGN_TOOLKIT_PATH,
       GROUP_INVENTORY_PATH,
       SHOP_LIBRARY_PATH,
       '/pokedex',
@@ -83,6 +85,10 @@ describe('app navigation helpers', () => {
     expect(isAppNavItemActive(`${BREEDING_WORKSHOP_PATH}/project/example`, BREEDING_WORKSHOP_PATH)).toBe(true)
     expect(isAppNavItemActive('/maps', BREEDING_WORKSHOP_PATH)).toBe(false)
     expect(isAppNavItemActive('/encounters/new', '/encounters/new')).toBe(true)
+    expect(isAppNavItemActive('/session-prep', GM_CAMPAIGN_TOOLKIT_PATH)).toBe(true)
+    expect(isAppNavItemActive('/npc-trainers', GM_CAMPAIGN_TOOLKIT_PATH)).toBe(true)
+    expect(isAppNavItemActive('/generate', GM_CAMPAIGN_TOOLKIT_PATH)).toBe(true)
+    expect(isAppNavItemActive('/group-inventory', GM_CAMPAIGN_TOOLKIT_PATH)).toBe(false)
     expect(isAppNavItemActive('/group-inventory', GROUP_INVENTORY_PATH)).toBe(true)
     expect(isAppNavItemActive('/group-inventory/history', GROUP_INVENTORY_PATH)).toBe(true)
     expect(isAppNavItemActive('/group-inventory-tools', GROUP_INVENTORY_PATH)).toBe(false)

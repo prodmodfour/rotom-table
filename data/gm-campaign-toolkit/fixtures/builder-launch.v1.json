@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "gm-campaign-toolkit-builder-launch-v1",
+  "tickets": ["P12-063", "P12-064", "P12-065", "P12-066", "P12-067", "P12-068", "P12-069", "P12-070", "P12-071", "P12-072"],
+  "status": "reviewed",
+  "goldenJourney": {
+    "sourceTableId": "encounter-table:v1:thickerby-vale-forest",
+    "sourceTableRevision": 0,
+    "generationFixtureId": "forest-vertical-slice-1",
+    "preparationId": "session-preparation:v1:forest-session",
+    "preparationRevisionBeforeLaunch": 0,
+    "sceneId": "scene:forest-ambush",
+    "mapSlug": "forest-map",
+    "mapRevisionBeforeLaunch": 0,
+    "handoffKind": "session-preparation",
+    "sourceResolution": "inside-launch-transaction",
+    "browserMechanicalAuthority": false,
+    "launchWrites": [
+      "ordinary-map-revision",
+      "ordinary-encounter-document",
+      "encounter-launch-operation",
+      "preparation-launch-evidence",
+      "preparation-record-launch-operation",
+      "persisted-realtime-events"
+    ],
+    "postLaunchAuthority": [
+      "ordinary-liveplay",
+      "encounter-director-correction",
+      "encounter-settlement",
+      "campaign-continuation"
+    ]
+  },
+  "expected": {
+    "mapRevisionAfterLaunch": 1,
+    "encounterRevisionAfterLaunch": 0,
+    "preparationRevisionAfterLaunch": 1,
+    "preparationLifecycleAfterLaunch": "launched",
+    "launchEvidenceCount": 1,
+    "recordLaunchOperationCount": 1,
+    "exactRetry": {
+      "additionalPlacements": 0,
+      "additionalEncounterDocuments": 0,
+      "additionalLaunchOperations": 0,
+      "additionalPreparationRevisions": 0,
+      "additionalRealtime": 0
+    },
+    "interruptedLaunch": {
+      "mapRevision": 0,
+      "encounterDocuments": 0,
+      "launchOperations": 0,
+      "preparationRevision": 0,
+      "preparationLaunchEvidence": 0,
+      "recordLaunchOperations": 0,
+      "interactionMode": "setup-edit",
+      "additionalRealtime": 0
+    },
+    "staleInputs": [
+      "preparation-revision",
+      "generated-package-receipt",
+      "ordinary-sheet-revision",
+      "map-revision",
+      "scene-material"
+    ],
+    "staleStatus": 409,
+    "settlementUsesOrdinaryAuthority": true,
+    "toolkitSpecificLiveplayEngine": false
+  }
+}

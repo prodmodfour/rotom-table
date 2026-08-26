@@ -20,6 +20,8 @@ const valid = () => ({
     label: 'Harbor duel', state: 'needs-review', openWorkCount: 2, href: '/play/harbor-duel',
   },
   additionalUnfinishedSettlements: 0,
+  readyPreparation: { label: 'Forest Session', state: 'ready', sceneCount: 2, href: '/session-prep' },
+  additionalReadyPreparations: 0,
   eggs: { active: 2, incubating: 1, ready: 1, needsAdjudication: 0, hatching: 0, href: '/breeding' },
 })
 
@@ -28,6 +30,7 @@ describe('campaign continuation projection contract', () => {
     const parsed = parseCampaignContinuationProjection(valid())
     expect(parsed.activeEncounter?.label).toBe('Harbor duel')
     expect(parsed.unfinishedSettlement?.openWorkCount).toBe(2)
+    expect(parsed.readyPreparation).toMatchObject({ label: 'Forest Session', sceneCount: 2 })
     expect(parsed.eggs.active).toBe(2)
     expect(Object.isFrozen(parsed)).toBe(true)
   })

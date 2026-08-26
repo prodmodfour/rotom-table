@@ -303,6 +303,17 @@ export interface TrainerEquipmentSlots {
 
 /** Server-authored Trainer evidence; never accepted from or projected to clients. */
 export interface TrainerSheetServerPrivate {
+  /** GM-only deterministic NPC package provenance and guided running notes. */
+  gmGeneration?: {
+    schemaVersion: 1
+    operationId: string
+    candidateId: string
+    archetypeId: string
+    archetypeRevision: number
+    sourceDefinitionHashes: readonly string[]
+    seedCommitment: string
+    guided: { readonly identity: string; readonly tactics: string; readonly notes: string }
+  }
   /** Latest accepted campaign-day use for each reusable HM source. */
   itemMachineUsage?: ItemMachineUsageStateV1
   /** Durable private Bait, Fishing Lure, Repel, Dowsing, and Shard-color authority. */

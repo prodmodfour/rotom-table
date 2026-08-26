@@ -21,6 +21,7 @@ import { PLAYER_TRAINER_PORTAL_PATH } from '~/utils/playerTrainerPortalRoutes'
 import { referenceIndexPath } from '~/utils/reference/routes'
 import { SHEET_LIBRARY_PATH } from '~/utils/sheetRoutes'
 import { SHOP_LIBRARY_PATH, isShopPath } from '~/utils/shopRoutes'
+import { GM_CAMPAIGN_TOOLKIT_PATH, isGmCampaignToolkitPath } from '~/utils/gmToolkitRoutes'
 
 export interface AppNavItem {
   path: string
@@ -35,6 +36,7 @@ export const PRIMARY_APP_NAV_ITEMS: AppNavItem[] = [
   { path: BREEDING_WORKSHOP_PATH, label: 'Breeding' },
   { path: CONTESTS_PATH, label: 'Contests' },
   { path: CAMPAIGN_PATH, label: 'Campaign' },
+  { path: GM_CAMPAIGN_TOOLKIT_PATH, label: 'Campaign Toolkit', gmOnly: true },
   { path: GROUP_INVENTORY_PATH, label: 'Group Inventory' },
   { path: SHOP_LIBRARY_PATH, label: 'Shops' },
   { path: POKEDEX_PATH, label: 'Pokédex' },
@@ -87,6 +89,8 @@ export const isAppNavItemActive = (currentPath: string, itemPath: string): boole
       || currentPath === SHEET_LIBRARY_PATH
       || currentPath.startsWith(`${SHEET_LIBRARY_PATH}/`)
   }
+
+  if (itemPath === GM_CAMPAIGN_TOOLKIT_PATH) return isGmCampaignToolkitPath(currentPath)
 
   if (itemPath === GROUP_INVENTORY_PATH) return isGroupInventoryPath(currentPath)
 

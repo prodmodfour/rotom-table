@@ -11,6 +11,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from successor_chain import advance_hash_bindings
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data/complete-play-loop/out-of-encounter-item-certification.v1.json"
 
@@ -184,10 +186,22 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    expected = canonical(build())
+    document = build()
+    expected = canonical(document)
     if args.check:
-        if not OUTPUT.is_file() or OUTPUT.read_bytes() != expected:
-            raise SystemExit("Out-of-encounter item certification is missing or stale.")
+        if not OUTPUT.is_file():
+            raise SystemExit("Out-of-encounter item certification is missing.")
+        recorded = json.loads(OUTPUT.read_text(encoding="utf-8"))
+        definition = recorded.get("definition")
+        if recorded.get("definitionSha256") != sha256_bytes(canonical(definition)):
+            raise SystemExit("Out-of-encounter item certification has an invalid recorded hash.")
+        try:
+            advanced = advance_hash_bindings(ROOT, recorded)
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
+        advanced["definitionSha256"] = sha256_bytes(canonical(advanced.get("definition")))
+        if advanced != document:
+            raise SystemExit("Out-of-encounter item certification is stale.")
         print(f"Out-of-encounter certification check passed: {len(JOURNEYS)} journeys.")
         return
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)

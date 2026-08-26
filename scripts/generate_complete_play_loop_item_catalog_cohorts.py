@@ -16,6 +16,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
+from successor_chain import advance_hash_bindings
+
 ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = ROOT / "data/reference/items.json"
 POLICY_PATH = ROOT / "scripts/reviewed-data/item-catalog-cohort-policy.v1.json"
@@ -279,7 +281,17 @@ def main() -> None:
     }
     rendered = json.dumps(document, ensure_ascii=False, indent=2) + "\n"
     if args.check:
-        if not OUTPUT_PATH.is_file() or OUTPUT_PATH.read_text() != rendered:
+        if not OUTPUT_PATH.is_file():
+            raise SystemExit("Canonical item cohort registry is missing.")
+        recorded = load(OUTPUT_PATH)
+        if recorded.get("registrySha256") != sha256_value(recorded.get("cohorts")):
+            raise SystemExit("Canonical item cohort registry has an invalid recorded hash.")
+        try:
+            advanced = advance_hash_bindings(ROOT, recorded)
+        except ValueError as error:
+            raise SystemExit(str(error)) from error
+        advanced["registrySha256"] = sha256_value(advanced.get("cohorts"))
+        if advanced != document:
             raise SystemExit("Canonical item cohort registry is stale; regenerate and review it.")
         return
     OUTPUT_PATH.write_text(rendered)

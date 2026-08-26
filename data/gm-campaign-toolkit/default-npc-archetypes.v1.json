@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "seedId": "gm-toolkit-reviewed-npc-archetypes-v1",
+  "ticket": "P12-039",
+  "policies": [
+    {
+      "schemaVersion": 1,
+      "archetypeId": "npc-archetype:v1:field-researcher",
+      "revision": 0,
+      "status": "active",
+      "name": "Field Researcher",
+      "description": "A Level 5 field specialist with a six-Pokémon local roster, broad research skills, and practical campaign equipment.",
+      "trainer": {
+        "level": 5,
+        "statPriority": ["hp", "sdef", "def", "spd", "satk", "atk"],
+        "background": {
+          "name": "Field Research",
+          "adept": ["pokeEd"],
+          "novice": ["athletics"],
+          "pathetic": ["charm", "combat", "occultEd"]
+        },
+        "trainingFeatureId": "Focused Training",
+        "features": [
+          { "canonicalId": "Medic", "choices": {} },
+          { "canonicalId": "Ace Trainer", "choices": {} },
+          { "canonicalId": "Commander", "choices": {} },
+          { "canonicalId": "Chronicler", "choices": {} },
+          { "canonicalId": "Breadth of Knowledge", "choices": {} },
+          { "canonicalId": "Tutoring", "choices": {} }
+        ],
+        "edges": [
+          { "canonicalId": "Basic Skills", "grantLevel": null, "choices": { "skill": "medicineEd" } },
+          { "canonicalId": "Basic Skills", "grantLevel": null, "choices": { "skill": "command" } },
+          { "canonicalId": "Basic Skills", "grantLevel": null, "choices": { "skill": "perception" } },
+          { "canonicalId": "Basic Skills", "grantLevel": null, "choices": { "skill": "generalEd" } },
+          { "canonicalId": "Basic Skills", "grantLevel": null, "choices": { "skill": "focus" } },
+          { "canonicalId": "Basic Skills", "grantLevel": null, "choices": { "skill": "intuition" } },
+          { "canonicalId": "Basic Skills", "grantLevel": 2, "choices": { "skill": "techEd" } }
+        ],
+        "milestoneChoices": [
+          { "level": 5, "optionId": "attack-special-attack", "immediateAllocation": { "atk": 1, "satk": 1 } }
+        ],
+        "money": 5000,
+        "inventory": [
+          { "section": "medicalKit", "itemId": "Potion", "quantity": 3 },
+          { "section": "medicalKit", "itemId": "Repel", "quantity": 2 },
+          { "section": "pokeBalls", "itemId": "Basic Ball", "quantity": 5 },
+          { "section": "keyItems", "itemId": "First Aid Kit", "quantity": 1 }
+        ]
+      },
+      "roster": {
+        "tableId": "encounter-table:v1:thickerby-vale-forest",
+        "expectedTableRevision": 0,
+        "count": 6,
+        "shinyChancePercent": 0,
+        "heldItemName": null
+      },
+      "guidedDecisions": {
+        "requireName": true,
+        "identityPrompt": "Who are they in this campaign, and what do players notice first?",
+        "tacticsPrompt": "What do they protect, pursue, or avoid when pressure rises?",
+        "notesPrompt": "Record only private context the GM needs to run them consistently."
+      },
+      "provenance": {
+        "kind": "reviewed-seed",
+        "sourceId": "data/gm-campaign-toolkit/fixtures/deterministic-generation.v1.json#npc-one-plus-six",
+        "sourceSha256": "c99214a191e553d27961b3cdf8963f666ad8f7af3f67186d929886152457f646"
+      },
+      "createdAt": "2026-08-25T00:00:00.000Z",
+      "updatedAt": "2026-08-25T00:00:00.000Z"
+    }
+  ]
+}

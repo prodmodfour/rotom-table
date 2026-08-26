@@ -1,0 +1,577 @@
+{
+  "schemaVersion": 1,
+  "registryId": "gm-campaign-toolkit-footprint-finality-v1",
+  "ticket": "P12-002",
+  "finalityTicket": "P12-093",
+  "status": "accepted-final",
+  "acceptedAt": "2026-08-26T00:00:00.000Z",
+  "completionStates": [
+    "Native",
+    "Migrated",
+    "Preserved",
+    "Retired",
+    "Documentary"
+  ],
+  "temporaryStates": [
+    "Pending",
+    "Blocked"
+  ],
+  "rules": {
+    "zeroGap": true,
+    "blockedForbiddenAtFinal": true,
+    "concreteMechanicMayBecomeProseOnly": false,
+    "retirementRequiresRuntimeUnreachableProof": true
+  },
+  "rows": [
+    {
+      "rowKey": "encounter_tables/spire-city/streets.json",
+      "targetState": "Migrated",
+      "implementationState": "Migrated",
+      "ownerTicket": "P12-014",
+      "authorityPaths": [
+        "data/gm-campaign-toolkit/migrated-legacy-tables.v1.json",
+        "scripts/migrate_legacy_encounter_tables.py",
+        "server/storage/gmEncounterTableRepository.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "encounter_tables/thickerby_vale/cave.json",
+      "targetState": "Migrated",
+      "implementationState": "Migrated",
+      "ownerTicket": "P12-014",
+      "authorityPaths": [
+        "data/gm-campaign-toolkit/migrated-legacy-tables.v1.json",
+        "scripts/migrate_legacy_encounter_tables.py",
+        "server/storage/gmEncounterTableRepository.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "encounter_tables/thickerby_vale/forest.json",
+      "targetState": "Migrated",
+      "implementationState": "Migrated",
+      "ownerTicket": "P12-014",
+      "authorityPaths": [
+        "data/gm-campaign-toolkit/migrated-legacy-tables.v1.json",
+        "scripts/migrate_legacy_encounter_tables.py",
+        "server/storage/gmEncounterTableRepository.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "encounter_tables/thickerby_vale/riverbank.json",
+      "targetState": "Migrated",
+      "implementationState": "Migrated",
+      "ownerTicket": "P12-014",
+      "authorityPaths": [
+        "data/gm-campaign-toolkit/migrated-legacy-tables.v1.json",
+        "scripts/migrate_legacy_encounter_tables.py",
+        "server/storage/gmEncounterTableRepository.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "shared/encounterTables.ts",
+      "targetState": "Preserved",
+      "implementationState": "Preserved",
+      "ownerTicket": "P12-012",
+      "authorityPaths": [
+        "shared/encounterTables.ts",
+        "shared/gmToolkit/encounterTables.ts",
+        "tests/shared/encounterTables.test.ts",
+        "tests/server/gmEncounterTableAuthority.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "server/utils/encounterTableStorage.ts",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-021",
+      "authorityPaths": [
+        "server/storage/gmEncounterTableRepository.ts",
+        "server/storage/migrations.ts",
+        "tests/server/gmEncounterTableAuthority.test.ts"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "server/useCases/encounterTableLibrary.ts",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-021",
+      "authorityPaths": [
+        "server/useCases/gmEncounterTableLibrary.ts",
+        "server/storage/gmEncounterTableRepository.ts",
+        "tests/server/gmEncounterTableAuthority.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "server/utils/encounterGeneration.ts",
+      "targetState": "Preserved",
+      "implementationState": "Preserved",
+      "ownerTicket": "P12-032",
+      "authorityPaths": [
+        "shared/gmToolkit/generation.ts",
+        "server/domain/gmToolkit/routeRepel.ts",
+        "server/domain/gmToolkit/wildGenerationEngine.ts",
+        "tests/server/gmWildGeneration.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "server/useCases/generateEncounters.ts",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-036",
+      "authorityPaths": [
+        "shared/gmToolkit/generation.ts",
+        "server/domain/gmToolkit/seededRng.ts",
+        "server/domain/gmToolkit/wildGenerationEngine.ts",
+        "server/domain/gmToolkit/wildPokemonConstruction.ts",
+        "server/useCases/manageWildGeneration.ts",
+        "server/storage/gmWildGenerationRepository.ts",
+        "server/api/encounters/generate.post.ts",
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts",
+        "tests/server/gmWildGeneration.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "server/utils/pokegenBatch.ts",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-038",
+      "authorityPaths": [
+        "server/domain/gmToolkit/wildPokemonConstruction.ts",
+        "server/useCases/manageWildGeneration.ts",
+        "tests/server/gmWildGeneration.test.ts"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "server/utils/pokegenRunner.ts",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-038",
+      "authorityPaths": [
+        "server/domain/gmToolkit/seededRng.ts",
+        "server/useCases/manageWildGeneration.ts",
+        "tests/server/gmWildGeneration.test.ts"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "server/api/encounters/generate.post.ts",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-036",
+      "authorityPaths": [
+        "server/api/encounters/generate.post.ts",
+        "server/useCases/manageWildGeneration.ts",
+        "shared/gmToolkit/generation.ts",
+        "tests/server/encounterGenerateRoute.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "scripts/pokegen.sh",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-038",
+      "authorityPaths": [
+        "server/domain/gmToolkit/wildPokemonConstruction.ts",
+        "server/useCases/manageWildGeneration.ts",
+        "tests/server/gmWildGeneration.test.ts"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "justfile",
+      "targetState": "Preserved",
+      "implementationState": "Preserved",
+      "ownerTicket": "P12-038",
+      "authorityPaths": [
+        "justfile",
+        "server/api/encounters/generate.post.ts",
+        "src/pages/generate.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "ptu-data/cli.py",
+      "targetState": "Documentary",
+      "implementationState": "Documentary",
+      "ownerTicket": "P12-038",
+      "authorityPaths": [
+        "ptu-data/cli.py",
+        "data/gm-campaign-toolkit/data-boundaries.v1.json",
+        "scripts/check_gm_campaign_toolkit.py"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/pages/encounter-tables.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/pages/encounter-tables.vue",
+        "src/composables/encounters/useGmCampaignToolkitTables.ts",
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/utils/encounterGeneration.ts",
+      "targetState": "Preserved",
+      "implementationState": "Preserved",
+      "ownerTicket": "P12-032",
+      "authorityPaths": [
+        "shared/gmToolkit/generation.ts",
+        "src/composables/encounters/useWildGenerationToolkit.ts",
+        "src/pages/generate.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/types/encounterTable.ts",
+      "targetState": "Preserved",
+      "implementationState": "Preserved",
+      "ownerTicket": "P12-011",
+      "authorityPaths": [
+        "shared/gmToolkit/encounterTables.ts",
+        "src/types/gmCampaignToolkit.ts",
+        "tests/server/gmEncounterTableAuthority.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateErrorCard.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateResultCard.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateResultFileRow.vue",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateResultFiles.vue",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateResultHeader.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateSelectedTableMeta.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateSetupActions.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateSetupCard.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterGenerateSetupFields.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-037",
+      "authorityPaths": [
+        "src/pages/generate.vue",
+        "src/composables/encounters/useWildGenerationToolkit.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 3 journaled generation, legality, inert-preview, atomic-commit, exact-retry, Repel, native API/UI, and retirement acceptance evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTableDetailHeader.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-019",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTableDetailPanel.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-019",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTableEditForm.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-019",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTableLibraryCard.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTableLibraryGrid.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTableLibraryIntroPanel.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTableRollList.vue",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-019",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/components/encounters/EncounterToolkitTableDetail.vue",
+        "src/components/encounters/EncounterToolkitTableEditor.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTablesRegionList.vue",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTablesRegionListItem.vue",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTablesSidebar.vue",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "src/components/encounters/EncounterTablesSidebarHeader.vue",
+      "targetState": "Retired",
+      "implementationState": "Retired",
+      "ownerTicket": "P12-018",
+      "authorityPaths": [
+        "src/components/encounters/EncounterToolkitTableLibrary.vue",
+        "src/pages/encounter-tables.vue"
+      ],
+      "runtimeReachable": false,
+      "proof": "P12 Phase 2 focused authority, migration, projection, and typecheck evidence."
+    },
+    {
+      "rowKey": "absent:npc-trainer-generation",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-050",
+      "authorityPaths": [
+        "shared/gmToolkit/npcArchetypes.ts",
+        "shared/gmToolkit/npcGeneration.ts",
+        "server/domain/gmToolkit/npcGenerationEngine.ts",
+        "server/domain/gmToolkit/npcTrainerConstruction.ts",
+        "server/useCases/manageNpcGeneration.ts",
+        "server/storage/gmNpcGenerationRepository.ts",
+        "server/api/gm-toolkit/npc-generation.post.ts",
+        "src/pages/npc-trainers.vue",
+        "tests/server/gmNpcGeneration.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 4 deterministic legality, atomic 1+6 commit, custody, privacy, exact-retry, restart, multi-GM, native UI, and typecheck acceptance evidence."
+    },
+    {
+      "rowKey": "absent:session-preparation-document",
+      "targetState": "Native",
+      "implementationState": "Native",
+      "ownerTicket": "P12-062",
+      "authorityPaths": [
+        "shared/gmToolkit/sessionPreparation.ts",
+        "shared/gmToolkit/sessionPreparationOperations.ts",
+        "server/storage/gmSessionPreparationRepository.ts",
+        "server/useCases/manageSessionPreparation.ts",
+        "server/api/gm-toolkit/session-preparations/mutate.post.ts",
+        "server/domain/campaignAttention/sessionPreparationDetector.ts",
+        "src/pages/session-prep.vue",
+        "tests/server/gmSessionPreparation.test.ts"
+      ],
+      "runtimeReachable": true,
+      "proof": "P12 Phase 5 strict lifecycle, typed composition, structural projection privacy, attention, realtime, reuse, terminal history, recovery, multi-GM, responsive UI, and typecheck acceptance evidence."
+    }
+  ],
+  "summary": {
+    "rows": 40,
+    "final": 40,
+    "pending": 0,
+    "blocked": 0,
+    "byState": {
+      "Native": 20,
+      "Migrated": 4,
+      "Preserved": 5,
+      "Retired": 10,
+      "Documentary": 1
+    }
+  }
+}

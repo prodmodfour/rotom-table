@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "policyId": "gm-campaign-toolkit-role-projections-v1",
+  "ticket": "P12-004",
+  "status": "reviewed",
+  "audiences": {
+    "gm": {
+      "tables": ["identity", "revision", "predicates", "weights", "notes", "provenance", "drift"],
+      "generation": ["request", "candidates", "guided-decisions", "receipt", "journal", "source-hashes", "diagnostics"],
+      "packages": ["sheet-refs", "ownership", "custody", "receipt", "placement-intent"],
+      "preparation": ["scenes", "candidates", "gm-notes", "player-safe-summaries", "unresolved-decisions", "launch-receipt"]
+    },
+    "owner": {
+      "tables": [],
+      "generation": [],
+      "packages": ["owned-ordinary-sheet-after-launch"],
+      "preparation": ["published-player-safe-summary-after-launch"]
+    },
+    "public": {
+      "tables": [],
+      "generation": [],
+      "packages": [],
+      "preparation": ["published-player-safe-summary-after-launch", "ordinary-launched-encounter-projection"]
+    }
+  },
+  "forbiddenOutsideGm": [
+    "candidate-pools",
+    "random-journals",
+    "source-hashes",
+    "diagnostics",
+    "gm-notes",
+    "unresolved-private-decisions",
+    "uncommitted-participant-identities",
+    "archetype-policy-internals"
+  ],
+  "realtime": {
+    "payloadFields": ["schemaVersion", "domain", "documentId", "revision"],
+    "contentPayloadsForbidden": true,
+    "gmInvalidationAccess": "gm-only",
+    "ownerInvalidationAccess": "player-profile-access-after-ownership",
+    "publicInvalidationAccess": "ordinary-launched-encounter-channel-only",
+    "publishAfterCommit": true
+  },
+  "privacyAuthority": "server-constructed-structurally-distinct-projections"
+}

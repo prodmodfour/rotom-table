@@ -7,6 +7,7 @@ This directory collects presentation and reviewer documentation for Rotom Table.
 - [Review guide](review-guide.md) — what to inspect first, key routes, source areas, scripts, and production caveats.
 - [Deferred mechanics closure](deferred-mechanics-closure.md) — current ranged weapons, weapon Moves, item actions, generic Skill Checks, Trainer Participant Contests, Battle Contests, role boundaries, recovery, and focused gates.
 - [Complete Play Loop contributor guide](complete-play-loop-contributor-guide.md), [operator guide](complete-play-loop-operator-guide.md), [GM guide](complete-play-loop-gm-guide.md), and [player guide](complete-play-loop-player-guide.md) — audience-specific current liveplay authority and recovery.
+- [GM Campaign Toolkit docs](gm-campaign-toolkit/README.md), [GM guide](gm-campaign-toolkit/gm-guide.md), and [contributor guide](gm-campaign-toolkit/contributor-guide.md) — campaign tables, deterministic wild and NPC packages, session preparation, Builder launch, migration/recovery, extension boundaries, and drift-gate maintenance.
 - [Pokémon Contests](contests/README.md) — ordinary, Trainer Participant, and Battle Contest player/GM, runtime, operations, and data-maintenance guides.
 - [Architecture](architecture.md) — high-level Nuxt/Nitro/filesystem-backed architecture.
 - [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, campaign reference overrides, app-owned PTU reference content, generated sheets, and local data hygiene.

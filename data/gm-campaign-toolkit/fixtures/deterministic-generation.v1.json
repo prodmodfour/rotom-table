@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "gm-campaign-toolkit-deterministic-generation-v1",
+  "ticket": "P12-005",
+  "status": "reviewed",
+  "rng": {
+    "algorithm": "sha256-seeded-mulberry32-v1",
+    "journalEveryDraw": true,
+    "drawRange": "unsigned-32-bit-inclusive-source-normalized-to-[0,1)",
+    "browserDraws": false
+  },
+  "fixtures": [
+    {
+      "fixtureId": "forest-vertical-slice",
+      "seed": "p12-forest-vertical-slice-1",
+      "tableId": "encounter-table:v1:thickerby-vale-forest",
+      "tableRevision": 0,
+      "party": { "trainerCount": 3, "pokemonCount": 3, "averageLevel": 6 },
+      "requestedSlots": 3,
+      "expected": {
+        "candidateCount": 3,
+        "previewDurableWrites": 0,
+        "commitSheetCount": 3,
+        "seedHex": "b10f8cb8303e46f05b636c24fe922c20aabb408d5e11fda615e27e72a49c1b68",
+        "previewHash": "2647bc2148119c08ea2141d88abbd19ed2be9edbb9badd7f73ffe9b26124b14f",
+        "journalSha256": "02f93cc5390f2aa1fb9972aacdd3fa76bd146e9259dc2f7af49d90b80623a0e1",
+        "candidates": [
+          { "speciesId": "Cutiefly", "level": 5, "gender": "Female", "nature": "Lax", "abilityNames": ["Shield Dust"], "moveNames": ["Absorb", "Fairy Wind"] },
+          { "speciesId": "Weedle", "level": 6, "gender": "Female", "nature": "Brave", "abilityNames": ["Shield Dust"], "moveNames": ["Poison Sting", "String Shot"] },
+          { "speciesId": "Pineco", "level": 8, "gender": "Male", "nature": "Decisive", "abilityNames": ["Sturdy"], "moveNames": ["Protect", "Tackle", "Self-Destruct"] }
+        ]
+      }
+    },
+    {
+      "fixtureId": "nothing-and-repel",
+      "seed": "p12-nothing-and-repel",
+      "tableId": "encounter-table:v1:spire-city-streets",
+      "tableRevision": 0,
+      "requestedSlots": 5,
+      "routeRepel": { "canonicalItemId": "Repel", "maximumAffectedWildLevel": 15 },
+      "expected": { "journalReplayExact": true, "repelledRowsOmitted": true }
+    },
+    {
+      "fixtureId": "npc-one-plus-six",
+      "seed": "p12-npc-one-plus-six",
+      "archetypeId": "npc-archetype:v1:field-researcher",
+      "rosterCount": 6,
+      "expected": {
+        "trainerCount": 1,
+        "pokemonCount": 6,
+        "atomicCommit": true,
+        "seedHex": "c13805f9a17392a846cb6b27d435e40299beadf2d6eca5de0ca677cdfc687609",
+        "previewHash": "867e1a75d2019352ed31dbf4176c3e5b542c020a4d0dd6238c9310e48814e252",
+        "journalSha256": "83b9b48e5ae6ac73cd573af51f232841bf7e5b5f9ef01e3e51654a6e43cfaa76",
+        "trainer": {
+          "name": "Researcher Rowan",
+          "level": 5,
+          "statTotals": { "hp": 13, "atk": 8, "def": 7, "satk": 8, "sdef": 8, "spd": 7 },
+          "skillRanks": { "pokeEd": "Adept", "command": "Novice", "medicineEd": "Novice" },
+          "money": 5000
+        },
+        "roster": [
+          { "speciesId": "Weedle", "level": 4, "gender": "Female", "nature": "Modest", "abilityNames": ["Shield Dust"], "moveNames": ["Poison Sting", "String Shot"] },
+          { "speciesId": "Spinarak", "level": 5, "gender": "Male", "nature": "Skittish", "abilityNames": ["Insomnia"], "moveNames": ["Poison Sting", "String Shot", "Scary Face"] },
+          { "speciesId": "Hoothoot", "level": 7, "gender": "Female", "nature": "Bold", "abilityNames": ["Insomnia"], "moveNames": ["Growl", "Tackle", "Foresight", "Hypnosis"] },
+          { "speciesId": "Weedle", "level": 5, "gender": "Male", "nature": "Dreamy", "abilityNames": ["Shield Dust"], "moveNames": ["Poison Sting", "String Shot"] },
+          { "speciesId": "Sentret", "level": 5, "gender": "Male", "nature": "Jolly", "abilityNames": ["Keen Eye"], "moveNames": ["Foresight", "Scratch", "Defense Curl"] },
+          { "speciesId": "Pidgey", "level": 7, "gender": "Female", "nature": "Mild", "abilityNames": ["Tangled Feet"], "moveNames": ["Tackle", "Sand Attack"] }
+        ]
+      }
+    }
+  ]
+}

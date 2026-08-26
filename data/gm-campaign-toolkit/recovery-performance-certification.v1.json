@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "certificationId": "gm-campaign-toolkit-recovery-performance-v1",
+  "ticket": "P12-084",
+  "tickets": ["P12-073", "P12-074", "P12-075", "P12-076", "P12-077", "P12-078", "P12-079", "P12-080", "P12-081", "P12-082", "P12-083", "P12-084"],
+  "status": "certified",
+  "revalidatedBy": ["P12-090", "P12-093"],
+  "revalidatedAt": "2026-08-26T00:00:00.000Z",
+  "storage": {
+    "baselineVersion": 50,
+    "latestVersion": 56,
+    "plan12Versions": [51, 52, 53, 54, 55, 56],
+    "freshDatabase": true,
+    "upgradeMatrix": [
+      { "fromVersion": 0, "toVersion": 56, "appliedVersions": 56, "result": "accepted" },
+      { "fromVersion": 50, "toVersion": 56, "appliedVersions": [51, 52, 53, 54, 55, 56], "result": "accepted-row-preserving" },
+      { "fromVersion": 51, "toVersion": 56, "appliedVersions": [52, 53, 54, 55, 56], "result": "accepted" },
+      { "fromVersion": 52, "toVersion": 56, "appliedVersions": [53, 54, 55, 56], "result": "accepted" },
+      { "fromVersion": 53, "toVersion": 56, "appliedVersions": [54, 55, 56], "result": "accepted" },
+      { "fromVersion": 54, "toVersion": 56, "appliedVersions": [55, 56], "result": "accepted" },
+      { "fromVersion": 55, "toVersion": 56, "appliedVersions": [56], "result": "accepted" },
+      { "fromVersion": 57, "toVersion": 57, "appliedVersions": [], "result": "refused-newer-schema-no-write" }
+    ],
+    "ordinaryAuthorityRowsRewritten": 0,
+    "foreignKeyViolations": 0,
+    "manualRepairRequired": false
+  },
+  "recoveryMatrix": {
+    "domains": ["encounter-tables", "wild-generation", "npc-generation", "session-preparation", "builder-launch"],
+    "exactRetryAdditionalAuthority": 0,
+    "changedMaterialStatus": 409,
+    "staleRevisionStatus": 409,
+    "concurrentGmAcceptedPerRevision": 1,
+    "concurrentGmLostUpdates": 0,
+    "restartRedraws": 0,
+    "offlineDeliveryRecovery": "same-operation-exact-retry",
+    "reconnectConverges": true,
+    "journalRewritesAfterCorrection": 0,
+    "cancelledHistoryPreserved": true
+  },
+  "backupRestore": {
+    "method": "sqlite-online-backup",
+    "statesRestoredExactly": ["campaign-table", "wild-package", "ordinary-sheets", "session-preparation", "launch-receipt", "map", "encounter-document", "preview-signing-secret"],
+    "restartMigrationsApplied": 0,
+    "foreignKeyViolations": 0,
+    "integrityErrors": 0
+  },
+  "previewInertness": {
+    "wildRequestedSlots": 30,
+    "npcTrainerCount": 1,
+    "npcRosterCount": 6,
+    "durableRowsAdded": 0,
+    "realtimeAdded": 0,
+    "previewTokenColumns": 0
+  },
+  "performance": {
+    "budgetPath": "data/gm-campaign-toolkit/performance-scale-budgets.v1.json",
+    "budgetSha256": "32ed52c667894bc0d0c60d572fdba074f4e1d30a8b37a9f0a9eaa050e8d91e2d",
+    "scale": { "campaignTables": 200, "rowsPerTable": 50, "generationRequestMaximum": 30, "committedPokemonBudget": 10, "npcTrainerCount": 1, "npcRosterMaximum": 6, "preparationScenes": 20, "preparationLinkedDocuments": 50, "realtimeClients": 6, "concurrentGmTabs": 2 },
+    "passedBudgets": ["listAndProjectTables", "validateMaximumTable", "previewTenPokemon", "commitTenPokemon", "previewNpcOnePlusSix", "loadMaximumPreparation", "atomicLaunch", "sixClientConvergence"],
+    "projectionBudgetsPassed": ["tableLibrary", "previewTenPokemon", "maximumPreparation"],
+    "workers": 1,
+    "fileParallelism": false
+  },
+  "realtime": {
+    "clientCount": 6,
+    "gmTabCount": 2,
+    "convergedHeads": 1,
+    "duplicateSequenceDelivery": 0,
+    "privateContentInToolkitInvalidation": false,
+    "maximumBudgetPassed": true
+  },
+  "integrityAudit": {
+    "command": "npm run audit:gm-toolkit-storage -- --database <campaign.sqlite>",
+    "readOnly": true,
+    "checks": ["sqlite-integrity", "foreign-keys", "accepted-operation-package-pairing", "ordinary-sheet-receipts", "npc-custody", "typed-preparation-references", "launch-evidence", "record-launch-operations", "backup-safe-secret"],
+    "positiveFixtureErrors": 0,
+    "injectedOrphanDetected": true
+  },
+  "acceptance": {
+    "freshDatabase": true,
+    "version50Upgrade": true,
+    "exactRetryConflictMatrix": true,
+    "concurrentGmMatrix": true,
+    "offlineRestartReconnect": true,
+    "correctionCancellation": true,
+    "backupRestore": true,
+    "previewStorageInertness": true,
+    "performanceBudgets": true,
+    "sixClientRealtime": true,
+    "storageIntegrity": true,
+    "nextTicket": "P12-085"
+  },
+  "authorities": [
+    { "path": "server/storage/migrations.ts", "sha256": "988d00d3029c444b252a98882672fcb1ac6be4da3dabb38eee5612d68feacf45" },
+    { "path": "server/storage/database.ts", "sha256": "472095a114e611757bc9e86b67687d3d8e1f27ec15a1c4d6a304257ca3d1f849" },
+    { "path": "server/useCases/launchEncounterBuilder.ts", "sha256": "e916c78f56a60b6422774e5ae6e6c2102cab1cd5b6cb4f9433489db428300b6c" },
+    { "path": "scripts/audit_gm_campaign_toolkit_storage.py", "sha256": "18533955801ac31295d46d023c13c28ac532453ee306414eb6dd3cbb71b4b7b7" },
+    { "path": "data/gm-campaign-toolkit/fixtures/failure-recovery.v1.json", "sha256": "ce8ccd3d2c5e226d18401dc52d52b539a16c5fd5a79826cd43ff061329c1ad2c" },
+    { "path": "data/gm-campaign-toolkit/fixtures/builder-launch.v1.json", "sha256": "240e925fd84ef81bced9579227a735ffe32d4cc2463d1c3bd49464f6c2571c10" }
+  ],
+  "evidence": [
+    { "path": "tests/server/gmCampaignToolkitStorageMigrations.test.ts", "sha256": "fa4c90e556ea8bbb63060d0382598ee159cd592ae42e6d625d348b51dbbb1764" },
+    { "path": "tests/server/gmCampaignToolkitPreviewInertness.test.ts", "sha256": "b50f2f12b5db3f33b5ecd50cc14432a29261fee45e4b229356d9d3d1527a83e0" },
+    { "path": "tests/server/gmCampaignToolkitPerformanceBudgets.test.ts", "sha256": "11b7257b2258765579dc2c11bcb32be38ca3efa7482fbfc7ba19d04993fe6f88" },
+    { "path": "tests/server/encounterBuilderHandoff.test.ts", "sha256": "fd071529b372a9e25bc24a5a57a4accaa8c098c44079721607c379e73d61c35c" },
+    { "path": "tests/server/gmEncounterTableAuthority.test.ts", "sha256": "597cfb589d376acdd010461148223dfa4f22cab5035afbd0761d723e5e0001f4" },
+    { "path": "tests/server/gmWildGeneration.test.ts", "sha256": "3a8fc30aeac76cf8ebf8e53261605cd29f05e3ef14fa31e8c4bbc52e555a0338" },
+    { "path": "tests/server/gmNpcGeneration.test.ts", "sha256": "85ace7977916504eb3a6e17cff571c8189ffa16d67cf95236203fb4ae860f9d1" },
+    { "path": "tests/server/gmSessionPreparation.test.ts", "sha256": "aa62273ebac68da651ab10c57e44ea154c8c197d6ffe7fc6b7a7689de9d446d5" },
+    { "path": "tests/server/encounterSettlementCorrection.test.ts", "sha256": "db55f9fa1740b63d3da7b58510ec6ecdac0ea222f15a44c7992a7e44e213bec5" },
+    { "path": "tests/data/gmCampaignToolkitRecoveryPerformanceCertification.test.ts", "sha256": "7d96aff631da279929c5b8a1dcd145a795e9981f140167f38bf911eac88e29a6" }
+  ]
+}

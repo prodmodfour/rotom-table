@@ -6751,6 +6751,589 @@
       "sourceSha256": "161be4cb987549b3947ba65262d325fcfd28dd5538286d633528e4ef2a2f9862",
       "changePolicy": "mark-reviewed-plan-12-scope-draft-converted-after-owner-gated-ledger-registration",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:session-preparation-attention-kinds:v1",
+      "ticket": "P12-056",
+      "surface": "shared/campaignAttention/model.ts",
+      "beforeSha256": "9cb7e0d477fda3e93b204733cac9930771df2b08fc49a5fab0c4adb52cb2dd1a",
+      "afterSha256": "979f9fd8efe268401dcce5206b22f16f9b4fe8a8959c7b02866fc5b3d66f1169",
+      "changedStableRows": [
+        "session-preparation-decision-reason",
+        "session-preparation-entity-authority-and-source-kinds",
+        "resolve-and-review-session-preparation-actions"
+      ],
+      "sourcePath": "data/gm-campaign-toolkit/fixtures/session-preparation.v1.json",
+      "sourceSha256": "8ec4a544d326caaefd8671e6bda7c31d97340489a00f84ecf3d85eef54c86432",
+      "changePolicy": "strict-additive-gm-only-session-preparation-attention-kind-registration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:server-storage-migrations-ts:p12-successor-v1",
+      "ticket": "P12-073",
+      "surface": "server/storage/migrations.ts",
+      "beforeSha256": "69cfdda140e9449ee70d43e13d850728b52027769c3ad596c27ae2059b8264d9",
+      "afterSha256": "988d00d3029c444b252a98882672fcb1ac6be4da3dabb38eee5612d68feacf45",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "contiguous-v51-v56-storage-authority",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-server-realtimeeventmigrations-test-ts:p12-successor-v1",
+      "ticket": "P12-073",
+      "surface": "tests/server/realtimeEventMigrations.test.ts",
+      "beforeSha256": "cc7e4a04f9eca5087a8136f9feee0acecdf82c8f972b1c73428eec83c07e1e7e",
+      "afterSha256": "b30b58f4833a72b7acf0b77e20e011dda2bd77a4f6e8675d06fecd8e946e0baf",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "current-schema-migration-matrix",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-server-deferredclosurestoragemigrations-test-ts:p12-successor-v1",
+      "ticket": "P12-073",
+      "surface": "tests/server/deferredClosureStorageMigrations.test.ts",
+      "beforeSha256": "e2ff273f05eef7031e64f800533948d4fec4ed4ec91ade3be3edfb79bbd70511",
+      "afterSha256": "c52274994ddef16f4d7159375aad1794ade97c69ab0633eb5a1d529c95729946",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "plan-11-row-preservation-through-v56",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-server-skillcheckstorage-test-ts:p12-successor-v1",
+      "ticket": "P12-073",
+      "surface": "tests/server/skillCheckStorage.test.ts",
+      "beforeSha256": "15bdf1a95b8545adf0b279dbcda4c7d2357223ca3b1b3856793622b1f2fcc4d1",
+      "afterSha256": "0024883ea1496cf1dd6e38a879eda26d94fcfda4364aaf2a145e83defc0187e5",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "skill-check-row-preservation-through-v56",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-data-deferredclosuremigrationcertification-test-ts:p12-successor-v1",
+      "ticket": "P12-073",
+      "surface": "tests/data/deferredClosureMigrationCertification.test.ts",
+      "beforeSha256": "5e322dfd49456dbcf4051241c10edbace861e01f43249653884589a3f2462868",
+      "afterSha256": "d0a4f17cc3f80a83fffdf63fe3862cb98e5abbee08b6285694e06413661907b8",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "historical-v50-certification-under-current-v56",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-data-deferredclosuredriftgate-test-ts:p12-successor-v1",
+      "ticket": "P12-093",
+      "surface": "tests/data/deferredClosureDriftGate.test.ts",
+      "beforeSha256": "7dc7be5c50e0e1b6402b5a7d7d83f346e705ef226528888a8d633ec2082af544",
+      "afterSha256": "314b212d4de7ac08dce505f7ceec6a628a1eaa6a917779c971a28254bc9435aa",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "successor-aware-current-schema-assertion",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:scripts-breedingdocumentationclosure-ts:p12-successor-v1",
+      "ticket": "P12-091",
+      "surface": "scripts/breedingDocumentationClosure.ts",
+      "beforeSha256": "da34ecae4d89d00ab9739d1c46e0137a954d4c32592321356026e488ec516f25",
+      "afterSha256": "6eb787b611ca4388432d93692d5f88f284606e792390da3f8468a6b55a8da1ac",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "current-runtime-schema-documentation-binding",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:docs-deferred-mechanics-storage-upgrades-md:p12-successor-v1",
+      "ticket": "P12-091",
+      "surface": "docs/deferred-mechanics-storage-upgrades.md",
+      "beforeSha256": "62819577d1c98dad027d88086edac6f9ab6dbdbafa616fdc8572512e993915d0",
+      "afterSha256": "af370497fd3e29bbf7f2f4af9f9ba092b3194f228b39c5c1b4831869e8201a4e",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "plan-11-history-with-current-v56-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:src-types-trainersheet-ts:p12-successor-v1",
+      "ticket": "P12-041",
+      "surface": "src/types/trainerSheet.ts",
+      "beforeSha256": "eae9a6b7fd7de8ca62009333af8bc48a03cf2145b2e9585f8807c1be08518072",
+      "afterSha256": "cce80f9f4452fa923150d9733b9761c20ecbd22c2efc188b21ca83a0c708c2af",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "ordinary-generated-trainer-provenance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:src-types-charactersheet-ts:p12-successor-v1",
+      "ticket": "P12-094",
+      "surface": "src/types/characterSheet.ts",
+      "beforeSha256": "058bac0a826f089b7c04f1d7288ed199aee9549e96fd26ad9f8f1c3777ccd61a",
+      "afterSha256": "30ca01ce8637fe483b2d450fc04e0b98b958058b7262f7e10912ec280a2ad78a",
+      "changedStableRows": [
+        "pre-toolkit-character-sheet-authority-head"
+      ],
+      "changePolicy": "normalize-the-reviewed-pre-toolkit-baseline-to-the-versioned-repository-head-before-applying-p12-provenance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:src-types-charactersheet-ts:p12-successor-v2",
+      "ticket": "P12-032",
+      "surface": "src/types/characterSheet.ts",
+      "beforeSha256": "30ca01ce8637fe483b2d450fc04e0b98b958058b7262f7e10912ec280a2ad78a",
+      "afterSha256": "753a2345c9f81d8ec06bfd1d710df021d7a9796d335f1ea4e5c05d616f7662c8",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "ordinary-generated-pokemon-provenance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:server-usecases-loadcampaignattention-ts:p12-successor-v1",
+      "ticket": "P12-058",
+      "surface": "server/useCases/loadCampaignAttention.ts",
+      "beforeSha256": "e5fbc8d2eaa065c173ab33b075d41ab61925b117fc6cb3fcb7e8f49b3dee4bd2",
+      "afterSha256": "55f343a13098ed938545caf44362cbee7f30b088df1e38f6d98ad947f68b76cd",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-private-session-preparation-attention",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:server-usecases-preparecampaignday-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "server/useCases/prepareCampaignDay.ts",
+      "beforeSha256": "f3dddca4dda5d39c271ffacd333113f590e50f1e69d0638811510c80ebc9d829",
+      "afterSha256": "8605272ded5adbb0f136a85d6d3eeed108775169ed695b7a0af2960bbe72a71c",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "ready-preparation-campaign-continuation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:shared-campaigncontinuation-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "shared/campaignContinuation.ts",
+      "beforeSha256": "0e7c2870d5a94a5735b0616802038305470358f39d18c4432cb36832fbbc05ae",
+      "afterSha256": "7715625ec7ed637d18b7b2b5be1f6f3bd366a75a00772ddee3d3b179199c27e8",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-only-ready-preparation-continuation-contract",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:server-usecases-loadcampaigncontinuation-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "server/useCases/loadCampaignContinuation.ts",
+      "beforeSha256": "f5b4322458de6204f2144e3814c878c23a184be08941a8820227efd0db6d190c",
+      "afterSha256": "ab5dd5463307a34ba2e0dcfeae92f395320826b3ab98ca316a34ad6edf29c01a",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-only-ready-preparation-continuation-projection",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:src-components-campaign-campaigncontinuationdashboard-vue:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "src/components/campaign/CampaignContinuationDashboard.vue",
+      "beforeSha256": "c2d400ba74f7843c31bad39087b9683e9ab9e68be26e4e0abbbf5bd3517ed61a",
+      "afterSha256": "deab6e381c00a5dfaa0cfae307819eef62b2ba6c6b4739ebd97ce947ef18fafc",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "campaign-toolkit-ready-session-continuation-card",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:src-pages-campaign-vue:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "src/pages/campaign.vue",
+      "beforeSha256": "3c416fac60573a675a3c986050e979f5c346c36404c49efcf0bc314482ee08ee",
+      "afterSha256": "ab83031dd83a876aa9049e98f872aff7ff0fba390829691fe00427f4c55f6f00",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-only-campaign-toolkit-entry-point",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:src-utils-appnavigation-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "src/utils/appNavigation.ts",
+      "beforeSha256": "b449f4228c0ec55f7ecc1f37e405066f2c6c431cbfe71e71adb3d3fde863ac57",
+      "afterSha256": "81be54870bc4b3ac8dc3f22a2310c57d693fe61e8e2d26122c2ba425f2f94d35",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-only-campaign-toolkit-navigation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-components-campaigncontinuationdashboard-test-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "tests/components/campaignContinuationDashboard.test.ts",
+      "beforeSha256": "ddaf492c8653276cd64d357ebf575b0ce8327e0633405ef0310013795c88a3ec",
+      "afterSha256": "8120c9c3924064161a8fb82b950e729b55fe3c300632be5bcbab4b6d9e3c773d",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "ready-session-continuation-component-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-server-campaigncontinuation-test-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "tests/server/campaignContinuation.test.ts",
+      "beforeSha256": "7a742b1ee24b24a0863af757c48f1b0a73bdd7d51d78a376b3c5f4d8508ed612",
+      "afterSha256": "2e088159aa5cf00c45da80b9e862c3f81b9a177f4a7da05108fd51b53877d05d",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "ready-session-continuation-server-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-server-campaigndaypreflight-test-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "tests/server/campaignDayPreflight.test.ts",
+      "beforeSha256": "d5eadb4469ec3ea0ae6d966dbc850ec86c874e347c89d87f92ce2a6f73d9dc11",
+      "afterSha256": "bf84e1f3be5bb7a7aa7e5c8e528fbff014f950e98a68e34a70bff779f628a646",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "campaign-day-ready-preparation-successor",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-shared-campaigncontinuation-test-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "tests/shared/campaignContinuation.test.ts",
+      "beforeSha256": "2ee2d93ef1d9137fa604302ef00bbd0cb1849b7eb03525b31ab4a0bcd884dbb0",
+      "afterSha256": "0705e387628e28aca2489379955c29c293d7f21ad34025a949acd2531ea55b8b",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "ready-session-continuation-contract-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-utils-campaigncontinuationsnapshot-test-ts:p12-successor-v1",
+      "ticket": "P12-085",
+      "surface": "tests/utils/campaignContinuationSnapshot.test.ts",
+      "beforeSha256": "b587a78459fa6be1ab4c33a3a77ffefe53a37b35e582844fcc99b2cf246949fe",
+      "afterSha256": "189e2f6ba8f83c16f3fe2aeeef989f45410b804937b186a1b96f098facbc902e",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "ready-session-continuation-snapshot-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-e2e-campaign-continuation-dashboard-spec-ts:p12-successor-v1",
+      "ticket": "P12-087",
+      "surface": "tests/e2e/campaign-continuation-dashboard.spec.ts",
+      "beforeSha256": "75503a32d59293ddbe1bfb73fde3e229f5b6bbde062d610494ab95b0ce973337",
+      "afterSha256": "c3b25f3042b34dc471515c26a9553fd73a845eef312fd409e021bace86ebb448",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "campaign-toolkit-continuation-production-journey",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-e2e-campaign-day-continuation-spec-ts:p12-successor-v1",
+      "ticket": "P12-087",
+      "surface": "tests/e2e/campaign-day-continuation.spec.ts",
+      "beforeSha256": "36aea2c7c9c9b7cc12d7ba4ba4ca56b18a45384f9885631dd059f1abe55b3346",
+      "afterSha256": "7769fb73d50084d746e0c926665a3be138dbc02b963b7d012c0698a621d31e64",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "campaign-toolkit-day-continuation-production-journey",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:package-json:p12-successor-v1",
+      "ticket": "P12-010",
+      "surface": "package.json",
+      "beforeSha256": "44f5f8b560484aea3ab93eaff4d328cb41d6796ba35db1429f099f93e5f5a0b8",
+      "afterSha256": "5eff687560fc4ca7dc1079d35a43f34112b255ceb9e665c0a20da6191ddcefa6",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-bounded-quality-commands",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:scripts-quality-gate-sh:p12-successor-v1",
+      "ticket": "P12-010",
+      "surface": "scripts/quality-gate.sh",
+      "beforeSha256": "0b1638e8edb362d64807884aff8eba6a6489968f6d1711232642d5d963461f0c",
+      "afterSha256": "aa68b939871e98a8f873017e22f8210c2a1d015d392d2692376470ef7766a047",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-finality-quality-gate-registration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:scripts-check-deferred-closure-py:p12-successor-v1",
+      "ticket": "P12-093",
+      "surface": "scripts/check_deferred_closure.py",
+      "beforeSha256": "b349586b08877b2ead5b1fa7942c2046a632bb4579953ef00b919be38be4723f",
+      "afterSha256": "c9f667690db82f6352d179280e4933ec5b5f561d5fa9e31bbfcaaba26ffefd86",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "registered-plan-successor-chain-admission",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:data-complete-play-loop-authority-guardrails-v1-json:p12-successor-v1",
+      "ticket": "P12-094",
+      "surface": "data/complete-play-loop/authority-guardrails.v1.json",
+      "beforeSha256": "e94700c781a254b7175b7bf2db80e57e76b7a2f87fb1c81f1d0bd5526513658d",
+      "afterSha256": "7f0ebf3467837204e0d2d9e8efb48bb63526ebb67d0935aeeaad813e58a03b71",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "cross-plan-authority-guardrail-refresh",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:docs-private-vps-backups-md:p12-successor-v1",
+      "ticket": "P12-091",
+      "surface": "docs/private-vps-backups.md",
+      "beforeSha256": "87a435cb90750eb6c147845ec02f1a128f1f032203e3cbd84766da69bc72f14f",
+      "afterSha256": "3347e2690d38171bd98b30d7f5d2671dd4bea8f52dab77f072655050e5c9cc24",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-v56-backup-and-restore-guidance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:docs-complete-play-loop-operator-guide-md:p12-successor-v1",
+      "ticket": "P12-091",
+      "surface": "docs/complete-play-loop-operator-guide.md",
+      "beforeSha256": "4a9a36b912bdee9b2698f60c437f86a74e464952c87e6a822789a38d054d10be",
+      "afterSha256": "a406bbc5a2cef7d12f65a8e9f29cbba6bfdb2888cc13dc21e5502e9df8c088f3",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-v56-operator-successor-guidance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:docs-deferred-mechanics-closure-md:p12-successor-v1",
+      "ticket": "P12-091",
+      "surface": "docs/deferred-mechanics-closure.md",
+      "beforeSha256": "47128d530435ce9ba262ddf74285b476e49a4010eac3234c2092c8b6b112d895",
+      "afterSha256": "57dabb5ad71ada373d61afd303c2fa79c8388362771d16634654810fea10fab2",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-successor-documentation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:docs-readme-md:p12-successor-v1",
+      "ticket": "P12-092",
+      "surface": "docs/README.md",
+      "beforeSha256": "849dc1fa66db1a25343316555aaecf8909795fd37c589e50b54172a74d33bd8a",
+      "afterSha256": "6df321f23314c5e8a0a5776fc0b6b4fdacc79f4c3abf24a27a0a354f9fa8a6c7",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-guide-and-contributor-index",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:tests-docs-deferredmechanicsdocumentationclosure-test-ts:p12-successor-v1",
+      "ticket": "P12-091",
+      "surface": "tests/docs/deferredMechanicsDocumentationClosure.test.ts",
+      "beforeSha256": "e98ae5c12d10dd273b51f511bfe5d479c4ac5651580cecebfaf9f93150d9c026",
+      "afterSha256": "9ede6a4a4a7b885580d00116cf4bd4612b8f551ae4edca6edc6efcc7f988a257",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-documentation-successor-acceptance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:implementation-plans-plan-order-md:p12-successor-v1",
+      "ticket": "P12-093",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "dacbdf6bd416d7f354413d12bead9ebf77fbef7f85504d59775e1181befed12f",
+      "afterSha256": "043bb923b59d11bb55a114c58a97fd6f259cc9df260b80e151653d0711f5ce06",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-authoritative-progress-ledger",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:agents-md:p12-successor-v1",
+      "ticket": "P12-093",
+      "surface": "AGENTS.md",
+      "beforeSha256": "38120692c61aa21c454dc741ab474e3d1c1fcfb6fd42e37fda315b77692236db",
+      "afterSha256": "8d994bcccb1a45621ee5321f4a1769af1d96c619d612b27f26f8ee2475c6032e",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "gm-toolkit-agent-progress-guidance",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:item-catalog-cohort-runtime-acceptance:p12-successor-v1",
+      "ticket": "P12-094",
+      "surface": "tests/server/itemCatalogCohortRegistry.test.ts",
+      "beforeSha256": "df74b931f218a91e36160df0fb52c7e94de6943e995655688987f2c32f36bd35",
+      "afterSha256": "74aefa70577eaf1f5366e2eaa7143759cca42d145a7fa9ea6e6a81a991ad4af2",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "successor-aware-cross-plan-source-fingerprint-validation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:breeding-documentation-runtime-schema:p12-successor-v2",
+      "ticket": "P12-091",
+      "surface": "scripts/breedingDocumentationClosure.ts",
+      "beforeSha256": "6eb787b611ca4388432d93692d5f88f284606e792390da3f8468a6b55a8da1ac",
+      "afterSha256": "f11dc1f6fb011a3a3d6fe099629bea45ac6c04e889e518d173108691ca1391be",
+      "changedStableRows": [
+        "plan-12-reviewed-successor"
+      ],
+      "changePolicy": "self-hash-refresh-for-current-v56-runtime-documentation",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:zero-deferred-successor-refresh:p12-v1",
+      "ticket": "P12-094",
+      "surface": "data/deferred-closure/zero-deferred-acceptance.v1.json",
+      "beforeSha256": "55bc05aeddffbfd9ced3a7572b859959e6238bcbd82f3aeb5317da40fe39ef5b",
+      "afterSha256": "344b6c2bec18524b98e5b0baa40248cc6bb88794bbf793e7161f1450b5cfd00e",
+      "changedStableRows": [
+        "accepted-successor-evidence-bindings"
+      ],
+      "changePolicy": "regenerated-successor-aware-evidence-with-unchanged-29-row-finality",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:exploration-route-repel-browser-acceptance:p12-successor-v1",
+      "ticket": "P12-094",
+      "surface": "tests/e2e/exploration-items.spec.ts",
+      "beforeSha256": "63a285b0a6707cd536585d66d00a7b74b42b9778bc08614e87016d83bf01f345",
+      "afterSha256": "38ecf942ddbb559c41f676a5c6a4cc0abb0f7169b6f5b0d21cb3ce0e1fa59ce0",
+      "changedStableRows": [
+        "route-repel-production-browser-acceptance"
+      ],
+      "changePolicy": "migrate-retained-exploration-acceptance-to-native-route-repel-workshop-projection",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:item-cohort-successor-aware-drift-check:p12-v1",
+      "ticket": "P12-094",
+      "surface": "scripts/generate_complete_play_loop_item_catalog_cohorts.py",
+      "beforeSha256": "6c9132703ab9844204f54f38265a09c40416502997ed377b016e1b78cfb0dd71",
+      "afterSha256": "617ae315f497e6ea54d1ceb75a4c8c0ceb4d110a7741808fda235bf06595afe8",
+      "changedStableRows": [
+        "successor-aware-evidence-hash-check"
+      ],
+      "changePolicy": "retain-frozen-p8-registry-while-requiring-contiguous-reviewed-cross-plan-evidence-successors",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:out-of-encounter-successor-aware-drift-check:p12-v1",
+      "ticket": "P12-094",
+      "surface": "scripts/generate_complete_play_loop_out_of_encounter_certification.py",
+      "beforeSha256": "e151deecf1eba1078bff770cdb439d7a0be3fa927f3b96ff9e3d4b394f8e0c89",
+      "afterSha256": "1132dad730b97113b4cbcb4f9bcc32a9059b01eb3e7125b57fa7ab8c008a5436",
+      "changedStableRows": [
+        "successor-aware-evidence-hash-check"
+      ],
+      "changePolicy": "retain-frozen-p8-certificate-while-requiring-contiguous-reviewed-cross-plan-evidence-successors",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:inventory-accessible-desktop-navigation-artifact:p12-v1",
+      "ticket": "P12-094",
+      "surface": ".pi/artifacts/ui-validation/inventory-accessible-reflow/chromium-trainer-discard.png",
+      "beforeSha256": "4cfb335de65786dcaf013677406ec3fba33afc4b222baefb51105fffe82e7a12",
+      "afterSha256": "eea1025934faefb6092b15df4eb9005e518996898ff27589c7a60ae8965760a5",
+      "changedStableRows": [
+        "gm-only-campaign-toolkit-navigation-destination"
+      ],
+      "changePolicy": "reviewed-production-browser-artifact-successor-after-toolkit-navigation-integration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:inventory-accessible-mobile-navigation-artifact:p12-v1",
+      "ticket": "P12-094",
+      "surface": ".pi/artifacts/ui-validation/inventory-accessible-reflow/mobile-chromium-trainer-zoom-320.png",
+      "beforeSha256": "1bf3b47b2fdb4ca6984983b88b0bfc32f4ef7db11200b262d9a6bd7af2d8b450",
+      "afterSha256": "f36ffc3624fae6114a7ebfd7a49d74c635abc2c478cad19e462d80f44fc4d144",
+      "changedStableRows": [
+        "gm-only-campaign-toolkit-navigation-destination",
+        "320-css-pixel-reflow"
+      ],
+      "changePolicy": "reviewed-production-browser-artifact-successor-after-toolkit-navigation-integration",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:plan-index-final-archive:p12-v1",
+      "ticket": "P12-096",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "043bb923b59d11bb55a114c58a97fd6f259cc9df260b80e151653d0711f5ce06",
+      "afterSha256": "fbe0ccb13924f4404c0fa6fb4c1eab5c206880b728ca3922c799ee1e8fee888f",
+      "changedStableRows": [
+        "plan-12-done-archive",
+        "plan-13-registered-scope-draft"
+      ],
+      "changePolicy": "archive-complete-plan-12-and-register-unactivated-plan-13-scope",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:agent-guidance-final-archive:p12-v1",
+      "ticket": "P12-096",
+      "surface": "AGENTS.md",
+      "beforeSha256": "8d994bcccb1a45621ee5321f4a1769af1d96c619d612b27f26f8ee2475c6032e",
+      "afterSha256": "cbea1c74e03d0a68a1e0647d5fda5e49fcb85b5574679b9cd0ddaadc34819e9d",
+      "changedStableRows": [
+        "plans-1-through-12-done",
+        "plan-13-draft-non-obligation"
+      ],
+      "changePolicy": "synchronize-plan-12-archive-and-unactivated-plan-13-boundary",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "gm-campaign-toolkit:superseded-draft-archive-link:p12-v1",
+      "ticket": "P12-096",
+      "surface": "implementation-plans/drafts/GM_CAMPAIGN_TOOLKIT_PLAN.md",
+      "beforeSha256": "8ca37c6e48ab2c2f9890ef0569717073b408a127400e8885e805517dddd914fe",
+      "afterSha256": "b083b2cd4c2b31231a29a95636be5b6441afe8250a4df1ab37f3d0cdcb9c356e",
+      "changedStableRows": [
+        "authoritative-ledger-archived-path"
+      ],
+      "changePolicy": "preserve-resolvable-superseded-draft-reference-after-plan-12-archive",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [

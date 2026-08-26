@@ -42,11 +42,13 @@ const projection: CampaignContinuationProjectionV1 = {
   additionalActiveEncounters: 0,
   unfinishedSettlement: { label: 'Harbor duel', state: 'needs-review', openWorkCount: null, href: '/play/harbor-duel' },
   additionalUnfinishedSettlements: 0,
+  readyPreparation: { label: 'Forest Session', state: 'ready', sceneCount: 2, href: '/session-prep' },
+  additionalReadyPreparations: 1,
   eggs: { active: 1, incubating: 1, ready: 0, needsAdjudication: 0, hatching: 0, href: '/breeding' },
 }
 
 const mountDashboard = () => mount(CampaignContinuationDashboard, {
-  props: { projection, status: 'ready', error: null, hasSelectedProfile: true },
+  props: { projection, status: 'ready', error: null, hasSelectedProfile: true, gm: true },
   global: {
     stubs: {
       NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' },
@@ -61,6 +63,9 @@ describe('CampaignContinuationDashboard', () => {
     expect(wrapper.text()).toContain('Harbor duel')
     expect(wrapper.text()).toContain('Return to encounter')
     expect(wrapper.text()).toContain('Review settlement')
+    expect(wrapper.text()).toContain('Ready session')
+    expect(wrapper.text()).toContain('Forest Session')
+    expect(wrapper.text()).toContain('Open Session prep')
     expect(wrapper.text()).toContain('Recommended next action')
     expect(wrapper.text()).toContain('Team over capacity')
     expect(wrapper.text()).toContain('Review team')
@@ -89,7 +94,7 @@ describe('CampaignContinuationDashboard', () => {
       },
     }
     const wrapper = mount(CampaignContinuationDashboard, {
-      props: { projection: privateProjection, status: 'ready', error: null, hasSelectedProfile: true },
+      props: { projection: privateProjection, status: 'ready', error: null, hasSelectedProfile: true, gm: true },
       global: { stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } } },
     })
     const text = wrapper.text()
@@ -118,7 +123,7 @@ describe('CampaignContinuationDashboard', () => {
       },
     }
     const wrapper = mount(CampaignContinuationDashboard, {
-      props: { projection: skillProjection, status: 'ready', error: null, hasSelectedProfile: true },
+      props: { projection: skillProjection, status: 'ready', error: null, hasSelectedProfile: true, gm: true },
       global: { stubs: { NuxtLink: { props: ['to'], template: '<a :href="to"><slot /></a>' } } },
     })
     expect(wrapper.text()).toContain('Skill Check response')
@@ -131,7 +136,7 @@ describe('CampaignContinuationDashboard', () => {
   it('uses a semantic alert and emits retry without replacing a retained complete snapshot', async () => {
     const wrapper = mount(CampaignContinuationDashboard, {
       props: {
-        projection, status: 'error', error: 'Fresh authority is temporarily unavailable.', hasSelectedProfile: true,
+        projection, status: 'error', error: 'Fresh authority is temporarily unavailable.', hasSelectedProfile: true, gm: true,
       },
       global: { stubs: { NuxtLink: { template: '<a><slot /></a>' } } },
     })
@@ -151,10 +156,12 @@ describe('CampaignContinuationDashboard', () => {
       },
     }
     const wrapper = mount(CampaignContinuationDashboard, {
-      props: { projection: empty, status: 'ready', error: null, hasSelectedProfile: false },
+      props: { projection: empty, status: 'ready', error: null, hasSelectedProfile: false, gm: false },
       global: { stubs: { NuxtLink: { template: '<a><slot /></a>' } } },
     })
     expect(wrapper.text()).toContain('Campaign ready')
     expect(wrapper.text()).toContain('Choose a Player Profile')
+    expect(wrapper.text()).not.toContain('Ready session')
+    expect(wrapper.find('a[href="/session-prep"]').exists()).toBe(false)
   })
 })

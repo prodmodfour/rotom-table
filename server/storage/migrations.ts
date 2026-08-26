@@ -1,6 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite'
+import migratedLegacyEncounterTables from '../../data/gm-campaign-toolkit/migrated-legacy-tables.v1.json'
+import defaultNpcArchetypes from '../../data/gm-campaign-toolkit/default-npc-archetypes.v1.json'
+import { parseEncounterTableDocumentV1 } from '#shared/gmToolkit/encounterTables'
+import { parseNpcArchetypePolicyV1 } from '#shared/gmToolkit/npcArchetypes'
 
-export const LATEST_STORAGE_SCHEMA_VERSION = 50
+export const LATEST_STORAGE_SCHEMA_VERSION = 56
 
 export interface StorageMigration {
   readonly version: number
@@ -1501,6 +1505,195 @@ const addCampaignToolGuidedRequestKind = (connection: DatabaseSync): void => {
   `)
 }
 
+const createGmCampaignEncounterTableAuthority = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS gm_encounter_tables (
+      table_id TEXT PRIMARY KEY,
+      document_json TEXT NOT NULL CHECK (json_valid(document_json) AND length(CAST(document_json AS BLOB)) <= 1048576),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      status TEXT NOT NULL CHECK (status IN ('active', 'archived')),
+      name_normalized TEXT NOT NULL CHECK (length(name_normalized) BETWEEN 1 AND 80),
+      updated_at TEXT NOT NULL,
+      source_sha256 TEXT CHECK (source_sha256 IS NULL OR length(source_sha256) = 64)
+    );
+    CREATE INDEX IF NOT EXISTS gm_encounter_tables_status_name_idx
+      ON gm_encounter_tables (status, name_normalized, table_id);
+    CREATE INDEX IF NOT EXISTS gm_encounter_tables_updated_idx
+      ON gm_encounter_tables (updated_at DESC, table_id);
+
+    CREATE TABLE IF NOT EXISTS gm_encounter_table_ops (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN ('create', 'update', 'archive', 'restore', 'copy', 'import')),
+      table_id TEXT NOT NULL,
+      expected_revision INTEGER CHECK (expected_revision IS NULL OR expected_revision >= 0),
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 1048576),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (table_id) REFERENCES gm_encounter_tables (table_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX IF NOT EXISTS gm_encounter_table_ops_table_revision_idx
+      ON gm_encounter_table_ops (table_id, result_revision, operation_id);
+  `)
+
+  const insert = connection.prepare(`
+    INSERT OR IGNORE INTO gm_encounter_tables (
+      table_id, document_json, revision, status, name_normalized, updated_at, source_sha256
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+  `)
+  for (const input of migratedLegacyEncounterTables.tables) {
+    const document = parseEncounterTableDocumentV1(input)
+    insert.run(
+      document.tableId,
+      JSON.stringify(document),
+      document.revision,
+      document.status,
+      document.name.toLocaleLowerCase('en-US'),
+      document.updatedAt,
+      document.provenance.sourceSha256,
+    )
+  }
+}
+
+const createGmWildGenerationAuthority = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS gm_wild_generation_ops (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 1048576),
+      preview_command_sha256 TEXT NOT NULL CHECK (length(preview_command_sha256) = 64),
+      preview_hash TEXT NOT NULL CHECK (length(preview_hash) = 64),
+      table_id TEXT NOT NULL,
+      table_revision INTEGER NOT NULL CHECK (table_revision >= 0),
+      seed TEXT NOT NULL CHECK (length(seed) = 64),
+      journal_json TEXT NOT NULL CHECK (json_valid(journal_json) AND length(CAST(journal_json AS BLOB)) <= 1048576),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (table_id) REFERENCES gm_encounter_tables (table_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX IF NOT EXISTS gm_wild_generation_ops_table_revision_idx
+      ON gm_wild_generation_ops (table_id, table_revision, created_at, operation_id);
+
+    CREATE TABLE IF NOT EXISTS gm_generated_packages (
+      package_id TEXT PRIMARY KEY,
+      operation_id TEXT NOT NULL UNIQUE,
+      package_json TEXT NOT NULL CHECK (json_valid(package_json) AND length(CAST(package_json AS BLOB)) <= 1048576),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (operation_id) REFERENCES gm_wild_generation_ops (operation_id) ON DELETE RESTRICT
+    );
+  `)
+}
+
+const createGmToolkitSecretAuthority = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS gm_toolkit_secrets (
+      secret_id TEXT PRIMARY KEY,
+      secret_value TEXT NOT NULL CHECK (length(secret_value) = 64 AND secret_value NOT GLOB '*[^a-f0-9]*'),
+      created_at TEXT NOT NULL
+    );
+    INSERT OR IGNORE INTO gm_toolkit_secrets (secret_id, secret_value, created_at)
+    VALUES ('preview-signing-v1', lower(hex(randomblob(32))), strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
+  `)
+}
+
+const createGmNpcArchetypeAuthority = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS gm_npc_archetypes (
+      archetype_id TEXT PRIMARY KEY,
+      document_json TEXT NOT NULL CHECK (json_valid(document_json) AND length(CAST(document_json AS BLOB)) <= 1048576),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      status TEXT NOT NULL CHECK (status IN ('active', 'archived')),
+      name_normalized TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS gm_npc_archetypes_status_name_idx
+      ON gm_npc_archetypes (status, name_normalized, archetype_id);
+
+    CREATE TABLE IF NOT EXISTS gm_npc_archetype_ops (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN ('create', 'update', 'archive', 'restore', 'copy')),
+      archetype_id TEXT NOT NULL,
+      expected_revision INTEGER,
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 1048576),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (archetype_id) REFERENCES gm_npc_archetypes (archetype_id) DEFERRABLE INITIALLY DEFERRED
+    );
+  `)
+  const insert = connection.prepare(`
+    INSERT OR IGNORE INTO gm_npc_archetypes (
+      archetype_id, document_json, revision, status, name_normalized, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?)
+  `)
+  for (const input of defaultNpcArchetypes.policies) {
+    const policy = parseNpcArchetypePolicyV1(input)
+    insert.run(policy.archetypeId, JSON.stringify(policy), policy.revision, policy.status, policy.name.toLocaleLowerCase('en-US'), policy.updatedAt)
+  }
+}
+
+const createGmSessionPreparationAuthority = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS gm_session_preparations (
+      preparation_id TEXT PRIMARY KEY,
+      document_json TEXT NOT NULL CHECK (json_valid(document_json) AND length(CAST(document_json AS BLOB)) <= 8388608),
+      revision INTEGER NOT NULL CHECK (revision >= 0),
+      lifecycle TEXT NOT NULL CHECK (lifecycle IN ('draft', 'review', 'ready', 'launched', 'archived', 'cancelled')),
+      title_normalized TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS gm_session_preparations_lifecycle_updated_idx
+      ON gm_session_preparations (lifecycle, updated_at DESC, preparation_id);
+
+    CREATE TABLE IF NOT EXISTS gm_session_preparation_ops (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_kind TEXT NOT NULL CHECK (command_kind IN ('create', 'save', 'transition', 'copy', 'import-scenes', 'archive', 'cancel', 'record-launch')),
+      preparation_id TEXT NOT NULL,
+      expected_revision INTEGER,
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 8388608),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 8388608),
+      result_revision INTEGER NOT NULL CHECK (result_revision >= 0),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (preparation_id) REFERENCES gm_session_preparations (preparation_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX IF NOT EXISTS gm_session_preparation_ops_document_idx
+      ON gm_session_preparation_ops (preparation_id, result_revision, created_at, operation_id);
+  `)
+}
+
+const createGmNpcGenerationAuthority = (connection: DatabaseSync): void => {
+  connection.exec(`
+    CREATE TABLE IF NOT EXISTS gm_npc_generation_ops (
+      operation_id TEXT PRIMARY KEY,
+      command_sha256 TEXT NOT NULL CHECK (length(command_sha256) = 64),
+      command_json TEXT NOT NULL CHECK (json_valid(command_json) AND length(CAST(command_json AS BLOB)) <= 1048576),
+      preview_command_sha256 TEXT NOT NULL CHECK (length(preview_command_sha256) = 64),
+      preview_hash TEXT NOT NULL CHECK (length(preview_hash) = 64),
+      archetype_id TEXT NOT NULL,
+      archetype_revision INTEGER NOT NULL CHECK (archetype_revision >= 0),
+      seed TEXT NOT NULL CHECK (length(seed) = 64),
+      journal_json TEXT NOT NULL CHECK (json_valid(journal_json) AND length(CAST(journal_json AS BLOB)) <= 1048576),
+      result_json TEXT NOT NULL CHECK (json_valid(result_json) AND length(CAST(result_json AS BLOB)) <= 1048576),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (archetype_id) REFERENCES gm_npc_archetypes (archetype_id) DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE INDEX IF NOT EXISTS gm_npc_generation_ops_archetype_idx
+      ON gm_npc_generation_ops (archetype_id, archetype_revision, created_at, operation_id);
+
+    CREATE TABLE IF NOT EXISTS gm_npc_packages (
+      package_id TEXT PRIMARY KEY,
+      operation_id TEXT NOT NULL UNIQUE,
+      trainer_slug TEXT NOT NULL,
+      package_json TEXT NOT NULL CHECK (json_valid(package_json) AND length(CAST(package_json AS BLOB)) <= 1048576),
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (operation_id) REFERENCES gm_npc_generation_ops (operation_id) ON DELETE RESTRICT
+    );
+  `)
+}
+
 export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
   {
     version: 1,
@@ -1751,6 +1944,36 @@ export const STORAGE_MIGRATIONS: readonly StorageMigration[] = [
     version: 50,
     name: 'store versioned generic Skill Check documents and replay-safe operations',
     up: createSkillCheckTables,
+  },
+  {
+    version: 51,
+    name: 'store versioned GM encounter tables and replay-safe table operations',
+    up: createGmCampaignEncounterTableAuthority,
+  },
+  {
+    version: 52,
+    name: 'store journaled wild generation operations and ordinary-sheet package receipts',
+    up: createGmWildGenerationAuthority,
+  },
+  {
+    version: 53,
+    name: 'store the backup-safe server-only GM Toolkit preview signing secret',
+    up: createGmToolkitSecretAuthority,
+  },
+  {
+    version: 54,
+    name: 'store campaign-owned NPC archetype policies and exact mutations',
+    up: createGmNpcArchetypeAuthority,
+  },
+  {
+    version: 55,
+    name: 'store journaled NPC Trainer generation operations and package receipts',
+    up: createGmNpcGenerationAuthority,
+  },
+  {
+    version: 56,
+    name: 'store versioned GM session preparation documents and exact operations',
+    up: createGmSessionPreparationAuthority,
   },
 ]
 

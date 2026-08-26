@@ -1,0 +1,486 @@
+{
+  "schemaVersion": 1,
+  "migrationId": "gm-campaign-toolkit-legacy-tables-v1",
+  "ticket": "P12-014",
+  "migratedAt": "2026-08-25T00:00:00.000Z",
+  "sourcePolicy": "activation-sha256-exact",
+  "sources": [
+    {
+      "path": "encounter_tables/spire-city/streets.json",
+      "sha256": "65edb80d7f85923783949f70befe04748833075244a817c2ac1293eb7a7711b1",
+      "sourceName": "Streets",
+      "tableId": "encounter-table:v1:spire-city-streets",
+      "speciesRows": 1,
+      "nothingWeight": 60
+    },
+    {
+      "path": "encounter_tables/thickerby_vale/cave.json",
+      "sha256": "d08a25560d06aae637e576b446e6460ecc98c59ac68bf04358e5afee076a37a4",
+      "sourceName": "Thickerby Vale Caves",
+      "tableId": "encounter-table:v1:thickerby-vale-caves",
+      "speciesRows": 6,
+      "nothingWeight": 60
+    },
+    {
+      "path": "encounter_tables/thickerby_vale/forest.json",
+      "sha256": "d87ce500d3dbc7257e21e27354547473f1f25f648d4fbbe16214844690f150c3",
+      "sourceName": "Thickerby Vale Forest",
+      "tableId": "encounter-table:v1:thickerby-vale-forest",
+      "speciesRows": 8,
+      "nothingWeight": 60
+    },
+    {
+      "path": "encounter_tables/thickerby_vale/riverbank.json",
+      "sha256": "6634598eaa13c03eebe26e0883cc56ce09b55186cb40a8282d20d7fc3402947f",
+      "sourceName": "Thickerby Vale Riverbank",
+      "tableId": "encounter-table:v1:thickerby-vale-riverbank",
+      "speciesRows": 7,
+      "nothingWeight": 60
+    }
+  ],
+  "tables": [
+    {
+      "schemaVersion": 1,
+      "documentKind": "encounter-table",
+      "tableId": "encounter-table:v1:spire-city-streets",
+      "revision": 0,
+      "status": "active",
+      "name": "Spire City Streets",
+      "environmentTags": [
+        "Urban"
+      ],
+      "predicates": {
+        "timeOfDay": [],
+        "weather": []
+      },
+      "rows": [
+        {
+          "rowId": "encounter-row:v1:spire-city-streets-01",
+          "kind": "species",
+          "speciesId": "Pidgey",
+          "weight": 100,
+          "minLevel": 1,
+          "maxLevel": 5,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:spire-city-streets-02",
+          "kind": "nothing",
+          "weight": 60,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        }
+      ],
+      "groupSizePolicy": {
+        "kind": "party-scale",
+        "minimum": 1,
+        "maximum": 30,
+        "perAdditionalTrainer": 1
+      },
+      "notes": "",
+      "provenance": {
+        "kind": "legacy-migration",
+        "sourceLabel": "encounter_tables/spire-city/streets.json",
+        "sourceSha256": "65edb80d7f85923783949f70befe04748833075244a817c2ac1293eb7a7711b1",
+        "sourceTableId": null,
+        "sourceRevision": null
+      },
+      "createdAt": "2026-08-25T00:00:00.000Z",
+      "updatedAt": "2026-08-25T00:00:00.000Z",
+      "archivedAt": null
+    },
+    {
+      "schemaVersion": 1,
+      "documentKind": "encounter-table",
+      "tableId": "encounter-table:v1:thickerby-vale-caves",
+      "revision": 0,
+      "status": "active",
+      "name": "Thickerby Vale Caves",
+      "environmentTags": [
+        "Cave"
+      ],
+      "predicates": {
+        "timeOfDay": [],
+        "weather": []
+      },
+      "rows": [
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-caves-01",
+          "kind": "species",
+          "speciesId": "Zubat",
+          "weight": 35,
+          "minLevel": 8,
+          "maxLevel": 14,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-caves-02",
+          "kind": "species",
+          "speciesId": "Geodude",
+          "weight": 25,
+          "minLevel": 8,
+          "maxLevel": 14,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-caves-03",
+          "kind": "species",
+          "speciesId": "Diglett",
+          "weight": 18,
+          "minLevel": 8,
+          "maxLevel": 14,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-caves-04",
+          "kind": "species",
+          "speciesId": "Onix",
+          "weight": 10,
+          "minLevel": 8,
+          "maxLevel": 14,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-caves-05",
+          "kind": "species",
+          "speciesId": "Roggenrola",
+          "weight": 7,
+          "minLevel": 8,
+          "maxLevel": 14,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-caves-06",
+          "kind": "species",
+          "speciesId": "Aron",
+          "weight": 5,
+          "minLevel": 8,
+          "maxLevel": 14,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-caves-07",
+          "kind": "nothing",
+          "weight": 60,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        }
+      ],
+      "groupSizePolicy": {
+        "kind": "party-scale",
+        "minimum": 1,
+        "maximum": 30,
+        "perAdditionalTrainer": 1
+      },
+      "notes": "",
+      "provenance": {
+        "kind": "legacy-migration",
+        "sourceLabel": "encounter_tables/thickerby_vale/cave.json",
+        "sourceSha256": "d08a25560d06aae637e576b446e6460ecc98c59ac68bf04358e5afee076a37a4",
+        "sourceTableId": null,
+        "sourceRevision": null
+      },
+      "createdAt": "2026-08-25T00:00:00.000Z",
+      "updatedAt": "2026-08-25T00:00:00.000Z",
+      "archivedAt": null
+    },
+    {
+      "schemaVersion": 1,
+      "documentKind": "encounter-table",
+      "tableId": "encounter-table:v1:thickerby-vale-forest",
+      "revision": 0,
+      "status": "active",
+      "name": "Thickerby Vale Forest",
+      "environmentTags": [
+        "Forest"
+      ],
+      "predicates": {
+        "timeOfDay": [],
+        "weather": []
+      },
+      "rows": [
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-01",
+          "kind": "species",
+          "speciesId": "Caterpie",
+          "weight": 25,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-02",
+          "kind": "species",
+          "speciesId": "Weedle",
+          "weight": 20,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-03",
+          "kind": "species",
+          "speciesId": "Pidgey",
+          "weight": 15,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-04",
+          "kind": "species",
+          "speciesId": "Sentret",
+          "weight": 15,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-05",
+          "kind": "species",
+          "speciesId": "Hoothoot",
+          "weight": 10,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-06",
+          "kind": "species",
+          "speciesId": "Spinarak",
+          "weight": 7,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-07",
+          "kind": "species",
+          "speciesId": "Pineco",
+          "weight": 5,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-08",
+          "kind": "species",
+          "speciesId": "Cutiefly",
+          "weight": 3,
+          "minLevel": 4,
+          "maxLevel": 8,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-forest-09",
+          "kind": "nothing",
+          "weight": 60,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        }
+      ],
+      "groupSizePolicy": {
+        "kind": "party-scale",
+        "minimum": 1,
+        "maximum": 30,
+        "perAdditionalTrainer": 1
+      },
+      "notes": "",
+      "provenance": {
+        "kind": "legacy-migration",
+        "sourceLabel": "encounter_tables/thickerby_vale/forest.json",
+        "sourceSha256": "d87ce500d3dbc7257e21e27354547473f1f25f648d4fbbe16214844690f150c3",
+        "sourceTableId": null,
+        "sourceRevision": null
+      },
+      "createdAt": "2026-08-25T00:00:00.000Z",
+      "updatedAt": "2026-08-25T00:00:00.000Z",
+      "archivedAt": null
+    },
+    {
+      "schemaVersion": 1,
+      "documentKind": "encounter-table",
+      "tableId": "encounter-table:v1:thickerby-vale-riverbank",
+      "revision": 0,
+      "status": "active",
+      "name": "Thickerby Vale Riverbank",
+      "environmentTags": [
+        "Fresh Water",
+        "Wetland"
+      ],
+      "predicates": {
+        "timeOfDay": [],
+        "weather": []
+      },
+      "rows": [
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-01",
+          "kind": "species",
+          "speciesId": "Poliwag",
+          "weight": 30,
+          "minLevel": 6,
+          "maxLevel": 10,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-02",
+          "kind": "species",
+          "speciesId": "Goldeen",
+          "weight": 25,
+          "minLevel": 6,
+          "maxLevel": 10,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-03",
+          "kind": "species",
+          "speciesId": "Magikarp",
+          "weight": 15,
+          "minLevel": 6,
+          "maxLevel": 10,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-04",
+          "kind": "species",
+          "speciesId": "Wooper",
+          "weight": 12,
+          "minLevel": 6,
+          "maxLevel": 10,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-05",
+          "kind": "species",
+          "speciesId": "Marill",
+          "weight": 8,
+          "minLevel": 6,
+          "maxLevel": 10,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-06",
+          "kind": "species",
+          "speciesId": "Surskit",
+          "weight": 6,
+          "minLevel": 6,
+          "maxLevel": 10,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-07",
+          "kind": "species",
+          "speciesId": "Pelipper",
+          "weight": 4,
+          "minLevel": 6,
+          "maxLevel": 10,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        },
+        {
+          "rowId": "encounter-row:v1:thickerby-vale-riverbank-08",
+          "kind": "nothing",
+          "weight": 60,
+          "predicates": {
+            "timeOfDay": [],
+            "weather": []
+          }
+        }
+      ],
+      "groupSizePolicy": {
+        "kind": "party-scale",
+        "minimum": 1,
+        "maximum": 30,
+        "perAdditionalTrainer": 1
+      },
+      "notes": "",
+      "provenance": {
+        "kind": "legacy-migration",
+        "sourceLabel": "encounter_tables/thickerby_vale/riverbank.json",
+        "sourceSha256": "6634598eaa13c03eebe26e0883cc56ce09b55186cb40a8282d20d7fc3402947f",
+        "sourceTableId": null,
+        "sourceRevision": null
+      },
+      "createdAt": "2026-08-25T00:00:00.000Z",
+      "updatedAt": "2026-08-25T00:00:00.000Z",
+      "archivedAt": null
+    }
+  ],
+  "summary": {
+    "tables": 4,
+    "speciesRows": 22,
+    "explicitNothingRows": 4,
+    "unknownSpecies": 0
+  }
+}

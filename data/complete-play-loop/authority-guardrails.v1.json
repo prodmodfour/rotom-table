@@ -354,7 +354,7 @@
     }
   ],
   "clientAuthority": {
-    "filesChecked": 1031,
+    "filesChecked": 1012,
     "serverImports": 0,
     "mechanicalMutationCallbacks": 0,
     "commandOnly": true
@@ -588,12 +588,12 @@
     },
     {
       "path": "package.json",
-      "sha256": "44f5f8b560484aea3ab93eaff4d328cb41d6796ba35db1429f099f93e5f5a0b8"
+      "sha256": "5eff687560fc4ca7dc1079d35a43f34112b255ceb9e665c0a20da6191ddcefa6"
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "0b1638e8edb362d64807884aff8eba6a6489968f6d1711232642d5d963461f0c"
+      "sha256": "aa68b939871e98a8f873017e22f8210c2a1d015d392d2692376470ef7766a047"
     }
   ],
-  "completionEvidenceSha256": "9e681af4985589dc47a7b215e1d1bed907c256c5e97d72be8968d8e4b2dd30c5"
+  "completionEvidenceSha256": "1841f4643d52ac80ca176ae39cd008041dc230e6f691e0cbfb14d149583792e6"
 }

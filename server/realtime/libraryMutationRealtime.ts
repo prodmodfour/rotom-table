@@ -538,6 +538,32 @@ export const mapFolderDeletedRealtimeAppendInputs = (input: {
   ]
 }
 
+/**
+ * Generated-package commits announce only sheet identity and revision to GM clients.
+ * Full generated documents (including GM provenance) must never enter realtime rows.
+ */
+export const sheetLibraryGeneratedIdentityRealtimeAppendInputs = (
+  sheetInput: PersistedSheet,
+): readonly AppendRealtimeEventInput[] => {
+  const sheet = normalizePersistedSheet(sheetInput)
+  return [appendInput({
+    event: draftEvent({
+      channel: sheetsChannel,
+      type: 'updated',
+      revision: sheet.revision,
+      data: { kind: sheet.kind, slug: sheet.slug, revision: sheet.revision },
+    }),
+    access: gmOnlyAccess,
+    dedupeKey: libraryDedupeKey({
+      family: 'sheet',
+      operation: 'generated-package-create',
+      resource: `${sheet.kind}:${sheet.slug}`,
+      revision: sheet.revision,
+      destination: sheetsChannel,
+    }),
+  })]
+}
+
 export const sheetLibraryCreatedRealtimeAppendInputs = (
   sheetInput: PersistedSheet,
   clientId?: unknown,

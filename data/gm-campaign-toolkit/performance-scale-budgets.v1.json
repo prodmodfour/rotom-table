@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "budgetId": "gm-campaign-toolkit-performance-v1",
+  "ticket": "P12-008",
+  "status": "enforced-fixture",
+  "scale": {
+    "campaignTables": 200,
+    "rowsPerTable": 50,
+    "generationRequestMaximum": 30,
+    "committedPokemonBudget": 10,
+    "npcTrainerCount": 1,
+    "npcRosterMaximum": 6,
+    "preparationScenes": 20,
+    "preparationLinkedDocuments": 50,
+    "realtimeClients": 6,
+    "concurrentGmTabs": 2
+  },
+  "budgetsMs": {
+    "listAndProjectTables": 750,
+    "validateMaximumTable": 100,
+    "previewTenPokemon": 1000,
+    "commitTenPokemon": 1500,
+    "previewNpcOnePlusSix": 1500,
+    "loadMaximumPreparation": 750,
+    "atomicLaunch": 2000,
+    "sixClientConvergence": 1500
+  },
+  "projectionBytes": { "tableLibrary": 2097152, "previewTenPokemon": 1048576, "maximumPreparation": 2097152 },
+  "measurement": { "runtime": "Node 24", "workers": 1, "fileParallelism": false, "raiseOnlyAfterReviewedProfiling": true }
+}

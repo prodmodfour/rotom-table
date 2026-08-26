@@ -855,6 +855,17 @@ const p8090VisualSuccessors: Readonly<Record<string, string>> = Object.freeze({
   // mobile that extra item intentionally adds one wrapped navigation row.
   'tests/e2e/breeding-workshop.spec.ts-snapshots/breeding-workshop-overview-mobile-chromium-linux.png': '9ba47f253993bd5068a264f261fba053565dc0a9ba078e6f6c759deef1a346c0',
 })
+const gmToolkitUx = json<Record<string, any>>('data/gm-campaign-toolkit/ux-success-criteria.v1.json')
+const gmToolkitNavigation = gmToolkitUx.implementationAcceptance?.navigation
+const gmToolkitNavigationPath = typeof gmToolkitNavigation?.sourcePath === 'string'
+  ? gmToolkitNavigation.sourcePath : ''
+const reviewedP12088NavigationSuccessor = gmToolkitUx.implementationAcceptance?.status === 'accepted'
+  && gmToolkitUx.implementationAcceptance?.tickets?.join(',') === 'P12-085,P12-086,P12-087,P12-088'
+  && gmToolkitNavigation?.destinationLabel === 'Campaign Toolkit'
+  && gmToolkitNavigation?.gmOnly === true
+  && gmToolkitNavigationPath === 'src/utils/appNavigation.ts'
+  && existsSync(resolve(ROOT, gmToolkitNavigationPath))
+  && sha256(readFileSync(resolve(ROOT, gmToolkitNavigationPath))) === gmToolkitNavigation.sourceSha256
 assert(Array.isArray(browserBaselines) && browserBaselines.length === 4
   && browserBaselines.every((baseline: any) => {
     if (typeof baseline.path !== 'string' || !existsSync(resolve(ROOT, baseline.path))) return false
@@ -862,6 +873,7 @@ assert(Array.isArray(browserBaselines) && browserBaselines.length === 4
     return actual === baseline.contentSha256
       || (reviewedP8058WorkshopSuccessor && p8058VisualSuccessors[baseline.path] === actual)
       || (reviewedP8090NavigationSuccessor && p8090VisualSuccessors[baseline.path] === actual)
+      || (reviewedP12088NavigationSuccessor && p8090VisualSuccessors[baseline.path] === actual)
   }), 'Workshop browser visual baselines drifted')
 assert(Object.values(workshopBrowserAcceptance.definition?.acceptance ?? {}).every(result => result === 'pass'), 'Workshop browser acceptance result drifted')
 const eggTransferContract = json<Record<string, any>>('data/breeding-automation/egg-transfer-contract.json')

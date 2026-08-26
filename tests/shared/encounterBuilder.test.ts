@@ -10,10 +10,10 @@ import { ENCOUNTER_RECIPE_IDS } from '#shared/encounterDocuments/model'
 const validRequest = () => ({
   schemaVersion: ENCOUNTER_BUILDER_SCHEMA_VERSION,
   launchId: 'launch-1', encounterId: 'test-encounter', name: 'Test encounter', recipe: 'boss',
-  mapSlug: 'arena', clientId: 'client-1', startInitiative: true,
+  mapSlug: 'arena', expectedMapRevision: 3, clientId: 'client-1', startInitiative: true,
   presentation: { stage: 'boss', tactical: 'on-demand' },
-  source: { region: 'kanto', table: 'forest', outRoot: 'data/sheets/encounters' },
-  cast: [{ castId: 'cast-1', species: 'Pikachu', level: 12, roll: 42, sideId: 'foes', role: 'boss', hidden: false }],
+  handoff: { kind: 'wild-package', documentId: 'wild-package:v1:0123456789abcdef0123456789abcdef', expectedRevision: 0, sceneId: null },
+  cast: [{ castId: 'cast-1', sheet: { kind: 'pokemon', slug: 'pikachu', expectedRevision: 0 }, sourceCandidateId: 'candidate-1', sideId: 'foes', role: 'boss', hidden: false }],
   publicStakes: null, gmStakes: 'Escalation at half HP', notes: null,
 })
 

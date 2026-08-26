@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "policyId": "gm-campaign-toolkit-generation-legality-v1",
+  "ticket": "P12-009",
+  "status": "reviewed",
+  "wild": {
+    "level": { "kind": "journaled-uniform-inclusive", "minimum": 1, "maximum": 100 },
+    "experience": { "source": "data/reference/pokemonExperienceChart.json", "binding": "exact-level-threshold" },
+    "moves": { "source": "data/reference/pokedex.json#level_up_moves", "selection": "latest-six-unique-at-or-below-level-in-source-order", "canonicalDetails": "data/reference/moves.json" },
+    "abilities": { "source": "data/reference/pokedex.json#abilities", "milestones": [ { "minimumLevel": 1, "count": 1, "tiers": ["basic"] }, { "minimumLevel": 20, "count": 2, "tiers": ["basic", "advanced"] }, { "minimumLevel": 40, "count": 3, "tiers": ["basic", "advanced", "high"] } ], "ambiguity": "fail-closed" },
+    "gender": { "source": "data/reference/pokedex.json", "fields": ["genderless", "male_pct", "female_pct"], "roll": "journaled-d100" },
+    "nature": { "source": "shared/ruleset/natures.ts#PTU_NATURE_CHART", "roll": "journaled-uniform-1-through-36" },
+    "shiny": { "defaultPercentage": 0, "minimumPercentage": 0, "maximumPercentage": 100, "roll": "journaled-d10000" },
+    "heldItem": { "default": null, "source": "data/reference/items.json", "requiresExplicitPolicy": true },
+    "capabilitiesAndSkills": { "source": "data/reference/pokedex.json", "copyCanonicalInitialValues": true },
+    "groupComposition": { "source": "campaign-table-row-plus-party-scale-policy", "minimum": 1, "maximum": 30 },
+    "baseRelations": { "allocation": "round-robin-in-nature-adjusted-base-order", "budgetSource": "data/reference/rules.json#Stat Point Advancement" }
+  },
+  "npc": {
+    "featuresAndEdges": "existing-onboarding-prerequisite-authority",
+    "equipmentAndMoney": "data/reference/items.json-plus-campaign-policy",
+    "roster": "wild-generation-engine",
+    "guidedFields": ["name", "identity", "tactics", "notes"]
+  },
+  "failClosed": ["unknown-species", "unknown-move", "unknown-ability", "unknown-item", "malformed-canonical-row", "ambiguous-tier"]
+}

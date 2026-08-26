@@ -23,6 +23,7 @@ export const CAMPAIGN_ATTENTION_REASONS = [
   'skill-check-response',
   'skill-check-resolution',
   'continuation-review',
+  'session-preparation-decision',
 ] as const
 export type CampaignAttentionReason = typeof CAMPAIGN_ATTENTION_REASONS[number]
 
@@ -34,7 +35,7 @@ export type CampaignAttentionUrgency = typeof CAMPAIGN_ATTENTION_URGENCIES[numbe
 
 export const CAMPAIGN_ATTENTION_ENTITY_KINDS = [
   'trainer-sheet', 'pokemon-sheet', 'group-inventory', 'profile',
-  'encounter', 'settlement', 'breeding-project', 'egg', 'campaign',
+  'encounter', 'settlement', 'breeding-project', 'egg', 'campaign', 'session-preparation',
 ] as const
 export type CampaignAttentionEntityKind = typeof CAMPAIGN_ATTENTION_ENTITY_KINDS[number]
 
@@ -42,14 +43,14 @@ export const CAMPAIGN_ATTENTION_AUTHORITY_KINDS = [
   'encounter-document', 'map', 'sheet', 'group-inventory', 'campaign-clock',
   'capture-operation', 'item-operation', 'equipment-operation', 'inventory-operation',
   'objective', 'clock', 'phase', 'effect', 'resource', 'profile', 'settlement',
-  'breeding-project', 'egg', 'operation',
+  'breeding-project', 'egg', 'operation', 'session-preparation',
 ] as const
 export type CampaignAttentionAuthorityKind = typeof CAMPAIGN_ATTENTION_AUTHORITY_KINDS[number]
 
 export const CAMPAIGN_ATTENTION_SOURCE_EVENT_KINDS = [
   'encounter-settlement', 'campaign-day', 'sheet-authority', 'profile-authority',
   'item-operation', 'equipment-operation', 'breeding-operation', 'capture-operation',
-  'skill-check',
+  'skill-check', 'session-preparation',
 ] as const
 export type CampaignAttentionSourceEventKind = typeof CAMPAIGN_ATTENTION_SOURCE_EVENT_KINDS[number]
 
@@ -58,14 +59,14 @@ export const CAMPAIGN_ATTENTION_DECISION_KINDS = [
   'choose-evolution', 'choose-form', 'review-post-evolution',
   'review-trainer-build', 'review-capture', 'repair-team',
   'review-hatch', 'assign-ownership', 'choose-treatment', 'review-recovery',
-  'repair-equipment', 'review-continuation',
+  'repair-equipment', 'review-continuation', 'resolve-session-preparation',
 ] as const
 export type CampaignAttentionDecisionKind = typeof CAMPAIGN_ATTENTION_DECISION_KINDS[number]
 
 export const CAMPAIGN_ATTENTION_ACTION_INTENTS = [
   'review-advancement', 'review-moves', 'review-abilities', 'review-evolution',
   'review-form', 'review-post-evolution', 'review-trainer', 'review-capture', 'review-team', 'review-hatch', 'review-ownership',
-  'start-treatment', 'review-recovery', 'review-equipment', 'continue-campaign',
+  'start-treatment', 'review-recovery', 'review-equipment', 'continue-campaign', 'review-session-preparation',
 ] as const
 export type CampaignAttentionActionIntent = typeof CAMPAIGN_ATTENTION_ACTION_INTENTS[number]
 

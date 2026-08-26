@@ -61,6 +61,7 @@ describe('quality gate automation validation', () => {
         'run check:complete-play-loop-documentation',
         'run check:complete-play-loop-alpha-acceptance',
         'run check:deferred-closure-drift',
+        'run check:gm-campaign-toolkit-complete',
         'run check:encounter-presentation',
         'run check:encounter-design',
         'run check:encounter-legacy',
@@ -112,6 +113,7 @@ describe('quality gate automation validation', () => {
     expect(packageJson.scripts['compile:breeding-registry']).toContain('--write')
     expect(packageJson.scripts['check:breeding-compiler']).toContain('--check')
     expect(packageJson.scripts['check:pokemon-contests']).toContain('contestCoverage.test.ts')
+    expect(packageJson.scripts['check:gm-campaign-toolkit-complete']).toContain('--require-final')
     expect(packageJson.scripts['check:move-automation']).toBe(
       'python3 scripts/check_move_automation_coverage.py',
     )

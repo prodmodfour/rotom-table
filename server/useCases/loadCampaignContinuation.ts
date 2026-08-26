@@ -13,6 +13,8 @@ import { encounterWorkspacePath } from '../../shared/encounterWorkspace/routes'
 import type { PlayerProfile } from '../../shared/playerProfiles'
 import { getRotomDatabase, type RotomDatabase } from '../storage/database'
 import { createSqliteEncounterSettlementRepository } from '../storage/encounterSettlementRepository'
+import { createSqliteGmSessionPreparationRepository } from '../storage/gmSessionPreparationRepository'
+import type { SessionPreparationDocumentV1 } from '../../shared/gmToolkit/sessionPreparation'
 import {
   loadCampaignAttentionUseCase,
   readCampaignAttentionAuthority,
@@ -32,6 +34,7 @@ export interface LoadCampaignContinuationDependencies {
   readonly loadAuthority?: () => CampaignAttentionAuthoritySnapshot
   readonly listWorkspaces?: (role: AuthRole) => readonly EncounterWorkspaceSummary[]
   readonly listSettlements?: () => readonly EncounterSettlementDocument[]
+  readonly listPreparations?: () => readonly SessionPreparationDocumentV1[]
 }
 
 const hash = (value: unknown): string => createHash('sha256').update(stableJsonStringify(value)).digest('hex')
@@ -84,6 +87,7 @@ export const projectCampaignContinuation = (input: {
   readonly attention: ReturnType<typeof loadCampaignAttentionUseCase>
   readonly workspaces: readonly EncounterWorkspaceSummary[]
   readonly settlements: readonly EncounterSettlementDocument[]
+  readonly preparations?: readonly SessionPreparationDocumentV1[]
   readonly eggs: readonly PokemonEggDocumentV1[]
 }): CampaignContinuationProjectionV1 => {
   if ((input.role === 'gm' && input.attention.scope !== 'gm')
@@ -92,14 +96,17 @@ export const projectCampaignContinuation = (input: {
   }
   if (input.workspaces.length > CAMPAIGN_CONTINUATION_LIMIT
     || input.settlements.length > CAMPAIGN_CONTINUATION_LIMIT
+    || (input.preparations?.length ?? 0) > CAMPAIGN_CONTINUATION_LIMIT
     || input.eggs.length > CAMPAIGN_CONTINUATION_LIMIT) {
     throw new Error(`Campaign continuation inputs are bounded to ${CAMPAIGN_CONTINUATION_LIMIT} records.`)
   }
   const workspaceIds = input.workspaces.map(row => row.encounterId)
   const settlementIds = input.settlements.map(row => row.settlementId)
+  const preparationIds = (input.preparations ?? []).map(row => row.preparationId)
   const eggIds = input.eggs.map(row => row.eggId)
   if (new Set(workspaceIds).size !== workspaceIds.length
     || new Set(settlementIds).size !== settlementIds.length
+    || new Set(preparationIds).size !== preparationIds.length
     || new Set(eggIds).size !== eggIds.length) {
     throw new Error('Campaign continuation requires unique current authority identities.')
   }
@@ -133,6 +140,26 @@ export const projectCampaignContinuation = (input: {
     href: encounterWorkspacePath(primarySettlement.workspace.encounterId),
   }) : null
 
+  const launchablePreparations = input.role === 'gm' ? (input.preparations ?? [])
+    .flatMap((preparation) => {
+      if (preparation.lifecycle !== 'ready' && preparation.lifecycle !== 'launched') return []
+      const launchedScenes = new Set(preparation.launches.map(row => row.sceneId))
+      const remaining = preparation.scenes.filter(scene => !launchedScenes.has(scene.sceneId)).length
+      return remaining > 0 ? [{ preparation, remaining }] : []
+    })
+    .sort((left, right) => {
+      const leftTime = left.preparation.scheduledFor ? Date.parse(left.preparation.scheduledFor) : Number.MAX_SAFE_INTEGER
+      const rightTime = right.preparation.scheduledFor ? Date.parse(right.preparation.scheduledFor) : Number.MAX_SAFE_INTEGER
+      return leftTime - rightTime || right.preparation.updatedAt.localeCompare(left.preparation.updatedAt) || left.preparation.preparationId.localeCompare(right.preparation.preparationId)
+    }) : []
+  const primaryPreparation = launchablePreparations[0] ?? null
+  const readyPreparation = primaryPreparation ? Object.freeze({
+    label: primaryPreparation.preparation.title,
+    state: primaryPreparation.preparation.lifecycle === 'ready' ? 'ready' as const : 'in-progress' as const,
+    sceneCount: primaryPreparation.remaining,
+    href: `/session-prep?preparation=${encodeURIComponent(primaryPreparation.preparation.preparationId)}`,
+  }) : null
+
   const ownedTrainerSlugs = new Set((input.role === 'player'
     ? input.playerProfile?.linkedCharacters ?? []
     : []).filter(link => link.sheetKind === 'trainer').map(link => link.sheetSlug))
@@ -157,6 +184,8 @@ export const projectCampaignContinuation = (input: {
     additionalActiveEncounters: Math.max(0, active.length - 1),
     unfinishedSettlement,
     additionalUnfinishedSettlements: Math.max(0, unfinished.length - 1),
+    readyPreparation,
+    additionalReadyPreparations: Math.max(0, launchablePreparations.length - 1),
     eggs,
   }
   return parseCampaignContinuationProjection({
@@ -177,11 +206,15 @@ export const loadCampaignContinuationUseCase = (
     const workspaces = dependencies.listWorkspaces?.(input.role)
       ?? listEncounterWorkspacesUseCase({ role: input.role }).summaries
     const settlements = dependencies.listSettlements?.() ?? defaultSettlements(database)
+    const preparations = input.role === 'gm'
+      ? dependencies.listPreparations?.() ?? createSqliteGmSessionPreparationRepository(database).list()
+      : []
     return projectCampaignContinuation({
       ...input,
       attention,
       workspaces,
       settlements,
+      preparations,
       eggs: authority.eggs,
     })
   })

@@ -95,6 +95,17 @@ const expectedTableNames = [
   'encounter_ux_metric_aggregates',
   'equipment_action_operations',
   'equipment_operations',
+  'gm_encounter_table_ops',
+  'gm_encounter_tables',
+  'gm_generated_packages',
+  'gm_npc_archetype_ops',
+  'gm_npc_archetypes',
+  'gm_npc_generation_ops',
+  'gm_npc_packages',
+  'gm_session_preparation_ops',
+  'gm_session_preparations',
+  'gm_toolkit_secrets',
+  'gm_wild_generation_ops',
   'group_inventories',
   'inventory_action_operations',
   'item_breeding_operations',
@@ -147,7 +158,7 @@ const expectedMigrationsAfter = (version: number): number[] =>
 
 describe('SQLite storage migrations', () => {
   it('keeps migration versions contiguous through the declared latest schema', () => {
-    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(50)
+    expect(LATEST_STORAGE_SCHEMA_VERSION).toBe(56)
     expect(STORAGE_MIGRATIONS.map((migration) => migration.version))
       .toEqual(expectedMigrationVersions)
     expect(STORAGE_MIGRATIONS.at(-1)?.version).toBe(LATEST_STORAGE_SCHEMA_VERSION)

@@ -1,8 +1,14 @@
-import { defineEventHandler } from 'h3'
+import { defineEventHandler, getQuery } from 'h3'
 import { requireGm } from '../../utils/auth'
-import { listEncounterTablesUseCase } from '../../useCases/encounterTableLibrary'
+import { throwUseCaseHttpError } from '../../utils/useCaseHttp'
+import { listGmEncounterTablesUseCase } from '../../useCases/gmEncounterTableLibrary'
 
 export default defineEventHandler((event) => {
   requireGm(event)
-  return listEncounterTablesUseCase()
+  try {
+    const query = getQuery(event)
+    return listGmEncounterTablesUseCase({ includeArchived: query.includeArchived === 'true' })
+  } catch (error) {
+    throwUseCaseHttpError(error)
+  }
 })

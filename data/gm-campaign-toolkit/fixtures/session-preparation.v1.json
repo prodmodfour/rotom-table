@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "fixtureSetId": "gm-campaign-toolkit-session-preparation-v1",
+  "ticket": "P12-061",
+  "status": "reviewed",
+  "document": {
+    "schemaVersion": 1,
+    "preparationId": "session-preparation:v1:old-canopy",
+    "revision": 0,
+    "lifecycle": "draft",
+    "title": "Under the Old Canopy",
+    "scheduledFor": "2026-08-30T18:00:00.000Z",
+    "playerOverview": "The road into Thickerby Vale continues.",
+    "gmNotes": "Private campaign plan.",
+    "scenes": [
+      {
+        "sceneId": "scene:forest-arrival",
+        "title": "Forest arrival",
+        "playerSummary": "The path narrows beneath an old canopy.",
+        "gmNotes": "Keep the source of the tracks private.",
+        "map": null,
+        "encounterCandidates": [
+          {
+            "candidateId": "candidate:forest-table",
+            "label": "Forest wildlife",
+            "selection": "option",
+            "source": {
+              "kind": "encounter-table",
+              "tableId": "encounter-table:v1:thickerby-vale-forest",
+              "revision": 0
+            },
+            "placementIntent": { "kind": "builder-default", "zoneLabel": null },
+            "gmNotes": "Use only if the party follows the tracks."
+          }
+        ]
+      }
+    ],
+    "handouts": [
+      {
+        "handoutId": "handout:field-note",
+        "title": "Field note",
+        "playerText": "A pressed leaf marks the page.",
+        "gmNotes": "Reveal only after scene one.",
+        "release": "on-launch"
+      }
+    ],
+    "unresolvedDecisions": [
+      {
+        "decisionId": "decision:weather",
+        "headline": "Choose the weather",
+        "prompt": "Will the rain break before arrival?",
+        "state": "open",
+        "resolution": null
+      }
+    ],
+    "launches": [],
+    "provenance": { "kind": "campaign-authored", "sourcePreparationId": null, "sourceRevision": null },
+    "createdAt": "2026-08-25T15:00:00.000Z",
+    "updatedAt": "2026-08-25T15:00:00.000Z"
+  },
+  "expected": {
+    "sceneCount": 1,
+    "linkedDocumentCount": 1,
+    "openDecisionCount": 1,
+    "readyBlockedReasons": ["open-decision", "unreviewed-option"],
+    "gmAttentionCount": 1,
+    "publicProjectionBeforeLaunch": null,
+    "copyStartsAtRevision": 0,
+    "importRemapsSceneAndCandidateIds": true,
+    "privateFieldsAbsentFromPublic": ["gmNotes", "encounterCandidates", "unresolvedDecisions", "map", "provenance", "launches"]
+  }
+}

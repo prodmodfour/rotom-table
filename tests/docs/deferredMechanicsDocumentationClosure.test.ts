@@ -74,7 +74,7 @@ describe('P11-087 Deferred Mechanics Closure documentation', () => {
     for (const claim of ['all twelve supplemental weapon Moves', 'schema-v50', 'typed immutable facts', 'accepted successor-chain continuity']) expect(contributor).toContain(claim)
 
     const operator = read('docs/complete-play-loop-operator-guide.md')
-    for (const claim of ['current application schema is 50', 'refuses an unknown future version without writing', 'linked Battle Contest/Encounter', 'never repair SQLite or JSON manually']) expect(operator).toContain(claim)
+    for (const claim of ['current application schema is 56', 'refuses an unknown future version without writing', 'linked Battle Contest/Encounter', 'never repair SQLite or JSON manually']) expect(operator).toContain(claim)
 
     const gm = read('docs/complete-play-loop-gm-guide.md')
     for (const claim of ['Ranged weapons, weapon Moves, and item actions', 'Generic Skill Checks', 'one through 32', 'Trainer Participant and Battle Contests', 'Independent **Finish Encounter**']) expect(gm).toContain(claim)

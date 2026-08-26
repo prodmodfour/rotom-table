@@ -1,0 +1,192 @@
+{
+  "schemaVersion": 1,
+  "acceptanceId": "gm-campaign-toolkit-final-v1",
+  "ticket": "P12-096",
+  "status": "accepted",
+  "acceptedAt": "2026-08-26T00:00:00.000Z",
+  "productPhase": "alpha",
+  "ticketsDone": 96,
+  "plan": {
+    "path": "implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md",
+    "ticketsTotal": 96,
+    "ticketsDone": 96,
+    "phasesTotal": 8,
+    "phasesDone": 8,
+    "currentTicket": "NONE",
+    "blockers": 0,
+    "archived": true
+  },
+  "footprint": {
+    "activationSha256": "161be4cb987549b3947ba65262d325fcfd28dd5538286d633528e4ef2a2f9862",
+    "rows": 40,
+    "finalRows": 40,
+    "nativeRows": 20,
+    "migratedRows": 4,
+    "preservedRows": 5,
+    "retiredRows": 10,
+    "documentaryRows": 1,
+    "pendingRows": 0,
+    "blockedRows": 0,
+    "hardFailures": 0
+  },
+  "deliveredScope": {
+    "migratedLegacyTables": 4,
+    "campaignTableSchema": 1,
+    "wildGenerationMaximumJournaledSlots": 30,
+    "wildPackageMaximumPokemon": 10,
+    "npcPackageTrainerCount": 1,
+    "npcPackageMaximumPokemon": 6,
+    "preparationMaximumScenes": 20,
+    "preparationMaximumLinkedDocuments": 50,
+    "preparationMaximumCandidatesPerScene": 20,
+    "preparationMaximumHandouts": 50,
+    "preparationMaximumDecisions": 50,
+    "builderHandoffSchema": 2,
+    "currentStorageSchema": 56
+  },
+  "authorityAssertions": {
+    "appOwnedCanonicalReferencesOnly": true,
+    "documentaryRuntimeReads": false,
+    "parallelMechanicsAuthority": false,
+    "parallelPersistenceAuthority": false,
+    "parallelSheetAuthority": false,
+    "parallelBuilderOrLaunchAuthority": false,
+    "browserOwnedRandomness": false,
+    "browserOwnedMechanicalMutation": false,
+    "previewWritesAuthority": false,
+    "exactRetryAddsAuthority": false,
+    "changedMaterialRetryAccepted": false,
+    "ordinaryGeneratedSheets": true,
+    "preparationBecomesLiveAuthority": false,
+    "roleSafeServerProjections": true,
+    "gmRealtimeContainsPrivateContent": false,
+    "retiredFilesystemOrHostGenerationReachable": false,
+    "manualStorageRepairRequired": false,
+    "liveplayOnly": true
+  },
+  "validation": {
+    "deterministicGenerationFixtures": "passed",
+    "ordinarySheetPackageCommit": "passed",
+    "goldenPreparationToSettlement": "passed",
+    "migrationAndUpgrade": "passed",
+    "backupRestoreRestartReconnect": "passed",
+    "previewInertness": "passed",
+    "concurrencyAndExactRetry": "passed",
+    "performance": "passed",
+    "privacyAndRoleProjection": "passed",
+    "accessibilityAndResponsive": "passed",
+    "documentation": "passed",
+    "footprintFinalityAndDrift": "passed",
+    "typecheck": "passed",
+    "lint": "passed-with-zero-errors",
+    "nuxtTests": "passed",
+    "fullVitest": "passed",
+    "fullRepositoryQualityGate": "passed",
+    "productionBuild": "passed",
+    "desktopMobileProductionLiveplay": "passed",
+    "traceEvidence": "complete",
+    "criticalUsabilityDefects": 0,
+    "fullBrowserMatrix": {
+      "passed": 97,
+      "failed": 0,
+      "skipped": 1,
+      "workers": 1,
+      "projects": [
+        "chromium",
+        "mobile-chromium"
+      ]
+    },
+    "toolkitProductionAcceptance": {
+      "passed": 6,
+      "failed": 0,
+      "traces": 6,
+      "seriousOrCriticalAxeViolations": 0,
+      "horizontalOverflowFailures": 0
+    }
+  },
+  "sourceEvidence": [
+    {
+      "path": "data/gm-campaign-toolkit/generation-preparation-footprint.v1.json",
+      "sha256": "161be4cb987549b3947ba65262d325fcfd28dd5538286d633528e4ef2a2f9862"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/footprint-finality.v1.json",
+      "sha256": "238d7e146094e2cd76c4e758748e65b23aff17550ae80824f1df8af6bd552e04"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/migrated-legacy-tables.v1.json",
+      "sha256": "947da900a9c812ede94c1cd190295382251dd9b99425406ba78f52ac401f9a7a"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/fixtures/deterministic-generation.v1.json",
+      "sha256": "dac3ce7d328f091044c2da7d022cef728ff776a6da6da6b6a5e3425fe7118f67"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/fixtures/builder-launch.v1.json",
+      "sha256": "240e925fd84ef81bced9579227a735ffe32d4cc2463d1c3bd49464f6c2571c10"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/recovery-performance-certification.v1.json",
+      "sha256": "65da8c57d1ea16b8071328f00928559226637d68da918ca207d245510e59f104"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/production-liveplay-acceptance.v1.json",
+      "sha256": "6441b717c6f0e85e64e499acb96d667f96bf27d3cf02f43cbb7e6cb34478d94e"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/completion-rubric.v1.json",
+      "sha256": "7ea513ad0fbdfc375608e762fe7dba7c438dc643736d491179a9831d93958576"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/data-boundaries.v1.json",
+      "sha256": "eec072465cee6a29e3c90b73d0e76a7493b033523eaa89c78e09c5a121d88e3a"
+    },
+    {
+      "path": "data/gm-campaign-toolkit/role-projections.v1.json",
+      "sha256": "21182ea5ff303fb71b90ac600f9430f3d1775f8e074f132909bf5a212fbe8eb0"
+    },
+    {
+      "path": "docs/gm-campaign-toolkit/gm-guide.md",
+      "sha256": "5afb5bc645bfa96a5e571a2bf6e9eb157cab6a9edae0cbf25aa118d9002777ad"
+    },
+    {
+      "path": "docs/gm-campaign-toolkit/contributor-guide.md",
+      "sha256": "ad37d3344845ba70c66c0cbbdd8c84c2923de42d933c73c6b43d786312682abe"
+    },
+    {
+      "path": "implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md",
+      "sha256": "380cbaa49365334c7b8e71f9a0c480c764130a85d55acbcdb8a6c9d582864189"
+    },
+    {
+      "path": "implementation-plans/drafts/RELEASE_READINESS_PLAN.md",
+      "sha256": "d392e750c484ffbc8b3c68f6d1465941a81f602509d98bd6e7d48cdc8968053f"
+    }
+  ],
+  "nextProspectivePlan": {
+    "order": 13,
+    "name": "1.0 Release Readiness",
+    "draftPath": "implementation-plans/drafts/RELEASE_READINESS_PLAN.md",
+    "draftStatus": "REGISTERED_FOR_REVIEW",
+    "numberedLedgerRegistered": false,
+    "activated": false,
+    "executionObligation": false,
+    "ownerStartRequired": true,
+    "dependsOnPlans10Through12": true
+  },
+  "finalAssertions": {
+    "everyTicketDone": true,
+    "allPhasesDone": true,
+    "everyFootprintRowFinal": true,
+    "zeroBlockedFootprintRows": true,
+    "legacyRuntimeAuthorityRetired": true,
+    "preservedBehaviorsCertified": true,
+    "ordinaryLiveplayAuthorityRetained": true,
+    "allGoldenJourneysPass": true,
+    "fullQualityGatePasses": true,
+    "desktopMobileLiveplayPasses": true,
+    "noCriticalUsabilityDefect": true,
+    "planArchived": true,
+    "releaseReadinessDraftRegisteredOnly": true,
+    "productPhaseRemainsAlpha": true
+  }
+}

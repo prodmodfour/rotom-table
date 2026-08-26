@@ -11,6 +11,7 @@ import { projectCampaignPokemonChoiceAttention } from '../domain/campaignAttenti
 import { projectCampaignTrainerChoiceAttention } from '../domain/campaignAttention/trainerChoiceDetector'
 import { projectCampaignRecoveryAttention } from '../domain/campaignAttention/recoveryDetector'
 import { projectCampaignSkillCheckAttention } from '../domain/campaignAttention/skillCheckDetector'
+import { projectCampaignSessionPreparationAttention } from '../domain/campaignAttention/sessionPreparationDetector'
 import {
   campaignProfileAuthorityDefinitionSha256,
   projectCampaignRosterOwnershipAttention,
@@ -40,6 +41,8 @@ import {
 } from '../storage/breedingOperationRepository'
 import { createSqlitePokemonEggRepository } from '../storage/pokemonEggRepository'
 import { createSqliteSkillCheckRepository, type StoredSkillCheckV1 } from '../storage/skillCheckRepository'
+import { createSqliteGmSessionPreparationRepository } from '../storage/gmSessionPreparationRepository'
+import type { SessionPreparationDocumentV1 } from '../../shared/gmToolkit/sessionPreparation'
 import { createSqliteBreedingLineageRepository } from '../storage/breedingLineageRepository'
 import { createSqliteCampaignClockRepository } from '../storage/campaignClockRepository'
 import { createSqliteSheetRepository, type StoredSheetDocument } from '../storage/sheetRepository'
@@ -57,6 +60,7 @@ export interface CampaignAttentionAuthoritySnapshot {
   readonly breedingOrigins: readonly PokemonBreedingOriginV1[]
   readonly breedingOperations: readonly BreedingOperationLedgerRecord[]
   readonly skillChecks: readonly StoredSkillCheckV1[]
+  readonly preparations: readonly SessionPreparationDocumentV1[]
   readonly campaignClock: unknown
   readonly campaignMinute: number
   readonly completeness: {
@@ -69,6 +73,7 @@ export interface CampaignAttentionAuthoritySnapshot {
     readonly breedingOrigins: true
     readonly breedingOperations: true
     readonly skillChecks: true
+    readonly preparations: true
     readonly campaignClock: true
   }
 }
@@ -184,6 +189,9 @@ export const readCampaignAttentionAuthority = (input: {
     const skillChecks = Object.freeze(identities(database, 'skill_checks', 'check_id')
       .map(id => required(skillCheckRepository.get(id), `Skill Check ${id}`)))
 
+    const preparations = Object.freeze(createSqliteGmSessionPreparationRepository(database).list())
+    if (preparations.length > CAMPAIGN_ATTENTION_AUTHORITY_READ_LIMIT) throw new Error(`Campaign attention session preparation authority exceeds the complete ${CAMPAIGN_ATTENTION_AUTHORITY_READ_LIMIT}-record limit.`)
+
     const campaignClock = createSqliteCampaignClockRepository(database).get()
     return Object.freeze({
       sheets,
@@ -195,6 +203,7 @@ export const readCampaignAttentionAuthority = (input: {
       breedingOrigins,
       breedingOperations,
       skillChecks,
+      preparations,
       campaignClock,
       campaignMinute: campaignClock.campaignMinute,
       completeness: Object.freeze({
@@ -207,6 +216,7 @@ export const readCampaignAttentionAuthority = (input: {
         breedingOrigins: true,
         breedingOperations: true,
         skillChecks: true,
+        preparations: true,
         campaignClock: true,
       }),
     })
@@ -293,7 +303,7 @@ export const collectCampaignAttentionItems = (
   if (complete.sheets !== true || complete.profiles !== true || complete.settlementSources !== true
     || complete.historyFacts !== true || complete.itemOperations !== true || complete.eggs !== true
     || complete.breedingOrigins !== true || complete.breedingOperations !== true
-    || complete.skillChecks !== true || complete.campaignClock !== true) {
+    || complete.skillChecks !== true || complete.preparations !== true || complete.campaignClock !== true) {
     throw new Error('Campaign attention aggregation requires one explicitly complete authority snapshot.')
   }
   const sheets = campaignAttentionRelevantSheets(authority)
@@ -332,6 +342,11 @@ export const collectCampaignAttentionItems = (
       skillChecks: authority.skillChecks,
       campaignMinute: authority.campaignMinute,
       completeness: { skillChecks: true },
+    }),
+    projectCampaignSessionPreparationAttention({
+      preparations: authority.preparations,
+      campaignMinute: authority.campaignMinute,
+      completeness: { preparations: true },
     }),
     projectCampaignRosterOwnershipAttention({
       sheets,

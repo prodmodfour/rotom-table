@@ -13,13 +13,13 @@ Back up the entire configured campaign root, not only the file you edited most r
 - `data/shops/` if retained as maintenance/export copies (not runtime authority)
 - `data/player-profiles/`
 - `data/reference-overrides/` for campaign-owned reference override diffs such as Pokédex edits
-- `encounter_tables/`
+- `encounter_tables/` only when retained as legacy provenance or maintenance interchange (not runtime authority)
 - `rotom-table.sqlite` plus `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` when live-play SQLite repositories have created them, or the configured `ROTOM_DB_PATH` and sidecars if the database uses another private campaign-storage path
 - any private campaign assets or notes intentionally kept under the campaign root
 
 For the documented VPS layout, the app runs from `/srv/rotom-table/app`, campaign data lives in `/srv/rotom-table/campaign`, the default SQLite database path is `/srv/rotom-table/campaign/rotom-table.sqlite`, and private archives live outside the app checkout in `/srv/rotom-table/backups`. If `ROTOM_DB_PATH` points outside the default campaign root, it must still be private operator-controlled campaign storage; include that database path and sidecars in a separate private backup step.
 
-After the SQLite authority migration, maps, Pokémon/trainer sheets, group inventory, and shop tables load from SQLite at runtime. Keep backing up residual JSON campaign files only as explicit maintenance/export/interchange artifacts. Player profiles, encounter tables, campaign reference overrides, and other non-map/sheet/group-inventory/shop campaign material may still live as JSON. Do not treat residual map/sheet/group-inventory/shop JSON as runtime fallback state.
+After the SQLite authority migrations, maps, Pokémon/trainer sheets, group inventory, shop tables, GM encounter tables, generation package receipts, and session preparations load from SQLite at runtime. Keep backing up residual JSON campaign files only as explicit maintenance/export/interchange or provenance artifacts. Player profiles, campaign reference overrides, and other non-SQLite campaign material may still live as JSON. Do not treat residual map/sheet/group-inventory/shop or legacy `encounter_tables/` JSON as runtime fallback state.
 
 A consistent SQLite backup is the only resumable backup for active move-response windows because private `pending_move_resolutions` rows are not map JSON. Maintenance JSON export retains encounter effects/resources/zones/history but terminally abandons pending prompts, clears their public summaries, and writes `data/move-automation-abandoned-pending-resolutions.json` as audit evidence. Never restore a map with a pending public summary unless the matching private repository row is present.
 
@@ -152,7 +152,7 @@ test -d "$RESTORED_CAMPAIGN_ROOT/data/trainers"
 test ! -d "$RESTORED_CAMPAIGN_ROOT/data/group-inventories" || test -r "$RESTORED_CAMPAIGN_ROOT/data/group-inventories"
 test ! -d "$RESTORED_CAMPAIGN_ROOT/data/shops" || test -r "$RESTORED_CAMPAIGN_ROOT/data/shops"
 test -d "$RESTORED_CAMPAIGN_ROOT/data/player-profiles"
-test -d "$RESTORED_CAMPAIGN_ROOT/encounter_tables"
+test ! -d "$RESTORED_CAMPAIGN_ROOT/encounter_tables" || test -r "$RESTORED_CAMPAIGN_ROOT/encounter_tables"
 test ! -d "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides" || test -f "$RESTORED_CAMPAIGN_ROOT/data/reference-overrides/pokedex.json"
 test ! -f "$RESTORED_CAMPAIGN_ROOT/rotom-table.sqlite" || test -r "$RESTORED_CAMPAIGN_ROOT/rotom-table.sqlite"
 test ! -f "$RESTORED_CAMPAIGN_ROOT/rotom-table.sqlite-wal" || test -r "$RESTORED_CAMPAIGN_ROOT/rotom-table.sqlite-wal"
@@ -185,7 +185,7 @@ In a browser on the host or through the same private access path, verify the res
 - open `/sheets` and load at least one restored Pokémon sheet and one trainer sheet;
 - open `/group-inventory` and confirm the restored shared party inventory loads from SQLite;
 - open `/players` and confirm restored player profiles and linked character references are present;
-- open `/encounter-tables` and confirm restored encounter-table regions and tables are listed;
+- open `/encounter-tables` and confirm restored campaign tables load from SQLite;
 - if the campaign has Pokédex overrides, open `/pokedex` and confirm one campaign-specific entry reflects the restored override.
 
 Then verify a temporary restore smoke write persists after restart:
@@ -197,7 +197,7 @@ Then verify a temporary restore smoke write persists after restart:
 5. Reload the edited map, sheet, group inventory, player profile list, encounter table, and any command-backed smoke map to confirm the disposable write and live-play state are still present.
 6. Delete the disposable item from the temporary root, or discard the entire temporary restore root after recording the result.
 
-For campaigns using Deferred Mechanics Closure state, include one representative durable-state check when that state exists in the archive: a terminal or pending generic Skill Check still has its original journal and operation receipt; a readied shield or netted target retains its exact source-bound Encounter effects; and a linked Battle Contest still points bidirectionally to the same Contest, Encounter, map, roster hash, and one set of operation rows. Refresh, stop, and restart the restore-smoke process, then reconnect the GM and one authorized owner. The projections must rebuild from persisted authority without rerolling the check, reapplying the item action, creating another Contest/Encounter/map, duplicating realtime rows, or exposing another owner's private evidence. Do not repair any of these states by editing SQLite or JSON.
+For campaigns using Deferred Mechanics Closure or GM Campaign Toolkit state, include representative durable-state checks when that state exists in the archive: a terminal or pending generic Skill Check still has its original journal and operation receipt; a readied shield or netted target retains its exact source-bound Encounter effects; a linked Battle Contest still points bidirectionally to the same Contest, Encounter, map, roster hash, and one set of operation rows; and a Toolkit table, generated package/ordinary sheet, preparation, and launch still share one consistent lineage. Run `npm run audit:gm-toolkit-storage -- --database "$RESTORED_DB_PATH"` for the restored database. Refresh, stop, and restart the restore-smoke process, then reconnect the GM and one authorized owner. The projections must rebuild from persisted authority without rerolling generation or the check, reapplying the item action, creating another package/Contest/Encounter/map, duplicating realtime rows, or exposing private evidence. Do not repair any of these states by editing SQLite or JSON.
 
 After the check, clean up only the staging directory created for this smoke pass:
 
@@ -293,4 +293,5 @@ If an archive was created in the checkout by mistake, move it to `/srv/rotom-tab
 
 - [Private VPS hosting scope](private-vps-hosting.md)
 - [Campaign repositories](campaign-repositories.md)
+- [GM Campaign Toolkit guide](gm-campaign-toolkit/gm-guide.md)
 - [Security](../SECURITY.md)

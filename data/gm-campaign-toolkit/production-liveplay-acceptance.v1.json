@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "acceptanceId": "gm-campaign-toolkit-production-liveplay-v1",
+  "ticket": "P12-095",
+  "status": "accepted",
+  "acceptedAt": "2026-08-26T00:00:00.000Z",
+  "runtime": {
+    "mode": "production-build-liveplay",
+    "localHostingAuthority": false,
+    "serverCommand": "npm run start",
+    "reuseExistingServer": false,
+    "workers": 1
+  },
+  "projects": [
+    "chromium",
+    "mobile-chromium"
+  ],
+  "results": {
+    "tests": 6,
+    "passed": 6,
+    "failed": 0,
+    "traces": 6,
+    "criticalUsabilityDefects": 0,
+    "seriousOrCriticalAxeViolations": 0,
+    "horizontalOverflowFailures": 0,
+    "minimumPrimaryTargetCssPx": 44,
+    "minimumTestedCssWidthAtTwoHundredPercentZoom": 160
+  },
+  "journeys": [
+    {
+      "id": "gm-wild-and-npc-preview",
+      "roles": ["gm"],
+      "projectsPassed": 2,
+      "keyboardComplete": true,
+      "previewInertCopyPresent": true
+    },
+    {
+      "id": "ready-preparation-to-immutable-builder-handoff",
+      "roles": ["gm"],
+      "projectsPassed": 2,
+      "focusRestored": true,
+      "politeAnnouncements": true,
+      "responsiveReflow": true
+    },
+    {
+      "id": "player-structural-denial",
+      "roles": ["player"],
+      "projectsPassed": 2,
+      "privateNavigationPresent": false,
+      "privateRouteAuthorityPresent": false
+    }
+  ],
+  "sourceEvidence": [
+    {
+      "path": "tests/e2e/gm-campaign-toolkit-liveplay.spec.ts",
+      "sha256": "8d63fabce9686d69e2ec99593e2e3677b4a3bf39b54b5353df8e8041ab7486ee"
+    },
+    {
+      "path": "playwright.gm-toolkit-reuse.config.ts",
+      "sha256": "01edb6e35b17e231e313647d3ab07fbfad28e1d7a93c51244ea6dfa7c4a45cfa"
+    }
+  ],
+  "reviewedScreenshots": [
+    {
+      "path": ".pi/artifacts/ui-validation/gm-campaign-toolkit/chromium-builder-handoff.png",
+      "sha256": "ad49a3f4e7f007a537cff86adf24585dcc6a017f4701589e6060bf72eb726e4c"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/gm-campaign-toolkit/chromium-npc-preview.png",
+      "sha256": "8969ea7cbdce7d475ee53b5c9b2a8f23945bcf3262a72000dbb4e8db37c12369"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/gm-campaign-toolkit/chromium-session-ready.png",
+      "sha256": "d906c03bffc7953b178d843057895acf35d13345759e795648be047d65b8d55b"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/gm-campaign-toolkit/mobile-chromium-builder-handoff.png",
+      "sha256": "8d91a27ca44488b25f5c71640b89f57949ba12fc16555691ea7ace2be43105bc"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/gm-campaign-toolkit/mobile-chromium-npc-preview.png",
+      "sha256": "f0adaa1a9b100f9f685e8634326e8e48b069f8f05f92e6c5d2e6f6f4293b371e"
+    },
+    {
+      "path": ".pi/artifacts/ui-validation/gm-campaign-toolkit/mobile-chromium-session-ready.png",
+      "sha256": "c2dee5757e182698199714a6dad812c14716f36c79471325d41cb8150d9a652e"
+    }
+  ],
+  "traceRoot": ".pi/artifacts/ui-validation/gm-campaign-toolkit/playwright",
+  "acceptance": {
+    "desktopProductionLiveplay": true,
+    "mobileProductionLiveplay": true,
+    "keyboardAndScreenReader": true,
+    "responsiveAndZoom": true,
+    "structuralPrivacy": true,
+    "immutableBuilderHandoff": true,
+    "noCriticalUsabilityDefect": true
+  }
+}

@@ -7,6 +7,7 @@ import {
   ENCOUNTER_SETTLEMENT_API_PATHS,
   EQUIPMENT_API_PATHS,
   GROUP_INVENTORY_API_PATHS,
+  GM_TOOLKIT_API_PATHS,
   INVENTORY_ACTION_API_PATHS,
   ITEM_API_PATHS,
   MAP_API_PATHS,
@@ -201,21 +202,28 @@ describe('API route constants', () => {
     })
   })
 
+  it('exposes Campaign Toolkit NPC and package paths', () => {
+    expect(GM_TOOLKIT_API_PATHS.npcArchetypes).toBe('/api/gm-toolkit/npc-archetypes')
+    expect(GM_TOOLKIT_API_PATHS.npcGeneration).toBe('/api/gm-toolkit/npc-generation')
+    expect(GM_TOOLKIT_API_PATHS.npcPackage('npc-package:v1:abc')).toBe('/api/gm-toolkit/packages/npc/npc-package%3Av1%3Aabc')
+    expect(GM_TOOLKIT_API_PATHS.wildPackage('wild-package:v1:abc')).toBe('/api/gm-toolkit/packages/wild/wild-package%3Av1%3Aabc')
+    expect(GM_TOOLKIT_API_PATHS.sessionPreparations).toBe('/api/gm-toolkit/session-preparations/list')
+    expect(GM_TOOLKIT_API_PATHS.sessionPreparation('session-preparation:v1:abc')).toBe('/api/gm-toolkit/session-preparations/session-preparation%3Av1%3Aabc')
+    expect(GM_TOOLKIT_API_PATHS.mutateSessionPreparation).toBe('/api/gm-toolkit/session-preparations/mutate')
+  })
+
   it('exposes encounter API paths', () => {
-    expect(ENCOUNTER_API_PATHS).toEqual({
+    expect(ENCOUNTER_API_PATHS).toMatchObject({
       list: '/api/encounters/list',
-      folders: '/api/encounters/folders',
       generate: '/api/encounters/generate',
-      spawn: '/api/encounters/spawn',
       create: '/api/encounters/create',
-      createFolder: '/api/encounters/create-folder',
       save: '/api/encounters/save',
-      move: '/api/encounters/move',
-      moveFolder: '/api/encounters/move-folder',
-      rename: '/api/encounters/rename',
-      deleteTable: '/api/encounters/delete',
-      deleteFolder: '/api/encounters/delete-folder',
+      archive: '/api/encounters/archive',
+      restore: '/api/encounters/restore',
+      copy: '/api/encounters/copy',
+      import: '/api/encounters/import',
     })
+    expect(ENCOUNTER_API_PATHS).not.toHaveProperty('spawn')
   })
 
   it('exposes pokedex API paths', () => {

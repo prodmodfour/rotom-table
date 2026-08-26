@@ -113,6 +113,9 @@ if have npm; then
   pp_section "Deferred Mechanics Closure drift and forbidden gaps"
   run_cmd npm run check:deferred-closure-drift
 
+  pp_section "GM Campaign Toolkit authority and finality"
+  run_cmd npm run check:gm-campaign-toolkit-complete
+
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 

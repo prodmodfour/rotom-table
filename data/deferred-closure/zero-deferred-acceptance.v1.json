@@ -523,7 +523,7 @@
     },
     {
       "path": "scripts/check_deferred_closure.py",
-      "sha256": "b349586b08877b2ead5b1fa7942c2046a632bb4579953ef00b919be38be4723f"
+      "sha256": "c9f667690db82f6352d179280e4933ec5b5f561d5fa9e31bbfcaaba26ffefd86"
     }
   ],
   "evidenceBindings": [

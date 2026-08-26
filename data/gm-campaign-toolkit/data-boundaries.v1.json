@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "boundaryId": "gm-campaign-toolkit-data-boundaries-v1",
+  "ticket": "P12-003",
+  "status": "reviewed",
+  "canonicalRuntimeSources": [
+    "data/reference/moves.json",
+    "data/reference/abilities.json",
+    "data/reference/edges.json",
+    "data/reference/poke-edges.json",
+    "data/reference/capabilities.json",
+    "data/reference/features.json",
+    "data/reference/conditions.json",
+    "data/reference/items.json",
+    "data/reference/maneuvers.json",
+    "data/reference/pokedex.json",
+    "data/reference/stat-rankings.json",
+    "data/reference/pokemonExperienceChart.json",
+    "data/reference/rules.json",
+    "data/reference/contests.json",
+    "shared/ruleset/natures.ts#PTU_NATURE_CHART"
+  ],
+  "campaignOwnedFamilies": [
+    "encounter-table-documents",
+    "npc-archetype-policy-documents",
+    "session-preparation-documents",
+    "generation-operations-and-receipts"
+  ],
+  "documentaryOnlyRoots": [
+    "ptu-data/",
+    "books/",
+    "pokesheet.pdf",
+    "encounter_tables/"
+  ],
+  "runtimePolicy": {
+    "documentaryRead": "forbidden",
+    "campaignDataMaySelectCanonicalIdentity": true,
+    "campaignDataMayOverrideCanonicalFact": false,
+    "unknownIdentity": "reject-with-bounded-explanation",
+    "ambiguousCanonicalText": "reject-with-bounded-explanation",
+    "silentSupplementation": false,
+    "browserMechanicalAuthority": false
+  },
+  "canonicalBindings": {
+    "species": "data/reference/pokedex.json#species",
+    "moves": "data/reference/moves.json#name",
+    "abilities": "data/reference/abilities.json#name",
+    "features": "data/reference/features.json#name",
+    "edges": "data/reference/edges.json#name",
+    "items": "data/reference/items.json#name",
+    "experience": "data/reference/pokemonExperienceChart.json#level",
+    "nature": "shared/ruleset/natures.ts#PTU_NATURE_CHART"
+  }
+}

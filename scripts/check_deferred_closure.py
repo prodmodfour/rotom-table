@@ -96,7 +96,7 @@ def validate_successor_chain(errors: list[str]) -> None:
         if not surface or Path(surface).is_absolute() or ".." in Path(surface).parts \
                 or not (ROOT / surface).is_file():
             errors.append(f"{migration_id}: successor surface is absent or unsafe: {surface!r}")
-        if not str(edge.get("ticket", "")).startswith("P11-") \
+        if not re.fullmatch(r"P(?:11|12)-\d{3}", str(edge.get("ticket", ""))) \
                 or not str(edge.get("changePolicy", "")).strip():
             errors.append(f"{migration_id}: successor ticket or change policy is invalid")
         source_path = edge.get("sourcePath")

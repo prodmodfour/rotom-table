@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import acceptance from '../../data/deferred-closure/final-acceptance.v1.json'
@@ -142,19 +142,15 @@ describe('Deferred Mechanics Closure final acceptance (P11-092)', () => {
 
     expect(planOrder).toContain('| 11 | [Deferred Mechanics Closure](done/DEFERRED_MECHANICS_CLOSURE_PLAN.md) | `DONE` |')
     expect(planOrder).not.toContain('[Deferred Mechanics Closure](DEFERRED_MECHANICS_CLOSURE_PLAN.md)')
-    // Accepted successor state (2026-08-25, chain migrations
-    // deferred-closure:plan-12-activation-*-register:v1): Plan 12 is registered
-    // `NOT_STARTED` behind an explicit owner start gate. The P11-092 boundary
-    // this test protects — Plan 11 archived, nothing silently activated — holds.
-    expect(authoritativeTable).toContain('| 12 | [GM Campaign Toolkit](GM_CAMPAIGN_TOOLKIT_PLAN.md) | `NOT_STARTED` |')
-    expect(authoritativeTable).toContain('OWNER_START_GATE')
-    expect(agents).toContain('Plans 1–11 are `DONE` and archived')
-    expect(agents).toContain('registered `NOT_STARTED`')
-    expect(agents).toContain('OWNER_START_GATE')
+    // Registered Plan 12 may advance only through its explicit owner-start
+    // decision; that successor execution cannot rewrite Plan 11's archive.
+    expect(authoritativeTable).toMatch(/\| 12 \| \[GM Campaign Toolkit\]\((?:done\/)?GM_CAMPAIGN_TOOLKIT_PLAN\.md\) \| `(?:IN_PROGRESS|DONE)` \|/u)
+    expect(agents).toMatch(/Plans 1–(?:11|12) are `DONE` and archived/u)
+    expect(agents).toContain('Plan 12')
     expect(agents).toContain('implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md')
   })
 
-  it('carries the GM Campaign Toolkit scope into a registered owner-gated Plan 12 without implementation', () => {
+  it('preserves the registered GM Campaign Toolkit scope while admitting its explicitly authorized successor execution', () => {
     // The recorded P11-092 acceptance facts are immutable history.
     expect(acceptance.nextProspectivePlan).toEqual({
       order: 12,
@@ -167,20 +163,21 @@ describe('Deferred Mechanics Closure final acceptance (P11-092)', () => {
       dependsOnPlan11: true,
     })
 
-    // Accepted successor state (2026-08-25, chain migration
-    // deferred-closure:plan-12-activation-scope-draft-convert:v1): the reviewed
-    // draft converted into the registered numbered ledger. The boundary this
-    // test protects is unchanged: no implementation has occurred.
     const draft = read(acceptance.nextProspectivePlan.draftPath)
     const planOrder = read('implementation-plans/plan-order.md')
-    const ledger = read('implementation-plans/GM_CAMPAIGN_TOOLKIT_PLAN.md')
+    const activePath = 'implementation-plans/GM_CAMPAIGN_TOOLKIT_PLAN.md'
+    const archivedPath = 'implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md'
+    const ledger = read(existsSync(resolve(root, activePath)) ? activePath : archivedPath)
     expect(draft).toContain('`DRAFT_STATUS: CONVERTED`')
-    expect(draft).toContain('`AUTHORITATIVE_LEDGER: implementation-plans/GM_CAMPAIGN_TOOLKIT_PLAN.md`')
-    expect(ledger).toContain('`PLAN_STATUS: NOT_STARTED`')
-    expect(ledger).toContain('`BLOCKED_BY: OWNER_START_GATE`')
-    expect(ledger.match(/^- \[ \] \*\*P12-\d{3}\b/gm)).toHaveLength(96)
-    expect(ledger).not.toMatch(/^- \[x\] \*\*P12-\d{3}\b/gm)
-    expect(planOrder).toContain('| 12 | [GM Campaign Toolkit](GM_CAMPAIGN_TOOLKIT_PLAN.md) | `NOT_STARTED` |')
+    expect(draft).toMatch(/`AUTHORITATIVE_LEDGER: implementation-plans\/(?:done\/)?GM_CAMPAIGN_TOOLKIT_PLAN\.md`/u)
+    expect(ledger).toMatch(/`PLAN_STATUS: (?:IN_PROGRESS|DONE)`/u)
+    expect(ledger).toContain('`BLOCKED_BY: NONE`')
+    expect(ledger).toContain('**2026-08-25 — Owner start recorded.**')
+    const pending = ledger.match(/^- \[ \] \*\*P12-\d{3}\b/gm)?.length ?? 0
+    const done = ledger.match(/^- \[x\] \*\*P12-\d{3}\b/gm)?.length ?? 0
+    expect(done + pending).toBe(96)
+    expect(done).toBeGreaterThan(0)
+    expect(planOrder).toMatch(/\| 12 \| \[GM Campaign Toolkit\]\((?:done\/)?GM_CAMPAIGN_TOOLKIT_PLAN\.md\) \| `(?:IN_PROGRESS|DONE)` \|/u)
   })
 
   it('accepts the alpha only when every final assertion holds', () => {

@@ -65,6 +65,7 @@ const attentionLabels: Readonly<Record<CampaignAttentionReason, string>> = Objec
   'skill-check-response': 'Skill Check response',
   'skill-check-resolution': 'Skill Check GM review',
   'continuation-review': 'Campaign follow-up',
+  'session-preparation-decision': 'Session preparation decision',
 })
 
 const changed = (left: unknown, right: unknown): boolean => (

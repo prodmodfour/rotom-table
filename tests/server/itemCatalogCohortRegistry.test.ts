@@ -9,6 +9,7 @@ import {
   listCanonicalItemCatalogCohortDecisions,
   requireCanonicalItemCatalogCohortDecision,
 } from '../../server/domain/itemAutomation/catalogCohortRegistry'
+import { acceptedSuccessorHead, repositoryFileSha256 } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (value: string | Buffer): string => createHash('sha256').update(value).digest('hex')
 
@@ -79,7 +80,8 @@ describe('canonical item catalog cohort registry', () => {
       ]) {
         expect(group.length, cohort.cohortId).toBeGreaterThan(0)
         for (const source of group) {
-          expect(sha256(readFileSync(source.path)), `${cohort.cohortId}: ${source.path}`).toBe(source.sha256)
+          expect(acceptedSuccessorHead(source.path, source.sha256), `${cohort.cohortId}: ${source.path}`)
+            .toBe(repositoryFileSha256(source.path))
         }
       }
     }

@@ -49,12 +49,12 @@ describe('transient realtime publication architecture', () => {
     expect(offenders).toEqual([])
   })
 
-  it('keeps campaign-day and encounter-spawn persistent mutations on durable events instead of transient-only publication', () => {
+  it('keeps campaign-day and encounter launch persistent mutations on durable events instead of transient-only publication', () => {
     for (const path of [
       'server/useCases/advanceCampaignDay.ts',
       'server/api/campaign/next-day.post.ts',
-      'server/useCases/spawnGeneratedEncounters.ts',
-      'server/api/encounters/spawn.post.ts',
+      'server/useCases/launchEncounterBuilder.ts',
+      'server/api/encounter-documents/launch.post.ts',
     ]) {
       const source = readProjectFile(path)
       expect(source).not.toContain('publishUseCaseRealtimeEvents')
@@ -63,16 +63,20 @@ describe('transient realtime publication architecture', () => {
     }
 
     expect(readProjectFile('server/useCases/advanceCampaignDay.ts')).toContain('realtimeEventRepository.appendMany')
-    expect(readProjectFile('server/useCases/spawnGeneratedEncounters.ts')).toContain('realtimeEventRepository.appendMany')
+    expect(readProjectFile('server/useCases/launchEncounterBuilder.ts')).toContain('realtime.appendMany')
   })
 
-  it('documents the remaining production transient map event path as visual-only', () => {
+  it('limits production transient paths to visual map events and role-scoped toolkit invalidation', () => {
     const productionTransientCallers = serverFiles
       .filter((file) => !['server/utils/realtime.ts', 'server/utils/useCaseHttp.ts'].includes(file.relativePath))
       .filter((file) => /\bpublishTransientRealtime\s*\(/.test(file.text))
       .map((file) => file.relativePath)
 
-    expect(productionTransientCallers).toEqual(['server/api/maps/action-event.post.ts'])
+    expect(productionTransientCallers).toEqual([
+      'server/api/maps/action-event.post.ts',
+      'server/utils/gmToolkitRealtime.ts',
+    ])
+    expect(readProjectFile('server/utils/gmToolkitRealtime.ts')).toContain("data: { documentId: invalidation.documentId, revision: invalidation.revision }")
     const actionUseCase = readProjectFile('server/useCases/publishMapActionEvent.ts')
     expect(actionUseCase).not.toMatch(/saveSetup|replaceSetup|applyLivePlayUpdate|appendMany|withTransaction/)
   })
@@ -89,12 +93,12 @@ describe('transient realtime publication architecture', () => {
     expect(offenders).toEqual([])
   })
 
-  it('keeps runtime encounter spawn independent from generated JSON import/export helpers', () => {
-    const source = readProjectFile('server/useCases/spawnGeneratedEncounters.ts')
+  it('keeps native generation and launch independent from generated JSON files and host processes', () => {
+    const source = `${readProjectFile('server/useCases/manageWildGeneration.ts')}\n${readProjectFile('server/useCases/launchEncounterBuilder.ts')}`
     expect(source).not.toContain('readJsonFile')
     expect(source).not.toContain('readGeneratedPokemonSheet')
     expect(source).not.toContain('generateEncountersUseCase')
-    expect(source).not.toContain('saveMapUseCase')
+    expect(source).not.toContain('spawn(')
     expect(source).not.toContain('writeTextFile(')
   })
 })

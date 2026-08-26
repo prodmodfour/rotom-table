@@ -197,6 +197,16 @@ export interface CharacterSheetGm {
 
 /** Server-authored evidence that must never be accepted from or projected to a client. */
 export interface CharacterSheetServerPrivate {
+  /** Immutable GM-only provenance for Pokémon committed by Campaign Toolkit generation. */
+  gmGeneration?: {
+    readonly schemaVersion: 1
+    readonly operationId: string
+    readonly candidateId: string
+    readonly tableId: string
+    readonly tableRevision: number
+    readonly sourceDefinitionHashes: readonly string[]
+    readonly seedCommitment: string
+  }
   breedingBabyTemplate?: BreedingBabyTemplateAuthorityV1
   /** Immutable server-owned provenance for accepted permanent item advancement. */
   itemPermanentAdvancement?: ItemPermanentAdvancementStateV1
