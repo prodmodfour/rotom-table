@@ -1,0 +1,27 @@
+{
+  "artifact": "release-structural-privacy-report",
+  "schemaVersion": 1,
+  "status": "Certified",
+  "projectionFamilies": [
+    "encounter-public-owner-gm-diagnostic",
+    "equipment-grants-and-actions",
+    "generic-skill-checks",
+    "trainer-participant-and-battle-contests",
+    "contest-realtime",
+    "gm-campaign-toolkit",
+    "onboarding",
+    "breeding",
+    "ability-automation"
+  ],
+  "boundedSuites": [
+    { "command": "npm run check:deferred-closure-privacy", "files": 15, "tests": 94, "result": "passed" },
+    { "command": "vitest run tests/server/gmCampaignToolkitPrivacyAudit.test.ts tests/server/onboardingReopenAndPrivacy.test.ts tests/server/breedingSecurityCertification.test.ts tests/shared/abilityAutomationPrivacy.test.ts --maxWorkers=1 --no-file-parallelism", "files": 4, "tests": 21, "result": "passed" }
+  ],
+  "totals": {
+    "files": 19,
+    "tests": 115,
+    "projectionRegressions": 0,
+    "privateAuthorityLeaks": 0
+  },
+  "privateFixtureSource": false
+}

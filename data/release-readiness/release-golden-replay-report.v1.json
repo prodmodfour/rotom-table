@@ -1,0 +1,29 @@
+{
+  "artifact": "release-golden-journey-replay",
+  "schemaVersion": 1,
+  "status": "Certified",
+  "priorJourneys": {
+    "files": [
+      "tests/integration/completePlayLoopGoldenCampaigns.test.ts",
+      "tests/integration/deferredClosureGoldenJourneys.test.ts",
+      "tests/server/onboardingWorkflows.test.ts",
+      "tests/server/breedingProductionLikeAcceptance.test.ts",
+      "tests/shared/contestGoldenReplay.test.ts",
+      "tests/server/encounterBuilderHandoff.test.ts",
+      "tests/data/gmCampaignToolkitProductionLiveplayAcceptance.test.ts"
+    ],
+    "testsPassed": 33,
+    "frozenEvidenceMutated": false
+  },
+  "releaseJourney": {
+    "fixture": "data/release-readiness/release-golden-journey.v1.json",
+    "test": "tests/integration/releaseGoldenJourney.test.ts",
+    "testsPassed": 1,
+    "checkpoints": 10,
+    "releaseIdentityChecked": true,
+    "restartInert": true,
+    "freshHostRestoreExact": true,
+    "integrityAndToolkitAuditsPassed": true
+  },
+  "directOutcomeRepair": false
+}

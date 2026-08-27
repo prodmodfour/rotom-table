@@ -3,18 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HOSTED_WRITES_DISABLED_MESSAGE } from '~~/server/utils/http'
 
 const mocks = vi.hoisted(() => ({
-  restorePokedexEntryFromBooksUseCase: vi.fn(),
   updatePokedexEntryUseCase: vi.fn(),
-}))
-
-vi.mock('../../server/useCases/restorePokedexEntryFromBooks', () => ({
-  restorePokedexEntryFromBooksUseCase: mocks.restorePokedexEntryFromBooksUseCase,
 }))
 vi.mock('../../server/useCases/updatePokedexEntry', () => ({
   updatePokedexEntryUseCase: mocks.updatePokedexEntryUseCase,
 }))
 
-const restoreRoute = (await import('../../server/api/pokedex/restore-from-books.post')).default
 const updateRoute = (await import('../../server/api/pokedex/update.post')).default
 
 type PokedexAdminRouteHandler = EventHandler<EventHandlerRequest, unknown>
@@ -68,14 +62,5 @@ describe('Pokédex admin API routes', () => {
       statusMessage: HOSTED_WRITES_DISABLED_MESSAGE,
     })
     expect(mocks.updatePokedexEntryUseCase).not.toHaveBeenCalled()
-
-    await expect(invokeRoute(restoreRoute, {
-      role: 'gm',
-      body: { slug: 'pikachu' },
-    })).rejects.toMatchObject({
-      statusCode: 403,
-      statusMessage: HOSTED_WRITES_DISABLED_MESSAGE,
-    })
-    expect(mocks.restorePokedexEntryFromBooksUseCase).not.toHaveBeenCalled()
   })
 })

@@ -3,16 +3,11 @@ import { PhX } from '@phosphor-icons/vue'
 
 defineProps<{
   canCropProfileImage: boolean
-  errorMessage: string | null
-  isRestoring: boolean
-  species: string | null
-  statusMessage: string | null
 }>()
 
 const emit = defineEmits<{
   (event: 'close'): void
   (event: 'open-profile-image-cropper'): void
-  (event: 'restore-from-books'): void
 }>()
 </script>
 
@@ -47,29 +42,13 @@ const emit = defineEmits<{
       <div class="pokedex-admin-panel__actions">
         <button
           type="button"
-          class="pokedex-admin-panel__action"
-          :disabled="!species || isRestoring"
-          @click="emit('restore-from-books')"
-        >
-          {{ isRestoring ? 'Restoring…' : `Restore ${species ?? 'Pokémon'} from PTU markdown books` }}
-        </button>
-
-        <button
-          type="button"
           class="pokedex-admin-panel__action pokedex-admin-panel__action--secondary"
-          :disabled="isRestoring || !canCropProfileImage"
+          :disabled="!canCropProfileImage"
           @click="emit('open-profile-image-cropper')"
         >
           Profile image cropper
         </button>
       </div>
-
-      <p v-if="errorMessage" class="pokedex-admin-panel__message pokedex-admin-panel__message--error">
-        {{ errorMessage }}
-      </p>
-      <p v-else-if="statusMessage" class="pokedex-admin-panel__message pokedex-admin-panel__message--success">
-        {{ statusMessage }}
-      </p>
     </section>
   </div>
 </template>
@@ -178,7 +157,7 @@ const emit = defineEmits<{
 }
 
 .pokedex-admin-panel__action:disabled {
-  cursor: wait;
+  cursor: not-allowed;
   opacity: 0.64;
 }
 
@@ -193,20 +172,4 @@ const emit = defineEmits<{
   color: var(--accent);
 }
 
-.pokedex-admin-panel__message {
-  margin: 0.8rem 0 0;
-  border-radius: 12px;
-  padding: 0.7rem 0.8rem;
-  font-weight: 700;
-}
-
-.pokedex-admin-panel__message--error {
-  background: color-mix(in srgb, var(--bad) 14%, transparent);
-  color: var(--bad);
-}
-
-.pokedex-admin-panel__message--success {
-  background: color-mix(in srgb, var(--good) 14%, transparent);
-  color: var(--good);
-}
 </style>

@@ -217,6 +217,5 @@ export const POKEDEX_API_PATHS = {
   searchIndex: '/api/pokedex/search-index',
   profilePriority: '/api/pokedex/profile-priority',
   update: '/api/pokedex/update',
-  restoreFromBooks: '/api/pokedex/restore-from-books',
   updateProfileImage: '/api/pokedex/profile-image',
 } as const

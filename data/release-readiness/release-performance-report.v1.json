@@ -1,0 +1,16 @@
+{
+  "artifact": "release-performance-budget-replay",
+  "schemaVersion": 1,
+  "status": "Certified",
+  "baselinePolicy": "Existing reviewed budgets are immutable in this replay; failures are defects, never automatic rebases.",
+  "boundedSuites": [
+    { "scope": "deferred, complete-loop, encounter, Contest, presentation, and component budgets", "command": "npm run check:deferred-closure-performance", "files": 13, "testsPassed": 57, "result": "passed" },
+    { "scope": "GM Toolkit, breeding, onboarding, Ability, and Move budgets", "command": "vitest run tests/server/gmCampaignToolkitPerformanceBudgets.test.ts tests/shared/breedingPerformanceBudgets.test.ts tests/shared/onboardingPerformance.test.ts tests/server/abilityAutomationCatalogPerformance.test.ts tests/server/abilityAutomationPerformanceBudgets.test.ts tests/server/moveAutomationPerformanceBudgets.test.ts --maxWorkers=1 --no-file-parallelism", "files": 6, "testsPassed": 31, "result": "passed" }
+  ],
+  "totals": {
+    "files": 19,
+    "testsPassed": 88,
+    "budgetRegressions": 0,
+    "rebasedBudgets": 0
+  }
+}

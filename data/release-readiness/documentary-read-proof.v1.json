@@ -1,0 +1,27 @@
+{
+  "artifact": "release-production-documentary-read-proof",
+  "schemaVersion": 1,
+  "status": "Certified",
+  "productionRoots": [
+    "server",
+    "shared",
+    "src"
+  ],
+  "rootFiles": [
+    "nuxt.config.ts"
+  ],
+  "forbiddenDocumentaryRoots": [
+    "books",
+    "ptu-data",
+    "encounter_tables",
+    "notepad",
+    "pokesheet.pdf"
+  ],
+  "productionSourceFiles": 2677,
+  "productionSourceGraphSha256": "bfb0c9dd3ff6bcede232e744e08e1c0c84bee760021bdac92fe981786c2f8923",
+  "staticViolations": 0,
+  "runtimeProbe": "checked-separately-by-registered-command",
+  "retiredRuntimeSeam": "/api/pokedex/restore-from-books",
+  "allowedProvenanceMetadata": "Path labels in immutable app-owned registries and source comments are allowed only when no production filesystem/process reader is colocated.",
+  "command": "npm run check:release-readiness:documentary-reads"
+}

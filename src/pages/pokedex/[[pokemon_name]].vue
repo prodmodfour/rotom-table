@@ -82,10 +82,6 @@ const saveEntry = (slug: string, entry: Record<string, unknown>): Promise<Pokede
   apiClient.postJson<PokedexEntryMutationResponse>(POKEDEX_API_PATHS.update, { slug, entry })
 )
 
-const restoreFromBooks = (slug: string): Promise<PokedexEntryMutationResponse> => (
-  apiClient.postJson<PokedexEntryMutationResponse>(POKEDEX_API_PATHS.restoreFromBooks, { slug })
-)
-
 const updateProfileImage = (slug: string, imageDataUrl: string): Promise<PokedexProfileImageUpdateResponse> => (
   apiClient.postJson<PokedexProfileImageUpdateResponse>(POKEDEX_API_PATHS.updateProfileImage, { slug, imageDataUrl })
 )
@@ -97,7 +93,6 @@ const {
   exitEditMode,
   isEditMode,
   isSaving: isSavingEntry,
-  replaceDraftWithEntry,
   saveEditedEntry,
   statusMessage: entryEditStatusMessage,
 } = usePokedexEntryEditing({
@@ -109,20 +104,9 @@ const {
 
 const {
   close: closeAdminPanel,
-  errorMessage: adminErrorMessage,
   isOpen: isAdminPanelOpen,
-  isRestoring: isRestoringEntry,
   open: openAdminPanel,
-  restoreSelectedEntryFromBooks,
-  selectedSpeciesName,
-  statusMessage: adminStatusMessage,
-} = usePokedexAdminPanel({
-  afterMutation: routeToMutatedEntry,
-  isGm,
-  onRestoredEntry: replaceDraftWithEntry,
-  restoreFromBooks,
-  selectedEntry,
-})
+} = usePokedexAdminPanel({ isGm })
 
 const {
   canOpen: canOpenProfileImageCropper,
@@ -256,13 +240,8 @@ await ready
     <PokedexAdminPanel
       v-if="isAdminPanelOpen"
       :can-crop-profile-image="canOpenProfileImageCropper"
-      :error-message="adminErrorMessage"
-      :is-restoring="isRestoringEntry"
-      :species="selectedSpeciesName"
-      :status-message="adminStatusMessage"
       @close="closeAdminPanel"
       @open-profile-image-cropper="openProfileImageCropper"
-      @restore-from-books="restoreSelectedEntryFromBooks"
     />
 
     <PokedexProfileImageCropper

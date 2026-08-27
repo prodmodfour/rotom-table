@@ -13,6 +13,34 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data/gm-campaign-toolkit"
+SUCCESSOR_CHAIN = ROOT / "data/deferred-closure/successor-chain.v1.json"
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def accepted_successor_reaches_current(path: str, recorded: str) -> bool:
+    target = ROOT / path
+    if not target.is_file() or not SUCCESSOR_CHAIN.is_file():
+        return False
+    current = file_sha256(target)
+    if recorded == current:
+        return True
+    chain = json.loads(SUCCESSOR_CHAIN.read_text(encoding="utf-8"))
+    next_hash = {
+        str(edge.get("beforeSha256")): str(edge.get("afterSha256"))
+        for edge in chain.get("edges", [])
+        if edge.get("surface") == path and edge.get("reviewStatus") == "accepted"
+    }
+    cursor = recorded
+    visited: set[str] = set()
+    while cursor != current:
+        if cursor in visited or cursor not in next_hash:
+            return False
+        visited.add(cursor)
+        cursor = next_hash[cursor]
+    return True
 
 
 def read(path: str) -> Any:
@@ -176,8 +204,8 @@ def main() -> int:
         expected_hash = row.get("sha256") if isinstance(row, dict) else None
         if not isinstance(path, str) or not (ROOT / path).is_file():
             errors.append(f"recovery/performance certification evidence is missing: {path}")
-        elif hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != expected_hash:
-            errors.append(f"recovery/performance certification evidence drifted: {path}")
+        elif not accepted_successor_reaches_current(path, str(expected_hash)):
+            errors.append(f"recovery/performance certification evidence drifted without an accepted successor: {path}")
     scenario_ids = {row.get("id") for row in failures.get("scenarios", []) if isinstance(row, dict)}
     expected_scenarios = {
         "exact-retry", "changed-input-conflict", "stale-revision", "offline-interruption",
@@ -241,8 +269,8 @@ def main() -> int:
                 expected_hash = row.get("sha256") if isinstance(row, dict) else None
                 if not isinstance(path, str) or not (ROOT / path).is_file():
                     errors.append(f"final acceptance evidence is missing: {path}")
-                elif hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != expected_hash:
-                    errors.append(f"final acceptance evidence drifted: {path}")
+                elif not accepted_successor_reaches_current(path, str(expected_hash)):
+                    errors.append(f"final acceptance evidence drifted without an accepted successor: {path}")
             prospective = final_acceptance.get("nextProspectivePlan", {})
             prospective_path = prospective.get("draftPath")
             if (

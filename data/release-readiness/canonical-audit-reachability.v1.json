@@ -1,0 +1,29 @@
+{
+  "artifact": "release-canonical-audit-reachability",
+  "schemaVersion": 1,
+  "status": "Certified",
+  "genericRowAudit": "tests/data/releaseCanonicalReachability.test.ts",
+  "sources": [
+    { "path": "data/reference/moves.json", "rows": 777, "owningAudits": ["npm run check:move-automation-complete", "npm run check:pokemon-contests"] },
+    { "path": "data/reference/abilities.json", "rows": 483, "owningAudits": ["npm run check:ability-automation-complete"] },
+    { "path": "data/reference/edges.json", "rows": 61, "owningAudits": ["npm run check:edge-automation-complete"] },
+    { "path": "data/reference/poke-edges.json", "rows": 20, "owningAudits": ["npm run check:edge-automation-complete"] },
+    { "path": "data/reference/capabilities.json", "rows": 83, "owningAudits": ["npm run check:capability-automation-complete"] },
+    { "path": "data/reference/features.json", "rows": 444, "owningAudits": ["npm run check:feature-automation-complete"] },
+    { "path": "data/reference/conditions.json", "rows": 31, "owningAudits": ["npm run check:breeding-automation-complete", "npm run check:complete-play-loop-item-catalog-closure"] },
+    { "path": "data/reference/items.json", "rows": 349, "owningAudits": ["npm run check:complete-play-loop-item-catalog-closure"] },
+    { "path": "data/reference/maneuvers.json", "rows": 11, "owningAudits": ["npm run check:breeding-automation-complete"] },
+    { "path": "data/reference/pokedex.json", "rows": 1149, "owningAudits": ["npm run check:breeding-automation-complete", "npm run check:gm-campaign-toolkit-complete"] },
+    { "path": "data/reference/stat-rankings.json", "rows": 1149, "owningAudits": ["npm run check:breeding-automation-complete", "npm run check:gm-campaign-toolkit-complete"] },
+    { "path": "data/reference/pokemonExperienceChart.json", "rows": 100, "owningAudits": ["npm run check:breeding-automation-complete", "npm run check:gm-campaign-toolkit-complete"] },
+    { "path": "data/reference/rules.json", "rows": 39, "owningAudits": ["npm run check:breeding-automation-complete", "vitest run tests/data/onboardingCreationRuleCoverage.test.ts"] },
+    { "path": "data/reference/contests.json", "rows": 78, "owningAudits": ["npm run check:pokemon-contests", "npm run check:deferred-closure-zero"] },
+    { "path": "shared/ruleset/natures.ts#PTU_NATURE_CHART", "rows": 36, "owningAudits": ["npm run check:breeding-automation-complete", "vitest run tests/data/onboardingCreationRuleCoverage.test.ts", "npm run check:gm-campaign-toolkit-complete"] }
+  ],
+  "totals": {
+    "sources": 15,
+    "rows": 4810,
+    "unreachableSources": 0,
+    "unreachableRows": 0
+  }
+}

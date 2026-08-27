@@ -1,0 +1,38 @@
+{
+  "artifact": "release-mechanics-registry-finality",
+  "schemaVersion": 1,
+  "status": "Certified",
+  "policy": {
+    "blockedRowsAllowed": 0,
+    "deferredRowsAllowed": 0,
+    "definitionMissingRowsAllowed": 0,
+    "visibleWithReasonCoreRowsAllowed": 0,
+    "guidedOrCampaignPolicyReviewedFinalStatesAreDeferrals": false
+  },
+  "registries": [
+    { "id": "abilities", "rows": 483, "finalRows": 483, "delegatedFinalRows": 0, "command": "npm run check:ability-automation-complete" },
+    { "id": "capabilities", "rows": 83, "finalRows": 83, "delegatedFinalRows": 0, "command": "npm run check:capability-automation-complete" },
+    { "id": "trainer-and-poke-edges", "rows": 81, "finalRows": 81, "delegatedFinalRows": 1, "command": "npm run check:edge-automation-complete" },
+    { "id": "features", "rows": 444, "finalRows": 444, "delegatedFinalRows": 0, "command": "npm run check:feature-automation-complete" },
+    { "id": "moves", "rows": 776, "finalRows": 776, "reviewedNonAutomatableCanonicalRows": 1, "command": "npm run check:move-automation-complete" },
+    { "id": "breeding-ledger", "rows": 90, "finalRows": 90, "delegatedFinalRows": 0, "command": "npm run check:breeding-automation-complete" },
+    { "id": "onboarding-decisions", "rows": 38, "finalRows": 38, "delegatedFinalRows": 0, "command": "vitest run tests/data/onboardingCreationRuleCoverage.test.ts" },
+    { "id": "canonical-items", "rows": 349, "finalRows": 349, "delegatedFinalRows": 0, "command": "npm run check:complete-play-loop-item-catalog-closure" },
+    { "id": "contest-integration", "rows": 44, "finalRows": 44, "delegatedFinalRows": 0, "command": "npm run check:pokemon-contests" },
+    { "id": "deferred-mechanics-closure", "rows": 29, "finalRows": 29, "delegatedFinalRows": 0, "command": "npm run check:deferred-closure-zero" },
+    { "id": "gm-campaign-toolkit-footprint", "rows": 40, "finalRows": 40, "delegatedFinalRows": 0, "command": "npm run check:gm-campaign-toolkit-complete" }
+  ],
+  "totals": {
+    "registeredRows": 2457,
+    "finalRows": 2457,
+    "blockedRows": 0,
+    "deferredRows": 0,
+    "definitionMissingRows": 0,
+    "visibleWithReasonCoreRows": 0
+  },
+  "successorPolicy": {
+    "archivedEvidenceIsImmutable": true,
+    "reviewedPlan13SuccessorsRecordedIn": "data/deferred-closure/successor-chain.v1.json",
+    "mechanicsSemanticsChangedBySuccessors": false
+  }
+}

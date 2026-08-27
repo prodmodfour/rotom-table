@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-043`
+`CURRENT_TICKET: P13-053`
 
 `BLOCKED_BY: NONE`
 
@@ -162,11 +162,11 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 2 — Versioning and release identity | P13-011–P13-020 | 10/10 |
 | 3 — Campaign upgrade guarantee | P13-021–P13-032 | 12/12 |
 | 4 — Release-boundary backup and restore | P13-033–P13-042 | 10/10 |
-| 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 0/10 |
+| 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 10/10 |
 | 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 0/14 |
 | 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 0/10 |
 | 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 0/10 |
-| **Total** | | **42/86** |
+| **Total** | | **52/86** |
 
 ## Tickets
 
@@ -352,36 +352,46 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 
 ### Phase 5 — Complete-catalog regression and mechanics finality
 
-- [ ] **P13-043 — Record the canonical census** — `TODO`
+- [x] **P13-043 — Record the canonical census** — `DONE`
   - Per-file row counts and SHA-256 hashes for the fourteen canonical reference files plus the nature chart, as a reviewed census artifact in the drift gate.
   - Census changes require a reviewed successor, never a silent regeneration.
-- [ ] **P13-044 — Aggregate the complete-catalog regression** — `TODO`
+  - Evidence: `canonical-census.v1.json` hash-binds 14 JSON files plus `PTU_NATURE_CHART`, with 4,810 rows; its deterministic generator passes `--check`.
+- [x] **P13-044 — Aggregate the complete-catalog regression** — `DONE`
   - One bounded release regression command binding every existing per-domain completeness, drift, migration, and fixture audit, producing a zero-gap report artifact.
   - Any canonical row unreachable by its owning audit is a failing gap.
-- [ ] **P13-045 — Prove the documentary-read prohibition** — `TODO`
+  - Evidence: `check:release-readiness:catalog` aggregates all domain checks; `canonical-audit-reachability.v1.json` and its test visit all 4,810 rows with zero unreachable rows.
+- [x] **P13-045 — Prove the documentary-read prohibition** — `DONE`
   - Static and runtime proof that no production code path reads `books/`, `ptu-data/`, `encounter_tables/`, or other documentary trees.
   - The proof is a registered gate, not a one-off grep.
-- [ ] **P13-046 — Sweep mechanics-registry finality** — `TODO`
+  - Evidence: the obsolete Pokédex books restore route/UI was retired; a 2,677-file static graph check plus `strace` runtime probe loads all 15 canonical authorities with zero documentary opens. This exact mechanical UI removal required no mockup.
+- [x] **P13-046 — Sweep mechanics-registry finality** — `DONE`
   - Machine-check that every registry row across Plans 1–12 remains in a reviewed final state: zero `Blocked`, deferred, definition-missing, or visible-with-reason core mechanic rows anywhere.
   - Discovered drift is a defect through the owning authority.
-- [ ] **P13-047 — Re-validate prior golden journeys** — `TODO`
+  - Evidence: 2,457/2,457 rows across 11 registries are final; Plan 13 source evolution is recorded as contiguous accepted successors without rewriting archived evidence or mechanics semantics.
+- [x] **P13-047 — Re-validate prior golden journeys** — `DONE`
   - The reviewed server-level golden campaigns from Plans 6–12 replay green at the release baseline under bounded runs.
   - Frozen evidence stays frozen; only replay outcomes are recorded.
-- [ ] **P13-048 — Implement the 1.0 release golden journey** — `TODO`
+  - Evidence: seven prior journey files replay 33/33 tests green under one worker; `release-golden-replay-report.v1.json` records outcomes without changing frozen journey evidence.
+- [x] **P13-048 — Implement the 1.0 release golden journey** — `DONE`
   - One server-level journey spanning onboarding → campaign play → encounter → settlement → breeding → contest → GM preparation → launch → restart → restore, deterministic and fixture-bound.
   - The journey exercises release-boundary behavior (identity reporting, restored storage) alongside gameplay authority.
-- [ ] **P13-049 — Sweep structural privacy audits** — `TODO`
+  - Evidence: `releaseGoldenJourney.test.ts` executes all ten ordered fixture checkpoints, verifies rc identity/v56, aggregate and Toolkit audits, inert restart, and digest-exact fresh-host restore.
+- [x] **P13-049 — Sweep structural privacy audits** — `DONE`
   - Existing structural privacy audits replay green; one aggregate release privacy report binds their outcomes.
   - Any projection regression is a blocker under rule 7.
-- [ ] **P13-050 — Sweep performance budgets** — `TODO`
+  - Evidence: 115/115 tests across 19 files and nine projection families pass; `release-privacy-report.v1.json` records zero projection regressions and zero leaks.
+- [x] **P13-050 — Sweep performance budgets** — `DONE`
   - Existing reviewed performance budgets replay green at the release baseline under bounded one-worker runs.
   - Budget regressions are defects, not new baselines.
-- [ ] **P13-051 — Record the catalog regression certification artifact** — `TODO`
+  - Evidence: 88/88 budget tests across 19 files pass under one worker with zero regressions and zero rebased budgets.
+- [x] **P13-051 — Record the catalog regression certification artifact** — `DONE`
   - Machine-readable certification binding census hashes, regression outcomes, journey results, and sweep evidence.
   - Registered in the drift gate.
-- [ ] **P13-052 — Catalog and finality acceptance** — `TODO`
+  - Evidence: `catalog-regression-certification.v1.json` binds 14 source artifacts/files and all seven catalog rubric rows; shared certification drift checking passes.
+- [x] **P13-052 — Catalog and finality acceptance** — `DONE`
   - Zero-gap report clean; all Phase 5 rubric rows `Certified`.
   - Phase-exit evidence recorded.
+  - Evidence: the aggregate records zero canonical, registry, documentary, journey, privacy, performance, or hard gaps; all registered component commands passed in bounded runs.
 
 ### Phase 6 — Distribution, repository presentation, licensing, and notices
 

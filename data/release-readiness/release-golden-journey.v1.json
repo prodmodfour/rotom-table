@@ -1,0 +1,36 @@
+{
+  "artifact": "release-1.0-server-golden-journey",
+  "schemaVersion": 1,
+  "journeyId": "release-journey:v1:trusted-table-loop",
+  "status": "Reviewed",
+  "privateCampaignSource": false,
+  "deterministicTimestamp": 1700000000000,
+  "checkpoints": [
+    { "order": 1, "id": "onboarding", "table": "onboarding_completions", "rowId": "completion-release-journey" },
+    { "order": 2, "id": "campaign-play", "table": "maps", "rowId": "release-journey-map" },
+    { "order": 3, "id": "encounter", "table": "encounter_documents", "rowId": "encounter-release-journey" },
+    { "order": 4, "id": "settlement", "table": "encounter_settlements", "rowId": "settlement-release-journey" },
+    { "order": 5, "id": "breeding", "table": "breeding_projects", "rowId": "breeding-project-release-journey" },
+    { "order": 6, "id": "contest", "table": "contests", "rowId": "contest-release-journey" },
+    { "order": 7, "id": "gm-preparation", "table": "gm_session_preparations", "rowId": "preparation-release-journey" },
+    { "order": 8, "id": "launch", "table": "encounter_launch_ops", "rowId": "launch-release-journey" },
+    { "order": 9, "id": "restart", "table": "realtime_events", "rowId": "release-journey:accepted" },
+    { "order": 10, "id": "restore", "table": "release-backup-manifest", "rowId": "stopped-service-copy" }
+  ],
+  "releaseBoundary": {
+    "version": "package.json",
+    "storageSchemaVersion": 56,
+    "backupMethod": "stopped-service-copy",
+    "integrityAuditRequired": true,
+    "restartIsInert": true,
+    "restoreIsFreshHost": true
+  },
+  "priorJourneyEvidence": [
+    "tests/integration/completePlayLoopGoldenCampaigns.test.ts",
+    "tests/integration/deferredClosureGoldenJourneys.test.ts",
+    "tests/server/onboardingWorkflows.test.ts",
+    "tests/server/breedingProductionLikeAcceptance.test.ts",
+    "tests/shared/contestGoldenReplay.test.ts",
+    "tests/server/encounterBuilderHandoff.test.ts"
+  ]
+}

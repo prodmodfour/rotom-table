@@ -1,0 +1,126 @@
+{
+  "artifact": "release-canonical-runtime-census",
+  "schemaVersion": 1,
+  "status": "Reviewed",
+  "changePolicy": "A hash or row-count change requires a reviewed successor artifact; never silently regenerate.",
+  "sources": [
+    {
+      "path": "data/reference/moves.json",
+      "bytes": 615165,
+      "sha256": "10833d0bac9baa2ed74cc3882e3287e99c99fc6b727185bee43d9374428c5821",
+      "rowCount": 777,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/abilities.json",
+      "bytes": 132190,
+      "sha256": "767c3e2ae45471c26ad97a07552c4b0417ed0e207827af8a59da3a73e81f4362",
+      "rowCount": 483,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/edges.json",
+      "bytes": 22523,
+      "sha256": "62348f9f5e57c28a3b61bfc3f554bcad258a769b054f5531c1d07ae6853e2123",
+      "rowCount": 61,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/poke-edges.json",
+      "bytes": 10914,
+      "sha256": "3e2dbb84a8c35e4655b62ece57a3760a2b9a6e09b917dc8a581e5e613e14e021",
+      "rowCount": 20,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/capabilities.json",
+      "bytes": 42465,
+      "sha256": "8f819401d40c598ae781ae0b273fd749575e05d6997a79c64be61f4ced8f654e",
+      "rowCount": 83,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/features.json",
+      "bytes": 257031,
+      "sha256": "27d0f2bee4db96ebfb0c431cce9ea5222fe3d2d9fe9ead32507c46b51a9d77c4",
+      "rowCount": 444,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/conditions.json",
+      "bytes": 14182,
+      "sha256": "2203364f0ea1a1919d8cefed78546de7ad4d3a3cf6499dd88ffcfb02101ab0f3",
+      "rowCount": 31,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/items.json",
+      "bytes": 164478,
+      "sha256": "842256900ab540c7cdb22c1663d8bb7c89966b8d225cff1a1c5f175ae1e915ef",
+      "rowCount": 349,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/maneuvers.json",
+      "bytes": 10242,
+      "sha256": "9532ec3641f6fa273a96ca7fe190252728c056aa2383109687587d93fca41b71",
+      "rowCount": 11,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/pokedex.json",
+      "bytes": 7048391,
+      "sha256": "ca62ed2a9b934bc8d66c75d198b200035c37a9ade13239fc0129169a8deaa696",
+      "rowCount": 1149,
+      "rowCountAuthority": "root-array-length"
+    },
+    {
+      "path": "data/reference/stat-rankings.json",
+      "bytes": 254326,
+      "sha256": "f5aa0b4eedfc7ad07e0db38a79023b5b38c1697a325929ad282f4285cebbaf8a",
+      "rowCount": 1149,
+      "rowCountAuthority": "pokemon-array-length"
+    },
+    {
+      "path": "data/reference/pokemonExperienceChart.json",
+      "bytes": 4781,
+      "sha256": "a8b9026cd855e2c84c157e5f117454c6afe8f48549ff215fe562867208629428",
+      "rowCount": 100,
+      "rowCountAuthority": "root-array-length"
+    },
+    {
+      "path": "data/reference/rules.json",
+      "bytes": 198452,
+      "sha256": "f8c4d550ebb683190b5adf619b0465c19a2cf7e3303a132c6d97ae978417c9df",
+      "rowCount": 39,
+      "rowCountAuthority": "root-record-key-count"
+    },
+    {
+      "path": "data/reference/contests.json",
+      "bytes": 31797,
+      "sha256": "7342b0696ef0d5925f3e66366164f9805efd7cab688627c8574b322f1b3c7497",
+      "rowCount": 78,
+      "rowCountAuthority": "reviewed-catalog-section-sum",
+      "sections": {
+        "contestStats": 5,
+        "contestEffects": 22,
+        "variants": 6,
+        "integrationRows": 44,
+        "reviewedSuccessors": 1
+      }
+    }
+  ],
+  "natureChart": {
+    "path": "shared/ruleset/natures.ts#PTU_NATURE_CHART",
+    "sourcePath": "shared/ruleset/natures.ts",
+    "bytes": 4502,
+    "sha256": "2b16701800716cd947d641e620ad6e80816db763e74748ff217befbf437f2f3e",
+    "rowCount": 36,
+    "rowCountAuthority": "PTU_NATURE_CHART.length"
+  },
+  "totals": {
+    "canonicalJsonFiles": 14,
+    "runtimeAuthorities": 15,
+    "rows": 4810
+  }
+}

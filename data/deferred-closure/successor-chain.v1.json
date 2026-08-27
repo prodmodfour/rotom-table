@@ -7334,6 +7334,162 @@
       ],
       "changePolicy": "preserve-resolvable-superseded-draft-reference-after-plan-12-archive",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:agents-md:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "AGENTS.md",
+      "beforeSha256": "cbea1c74e03d0a68a1e0647d5fda5e49fcb85b5574679b9cd0ddaadc34819e9d",
+      "afterSha256": "27f2f06b486f7a7610a54f291d948c7fb599605810bf9c17e26edf1d126ce559",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:docs-private-vps-backups-md:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "docs/private-vps-backups.md",
+      "beforeSha256": "3347e2690d38171bd98b30d7f5d2671dd4bea8f52dab77f072655050e5c9cc24",
+      "afterSha256": "e89b1933a38c60a68ec2f3de901327657201225f4db9bc5b031749e1505132ab",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-plan-order-md:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "fbe0ccb13924f4404c0fa6fb4c1eab5c206880b728ca3922c799ee1e8fee888f",
+      "afterSha256": "332254d2032047c715d6dce4a49a71870ff99dbd54d836c70e661295e86690c0",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:package-json:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "package.json",
+      "beforeSha256": "5eff687560fc4ca7dc1079d35a43f34112b255ceb9e665c0a20da6191ddcefa6",
+      "afterSha256": "d3ac977a0170073eee187ab7470eff2cfaf894e47867296ff53264bf6f44c119",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:scripts-check-deferred-closure-py:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "scripts/check_deferred_closure.py",
+      "beforeSha256": "c9f667690db82f6352d179280e4933ec5b5f561d5fa9e31bbfcaaba26ffefd86",
+      "afterSha256": "3f0a008516dd028b8d85ce8fc99a4d4fff9352641bb2b7043d0f4b3fee708255",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:scripts-quality-gate-sh:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "scripts/quality-gate.sh",
+      "beforeSha256": "aa68b939871e98a8f873017e22f8210c2a1d015d392d2692376470ef7766a047",
+      "afterSha256": "a5aa7437de82371ac7c394dd9cf5e77705d262bf0fb88761e24fda6a1e2dcd3c",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:server-storage-migrations-ts:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "server/storage/migrations.ts",
+      "beforeSha256": "988d00d3029c444b252a98882672fcb1ac6be4da3dabb38eee5612d68feacf45",
+      "afterSha256": "73eac7c1ec04bedb1c386c776b9a99e8c9af9defebc7b7fdd2878f2baccd927e",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:data-deferred-closure-zero-deferred-acceptance-v1-json:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "data/deferred-closure/zero-deferred-acceptance.v1.json",
+      "beforeSha256": "344b6c2bec18524b98e5b0baa40248cc6bb88794bbf793e7161f1450b5cfd00e",
+      "afterSha256": "aa6afe244bbdcc24488f112e49c8c3d2b99da15d11db676dcd234cf56cf0cdd3",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-drafts-release-readiness-plan-md:p13-successor-v1",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/drafts/RELEASE_READINESS_PLAN.md",
+      "beforeSha256": "d392e750c484ffbc8b3c68f6d1465941a81f602509d98bd6e7d48cdc8968053f",
+      "afterSha256": "5a88c5abd79a5f92e4acfdc60dd25fc64354c40f95e19086ae92a0d1b16f2fd6",
+      "changedStableRows": [
+        "numbered-plan-13-ledger-registration"
+      ],
+      "changePolicy": "Plan 13 reviewed draft conversion and explicit owner-start successor; archived Plan 12 acceptance remains historical.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:package-json:p13-successor-v2",
+      "ticket": "P13-046",
+      "surface": "package.json",
+      "beforeSha256": "d3ac977a0170073eee187ab7470eff2cfaf894e47867296ff53264bf6f44c119",
+      "afterSha256": "2675bc922d1225ff26d18ecb6d216a164ee9bcf1d129cacb868bbf7082a8968f",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:package-json:p13-successor-v3",
+      "ticket": "P13-046",
+      "surface": "package.json",
+      "beforeSha256": "2675bc922d1225ff26d18ecb6d216a164ee9bcf1d129cacb868bbf7082a8968f",
+      "afterSha256": "f6ad02e91a97de8dad75e85464829d0217d82171c46d6c846f1f39b5bc38b525",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:agents-md:p13-successor-v2",
+      "ticket": "P13-046",
+      "surface": "AGENTS.md",
+      "beforeSha256": "27f2f06b486f7a7610a54f291d948c7fb599605810bf9c17e26edf1d126ce559",
+      "afterSha256": "714bc14e96a74a26b734238c10e3499798bbe2f81148d61aff1ba8385c7c0380",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-plan-order-md:p13-successor-v2",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "332254d2032047c715d6dce4a49a71870ff99dbd54d836c70e661295e86690c0",
+      "afterSha256": "c82919228ea3db2b81319576cbb17fd397861251ba60b595152be62f978d2dd7",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [
