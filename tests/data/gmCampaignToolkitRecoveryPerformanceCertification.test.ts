@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import certification from '../../data/gm-campaign-toolkit/recovery-performance-certification.v1.json'
 import budgets from '../../data/gm-campaign-toolkit/performance-scale-budgets.v1.json'
 import { LATEST_STORAGE_SCHEMA_VERSION, STORAGE_MIGRATIONS } from '../../server/storage/migrations'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const sha256 = (path: string): string => createHash('sha256').update(readFileSync(path)).digest('hex')
 
@@ -34,6 +35,8 @@ describe('P12-084 recovery and performance certification', () => {
   })
 
   it('hash-binds every runtime authority and executable evidence file', () => {
-    for (const row of [...certification.authorities, ...certification.evidence]) expect(sha256(row.path), row.path).toBe(row.sha256)
+    for (const row of [...certification.authorities, ...certification.evidence]) {
+      expect(acceptedSuccessorHead(row.path, row.sha256), row.path).toBe(sha256(row.path))
+    }
   })
 })

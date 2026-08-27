@@ -17,6 +17,18 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 
 No changes have been recorded after the current candidate.
 
+## [1.0.0-rc.6] - 2026-08-27
+
+### Fixed
+
+- Repaired stale documentation links and historical hash-successor expectations exposed by the bounded full-repository gate without rewriting archived evidence.
+- Kept the release-rehearsal check active in the real quality gate while allowing isolated quality-gate fixtures that do not contain the release checker.
+- Gave project-authored type and damage-class badges valid image semantics for their accessible labels, clearing serious desktop and mobile accessibility findings without changing their visual presentation.
+
+### Boundaries
+
+- This successor includes the complete rc.5 rehearsal scope plus only the validation and accessibility repairs found after that immutable tag. The successful rc.5 rehearsal tag and its operator-local evidence remain unchanged and unpublished.
+
 ## [1.0.0-rc.5] - 2026-08-27
 
 ### Fixed

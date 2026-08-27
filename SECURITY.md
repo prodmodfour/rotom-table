@@ -6,6 +6,8 @@ Rotom Table is a private trusted-table application for one known campaign group.
 
 The GM/Player picker stores a trusted role choice in browser state. It is **not public authentication**, does not establish a real-world identity, and is not sufficient protection for an internet-reachable URL. Player-profile links enforce in-app role projection only after a participant is already inside the trusted table boundary.
 
+The archive at [docs/archive/live-session/README.md](docs/archive/live-session/README.md) is not the current multiplayer architecture or a supported security contract; current profile-based liveplay and this private-VPS boundary supersede it.
+
 Use VPN/Tailscale, Cloudflare Access, reverse-proxy authentication, private-network controls, or an equivalent gate before traffic reaches Rotom Table. Bind Nitro to loopback unless the private network design provides an equivalent boundary. See [the private VPS runbook](docs/private-vps-hosting.md) and [deployment checklist](docs/private-vps-deployment-smoke-checklist.md).
 
 ## Campaign and operator authority

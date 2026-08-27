@@ -2,7 +2,7 @@
   "artifact": "release-licensing-notice-disposition",
   "schemaVersion": 1,
   "dispositionId": "p13-062-owner-license-notice-disposition-v1",
-  "releaseVersion": "1.0.0-rc.5",
+  "releaseVersion": "1.0.0-rc.6",
   "ticket": "P13-062",
   "status": "OWNER_APPROVED_AND_IMPLEMENTED",
   "automationMayApprove": false,
@@ -215,11 +215,11 @@
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
-      "sha256": "5c356c9f7092929a644d9c153fe179513df0cd2a43b15b7e5a7c76517713aff8"
+      "sha256": "0b4f27c741db70a072bf72514846eacf09892be64d7416584de8ce65563941e2"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "1c1e205beffd2fad187bde215a87d378e85bfca862498831c7e55da096718e94"
+      "sha256": "b104da45c547e586925b2f2fe2f3c99f7305415b299df566ba921abb2107c39c"
     },
     {
       "path": "data/release-readiness/dependency-license-policy.v1.json",
@@ -227,7 +227,7 @@
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
-      "sha256": "1e1748191f19c0b00b252bff72752eab8127f1cded1adcc3ff88fbe107feacab"
+      "sha256": "b69415fd6db7d8bd150e3c34bd01a180cfa5aaaa54b5ccb10bcee0cc440fa936"
     },
     {
       "path": "data/release-readiness/media-asset-policy.v1.json",
@@ -235,15 +235,15 @@
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "45dcdd42dc9d82e26d2f5332bdab9bc67d720ec8f7e72a41e75577f98a7a09a2"
+      "sha256": "4139c24de6b065f34394f8bc837b703797c6c66b3f05dfb7c0218b705cffeff8"
     },
     {
       "path": "src/components/TypeBadge.vue",
-      "sha256": "b98a09ced90942ebfbd0e98477a9e32b2f68d07aa16936c446fc600738f5f695"
+      "sha256": "eb90dc06bb0101b80b52d522556e7d2924e17ae2ee2f3bbb826363e289aeddb9"
     },
     {
       "path": "src/components/DamageClassBadge.vue",
-      "sha256": "c4a1ba994fe7b555d79a63e655ea95c6613ba611834c3297d6b9ba4e630ba8ed"
+      "sha256": "006c1959e2aaa0e932e256eee0363fa13433edd8a604358a3f09e54ae8865387"
     },
     {
       "path": "src/components/map/MapScenePanel.vue",
@@ -271,11 +271,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "20b6ae1ebfa89bc6079bdd11945b5fc8c5e8320281b4cfad48c586b2a5337f86"
+      "sha256": "217427fefa6c5a2a21158a6a1a980c95b7072b05a27d856f572a20b258acd023"
     },
     {
       "path": "package-lock.json",
-      "sha256": "28936d35477f91598d27698145c78359b3af8615f43961b5df8124bfc8fdba99"
+      "sha256": "38839c7c0042ba46d674384bafd5d2b8a95223c3cd45a070f1a3cade1c7b6be9"
     }
   ]
 }

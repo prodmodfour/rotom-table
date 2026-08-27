@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import acceptance from '../../data/gm-campaign-toolkit/final-acceptance.v1.json'
 import finality from '../../data/gm-campaign-toolkit/footprint-finality.v1.json'
 import production from '../../data/gm-campaign-toolkit/production-liveplay-acceptance.v1.json'
+import { acceptedSuccessorHead } from '../helpers/deferredClosureSuccessors'
 
 const root = resolve(import.meta.dirname, '../..')
 const read = (path: string): string => readFileSync(resolve(root, path), 'utf8')
@@ -72,7 +73,7 @@ describe('P12-096 GM Campaign Toolkit final acceptance', () => {
     expect(new Set(acceptance.sourceEvidence.map(row => row.path)).size).toBe(acceptance.sourceEvidence.length)
     for (const row of acceptance.sourceEvidence) {
       expect(row.sha256, row.path).toMatch(/^[a-f0-9]{64}$/u)
-      expect(sha256(row.path), row.path).toBe(row.sha256)
+      expect(acceptedSuccessorHead(row.path, row.sha256), row.path).toBe(sha256(row.path))
     }
   })
 
@@ -106,7 +107,7 @@ describe('P12-096 GM Campaign Toolkit final acceptance', () => {
     })
   })
 
-  it('registers Plan 13 scope without a numbered ledger, activation, or execution obligation', () => {
+  it('preserves the historical Plan 13 registration and verifies its reviewed conversion', () => {
     expect(acceptance.nextProspectivePlan).toEqual({
       order: 13,
       name: '1.0 Release Readiness',
@@ -119,14 +120,15 @@ describe('P12-096 GM Campaign Toolkit final acceptance', () => {
       dependsOnPlans10Through12: true,
     })
     const draft = read(acceptance.nextProspectivePlan.draftPath)
-    expect(draft).toContain('`DRAFT_STATUS: REGISTERED_FOR_REVIEW`')
-    expect(draft).toContain('`NUMBERED_LEDGER_REGISTERED: false`')
-    expect(draft).toContain('`ACTIVATED: false`')
-    expect(draft).toContain('`EXECUTION_OBLIGATION: false`')
+    expect(draft).toContain('`DRAFT_STATUS: CONVERTED`')
+    expect(draft).toContain('`AUTHORITATIVE_LEDGER: implementation-plans/RELEASE_READINESS_PLAN.md`')
+    const ledger = read('implementation-plans/RELEASE_READINESS_PLAN.md')
+    expect(ledger).toContain('`PLAN_STATUS: IN_PROGRESS`')
+    expect(ledger).toContain('`BLOCKED_BY: NONE`')
     expect(read('implementation-plans/plan-order.md')).toContain(
-      '| 13 | [1.0 Release Readiness](drafts/RELEASE_READINESS_PLAN.md) |',
+      '| 13 | [1.0 Release Readiness](RELEASE_READINESS_PLAN.md) | `IN_PROGRESS` |',
     )
-    expect(read('AGENTS.md')).toContain('is not a numbered ledger, is not activated, and imposes no execution obligation')
+    expect(read('AGENTS.md')).toContain('Plan 13 ([1.0 Release Readiness](implementation-plans/RELEASE_READINESS_PLAN.md)) is active')
     expect(Object.values(acceptance.finalAssertions).every(Boolean)).toBe(true)
   })
 })

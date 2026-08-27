@@ -118,7 +118,9 @@ if have npm; then
 
   pp_section "1.0 Release Readiness"
   run_cmd npm run check:release-readiness
-  run_cmd node scripts/release-readiness/check-release-rehearsal.mjs
+  if [[ -f scripts/release-readiness/check-release-rehearsal.mjs ]]; then
+    run_cmd node scripts/release-readiness/check-release-rehearsal.mjs
+  fi
 
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation

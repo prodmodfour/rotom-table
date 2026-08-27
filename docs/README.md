@@ -10,7 +10,7 @@ Read these in order for the supported Linux x86-64 private VPS shape:
 2. [Deployment smoke checklist](private-vps-deployment-smoke-checklist.md)
 3. [1.0 campaign upgrade guide](release/upgrade.md)
 4. [Backup, restore, retention, and rollback](private-vps-backups.md)
-5. [Production liveplay smoke](private-vps-live-play-smoke.md)
+5. [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md)
 6. [Security and outer access gate](../SECURITY.md)
 
 Release identity and compatibility:
@@ -29,7 +29,7 @@ Use `npm run upgrade:campaign`, `backup:campaign`, `restore:campaign`, and `audi
 - [GM Campaign Toolkit](gm-campaign-toolkit/README.md) and [GM guide](gm-campaign-toolkit/gm-guide.md) — campaign tables, deterministic wild/NPC packages, session preparation, Builder launch, and recovery.
 - [Pokémon Contests](contests/README.md) — ordinary, Trainer Participant, and Battle Contest workflows.
 - [Deferred mechanics closure](deferred-mechanics-closure.md) — ranged weapons, item actions, Skill Checks, and Battle Contest integration.
-- [Group inventory](group-inventory.md) — shared custody, transfers, revisions, and realtime behavior.
+- [Group inventory workflow](group-inventory.md) — shared custody, transfers, revisions, and realtime behavior.
 - [Player profiles](player-profiles.md) — profile creation, character links, and token control.
 - [Ability recovery/manual QA](ability-automation-manual-qa.md) and [Move recovery/manual QA](move-automation-manual-qa.md).
 
@@ -37,7 +37,7 @@ Use `npm run upgrade:campaign`, `backup:campaign`, `restore:campaign`, and `audi
 
 - [Complete Play Loop player guide](complete-play-loop-player-guide.md)
 - [Player profiles and linked-character control](player-profiles.md)
-- [Liveplay authority](live-play-authority.md) — commands, revisions, retries, and setup versus live boundaries.
+- [Live play authority](live-play-authority.md) — commands, revisions, retries, and setup versus live boundaries.
 - [Contest documentation](contests/README.md)
 
 The GM/Player picker is role projection for a known table, not public authentication. Player views must never rely on GM diagnostics or private evidence.
@@ -97,4 +97,4 @@ Never commit campaign databases, profiles, environment files, backup archives, r
 
 ## Historical material
 
-Documents under [archive/live-session/](archive/live-session/README.md) describe the retired/direct-only `/sessions` seam and are historical maintenance references. They do not define current profile-based liveplay architecture. Any document explicitly marked roadmap, legacy, archived, or historical is context—not a supported operator procedure.
+[Archived legacy live-session documents](archive/live-session/README.md) describes the retired/direct-only `/sessions` seam and is historical maintenance material. They do not define current profile-based liveplay architecture. Any document explicitly marked roadmap, legacy, archived, or historical is context—not a supported operator procedure.

@@ -60,7 +60,7 @@ Do not weaken a gate, rebase a performance budget, rewrite archived evidence, or
 ## Domain-specific changes
 
 - Move automation: [`docs/move-automation.md`](docs/move-automation.md) and `npm run check:move-automation-complete`.
-- Ability automation: [`docs/ability-automation.md`](docs/ability-automation.md) and `npm run check:ability-automation-complete`.
+- Ability automation: [`docs/ability-automation.md`](docs/ability-automation.md), archived [`ABILITY_AUTOMATION_PLAN.md`](implementation-plans/done/ABILITY_AUTOMATION_PLAN.md), and `npm run check:ability-automation-complete`.
 - Encounter presentation and liveplay: [`docs/encounter-presentation-contract.md`](docs/encounter-presentation-contract.md), [`docs/encounter-workspace/design-system.md`](docs/encounter-workspace/design-system.md), `npm run check:encounter-presentation`, and `npm run check:encounter-design`.
 - Breeding: [`docs/breeding/contributor-guide.md`](docs/breeding/contributor-guide.md).
 - Contests: [`docs/contests/README.md`](docs/contests/README.md).

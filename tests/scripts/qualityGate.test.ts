@@ -62,6 +62,7 @@ describe('quality gate automation validation', () => {
         'run check:complete-play-loop-alpha-acceptance',
         'run check:deferred-closure-drift',
         'run check:gm-campaign-toolkit-complete',
+        'run check:release-readiness',
         'run check:encounter-presentation',
         'run check:encounter-design',
         'run check:encounter-legacy',

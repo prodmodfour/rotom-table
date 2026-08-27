@@ -45,6 +45,7 @@ const ariaLabel = computed(() => props.decorative ? undefined : `${label.value} 
     :class="`source-badge--${size}`"
     :data-category="slug"
     :style="badgeStyle"
+    :role="decorative ? undefined : 'img'"
     :aria-label="ariaLabel"
     :aria-hidden="decorative ? 'true' : undefined"
     :title="label"

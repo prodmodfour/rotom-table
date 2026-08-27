@@ -62,11 +62,15 @@ function main() {
   const schema = readJson(SCHEMA_PATH)
   const rubric = readJson(RUBRIC_PATH)
   const packageMetadata = readJson(resolve(ROOT, 'package.json'))
+  const mintLedger = readJson(resolve(ROOT, 'data/release-readiness/version-mints.v1.json'))
 
   assert(schema.required?.every(key => Object.hasOwn(artifact, key)), 'Release-rehearsal certification violates its required schema fields.')
   assert(artifact.artifact === 'release-rehearsal-certification' && artifact.schemaVersion === 1, 'Unexpected release-rehearsal artifact identity.')
   assert(artifact.rehearsalId === 'p13-074-v1.0.0-rc.5' && artifact.ticket === 'P13-075' && artifact.status === 'Certified', 'Release-rehearsal certification is not final.')
-  assert(artifact.identity.version === packageMetadata.version && /^1\.0\.0-rc\.\d+$/u.test(artifact.identity.version), 'Rehearsal version disagrees with the current package candidate.')
+  assert(/^1\.0\.0-rc\.\d+$/u.test(artifact.identity.version), 'Rehearsal identity is not a valid 1.0 release candidate.')
+  const rehearsalMintIndex = mintLedger.mints?.findIndex(row => row.to === artifact.identity.version) ?? -1
+  const currentMintIndex = mintLedger.mints?.findIndex(row => row.to === packageMetadata.version) ?? -1
+  assert(rehearsalMintIndex >= 0 && currentMintIndex >= rehearsalMintIndex, 'Current package identity is not the rehearsed candidate or an append-only minted successor.')
   assert(artifact.identity.storageSchemaVersion === 56 && artifact.identity.tag === `v${artifact.identity.version}`, 'Rehearsal tag or storage identity drifted.')
   assert(git(['cat-file', '-t', artifact.identity.tag]) === 'tag', 'Rehearsal tag is not annotated.')
   assert(git(['rev-list', '-n', '1', artifact.identity.tag]) === artifact.identity.commit, 'Rehearsal tag does not identify the certified commit.')

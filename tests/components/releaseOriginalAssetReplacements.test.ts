@@ -13,6 +13,7 @@ describe('P13-062 original UI asset replacements', () => {
 
     expect(wrapper.element.tagName).toBe('SPAN')
     expect(wrapper.attributes('data-type')).toBe('fire')
+    expect(wrapper.attributes('role')).toBe('img')
     expect(wrapper.attributes('aria-label')).toBe('Fire type')
     expect(wrapper.text()).toBe('FIFire')
     expect(wrapper.find('img').exists()).toBe(false)
@@ -25,6 +26,7 @@ describe('P13-062 original UI asset replacements', () => {
     })
 
     expect(wrapper.attributes('aria-hidden')).toBe('true')
+    expect(wrapper.attributes('role')).toBeUndefined()
     expect(wrapper.attributes('aria-label')).toBeUndefined()
   })
 
@@ -34,6 +36,7 @@ describe('P13-062 original UI asset replacements', () => {
     })
 
     expect(wrapper.attributes('data-category')).toBe('special')
+    expect(wrapper.attributes('role')).toBe('img')
     expect(wrapper.attributes('aria-label')).toBe('Special damage class')
     expect(wrapper.text()).toBe('SPSpecial')
     expect(wrapper.find('img').exists()).toBe(false)

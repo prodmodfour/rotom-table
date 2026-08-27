@@ -275,11 +275,11 @@
   "sourceEvidence": [
     {
       "path": "scripts/release-readiness/check-release-rehearsal.mjs",
-      "sha256": "e0d86be39e6392b1f3a57e9081db16baf16cbc2e61fec900db09d0ae5209df94"
+      "sha256": "f45864d89530bf3db9a4a934c2031caaf115f2d54143987c3a8f765ac926eaaf"
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "f4b8a74229e64e494c7d216d84dd6c843c1c410b544f3474e2e2d4a69d7c7b83"
+      "sha256": "df68ef83a489ee3a6a0be53dff69c9290bbd4ed073ab740b6fdde3c098b970fe"
     },
     {
       "path": "data/release-readiness/schemas/rehearsal.schema.v1.json",
@@ -292,6 +292,10 @@
     {
       "path": "data/release-readiness/version-policy.v1.json",
       "sha256": "3e65a10e9d29b1bce604bc52a2b3873272632f13a6ae396345782054257e533f"
+    },
+    {
+      "path": "data/release-readiness/version-mints.v1.json",
+      "sha256": "e056084124459209f97f4a60319d68c9c75b558dff3478681a6cd1d459b75f5c"
     },
     {
       "path": "data/release-readiness/supported-platform-matrix.v1.json",

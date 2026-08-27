@@ -1,7 +1,7 @@
 # Rotom Table
 
 [![CI](https://github.com/prodmodfour/rotom-table/actions/workflows/ci.yml/badge.svg)](https://github.com/prodmodfour/rotom-table/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-1.0.0--rc.5-ef4444)
+![Version](https://img.shields.io/badge/version-1.0.0--rc.6-ef4444)
 ![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxtdotjs&logoColor=white)
 ![Node 24](https://img.shields.io/badge/Node-24.x-339933?logo=nodedotjs&logoColor=white)
 ![Private VPS](https://img.shields.io/badge/deployment-private%20VPS-334155)
@@ -13,7 +13,7 @@ Rotom Table is a fan project. It is not official, endorsed, or a commercial Pok�
 
 ## Release identity
 
-The current candidate is **1.0.0-rc.5**, storage schema **v56**. A running private deployment reports the same package/build identity at:
+The current candidate is **1.0.0-rc.6**, storage schema **v56**. A running private deployment reports the same package/build identity at:
 
 - `/api/health`
 - `/api/version`
@@ -127,7 +127,7 @@ The workspace has finite memory; run broad TypeScript, Vitest, Nuxt, and build p
 - `tests/` — server, shared, component, integration, and production-liveplay acceptance.
 - `docs/` — operator, GM, player, contributor, architecture, and historical material.
 
-See [docs/README.md](docs/README.md), [architecture](docs/architecture.md), [liveplay authority](docs/live-play-authority.md), and [the GM Campaign Toolkit index](docs/gm-campaign-toolkit/README.md).
+See [docs/README.md](docs/README.md), [architecture](docs/architecture.md), [liveplay authority](docs/live-play-authority.md), [ADR 009](docs/adrs/009-server-authoritative-profile-play.md), and [the GM Campaign Toolkit index](docs/gm-campaign-toolkit/README.md).
 
 ## Key routes
 
