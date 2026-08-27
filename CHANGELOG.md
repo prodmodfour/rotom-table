@@ -17,6 +17,16 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 
 No changes have been recorded after the current candidate.
 
+## [1.0.0-rc.3] - 2026-08-27
+
+### Fixed
+
+- The release command now invokes the tag-aware identity guard directly, preventing npm from forwarding `--require-tag` into Vitest. This is the only source repair after the immutable `v1.0.0-rc.2` rehearsal stopped before its aggregate gates or evidence generation.
+
+### Boundaries
+
+- This successor includes the complete rc.2 source scope plus the release-command fix. The failed rc.2 tag remains immutable and unpublished; it produced no release evidence bundle.
+
 ## [1.0.0-rc.2] - 2026-08-27
 
 ### Added
@@ -47,6 +57,10 @@ No changes have been recorded after the current candidate.
 - Local hosting is deprecated for liveplay; public SaaS, multi-tenancy, public authentication, and non-Chromium certification are outside 1.0 support.
 - The limited project license does not grant rights to third-party Pokémon or PTU material. Notices and attribution are not legal clearance.
 - The owner explicitly accepts the recommendation-5 residual risk of retaining 1,460 edited Trainer-profile derivatives despite the source do-not-edit warning; the exception is not cured by notice text.
+
+### Rehearsal outcome
+
+- The local annotated `v1.0.0-rc.2` tag was created immutably, but release preparation stopped at its first command because `--require-tag` reached Vitest through the compound npm identity script. No aggregate gate, build, checksum, provenance, artifact audit, or release evidence bundle was represented as passed. The fix required rc.3 rather than moving this tag.
 
 ## [1.0.0-rc.1] - 2026-08-27
 

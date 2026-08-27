@@ -46,7 +46,7 @@ async function main() {
   assertOrdered(command, [
     "assertCleanTree('before gates')",
     '\n  assertAnnotatedHeadTag(commit)\n',
-    "run('npm', ['run', 'check:release-readiness:identity', '--', '--require-tag'])",
+    "run('node', ['scripts/release-readiness/check-identity.mjs', '--require-tag'])",
     "run('npm', ['run', 'check:release-readiness'])",
     "assertCleanTree('after gates')",
     'rmSync(OUTPUT_ROOT',

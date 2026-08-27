@@ -2,7 +2,7 @@
   "artifact": "release-command-certification",
   "schemaVersion": 1,
   "certificationId": "p13-071-release-command-v1",
-  "releaseVersion": "1.0.0-rc.2",
+  "releaseVersion": "1.0.0-rc.3",
   "ticket": "P13-071",
   "status": "Certified",
   "gateRows": [
@@ -24,7 +24,7 @@
   "sourceEvidence": [
     {
       "path": "package.json",
-      "sha256": "975b597cd5ab9d06bedd74495871ec3bb56809dd4addb2deec9c15944f4ab7ef"
+      "sha256": "6f4aea7d0e11dd8f066af6929f46eb5331c67c6b6e5277b24f8a0389a31ec61e"
     },
     {
       "path": ".gitignore",
@@ -32,7 +32,7 @@
     },
     {
       "path": "scripts/release-readiness/release-command.mjs",
-      "sha256": "7c2afb46e7dbdd70707ed1c783e6930fc40d56505028fe96452ebafb9200d0fa"
+      "sha256": "396f851f0f4d0fe5f8cd8c196660ca48a7c8ceb95cf33a7c99bd98d453d77f08"
     },
     {
       "path": "scripts/release-readiness/generate-build-evidence.mjs",
@@ -44,7 +44,7 @@
     },
     {
       "path": "scripts/release-readiness/check-release-command.mjs",
-      "sha256": "8af80d0563fa2e6ea63c2a0a648d2010ba6665fe9172a46f01b551eb2bf5f840"
+      "sha256": "c1736cc478641babdf0a314c79edc566b7b1bed71764bad0a282db32d5d72858"
     },
     {
       "path": "docs/release/releasing.md",
@@ -52,11 +52,11 @@
     },
     {
       "path": "docs/releases/1.0.0.md",
-      "sha256": "2fcf0a8625270a6c77e975a1f47180ad1fbe63dc0a58bab19a9366640fb12868"
+      "sha256": "ef063677fd5b9a3c60a821c2642a29b418094ebb4db5adb83f08ffdbc6153f0e"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "5dce0a1a7b6fce070c30c22082ec94ff3e0962489196da92a8b55e9d709b41fb"
+      "sha256": "61e91a822537dd7b2abfc67aaac5d99c38bef1e72e0b1ce939aec382b516297c"
     },
     {
       "path": "data/release-readiness/version-policy.v1.json",

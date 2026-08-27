@@ -2,7 +2,7 @@
   "artifact": "release-distribution-and-notices-certification",
   "schemaVersion": 1,
   "certificationId": "p13-066-distribution-and-notices-v1",
-  "releaseVersion": "1.0.0-rc.2",
+  "releaseVersion": "1.0.0-rc.3",
   "ticket": "P13-066",
   "status": "Certified",
   "gateRows": [
@@ -72,15 +72,15 @@
   "sourceEvidence": [
     {
       "path": "data/release-readiness/repository-presentation-certification.v1.json",
-      "sha256": "288d5b92d16c2ab364ce73c6394647f7369c7b6ce0b25519d3aa225dbdc3a906"
+      "sha256": "776e2affc090abc10c106e69011c377b3c8f3219aafd43fbc009867f69d768a0"
     },
     {
       "path": "data/release-readiness/distribution-inventory.v1.json",
-      "sha256": "790f92b0a4ab2f489560b1ced391d871ec9500cde93ef42de05299f97c9ec38f"
+      "sha256": "65b6387f92de8fea8c1614c3b2dde3461db56eec64b453595a422592cbaf59f0"
     },
     {
       "path": "data/release-readiness/distribution-manifest.v1.json",
-      "sha256": "644b8234640edab06ed05764e2ca26680f5a2ea7fad56be4085b0f220c9f4e48"
+      "sha256": "551bf22b1346684b4b7a46c27aade91f34387d3691bc8ce667ac8197f407946c"
     },
     {
       "path": "data/release-readiness/documentary-tree-disposition.v1.json",
@@ -88,27 +88,27 @@
     },
     {
       "path": "data/release-readiness/private-artifact-audit.v1.json",
-      "sha256": "9d141ab81073f452f1e14054bbbf884459e9915e4e4324e16d5c2677a8793940"
+      "sha256": "3667e4264d23ccef578354ba27809e11ef27d23ffd5e1be7cf1594bb84538e9b"
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",
-      "sha256": "1782b533c65a71fc52d7edbdc331bf947bfcac2da7fa5c0d82a7e0e2faabea0d"
+      "sha256": "22fb6f592bd8344ce27118c1aa2ff05b470c3c22491a70067abca97d04956b53"
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
-      "sha256": "db98d915b8e8208227c706e9cf1bb4713aa866c3aa6c734fcca3f77b3c5b1e47"
+      "sha256": "b27c5091ef51d7206fee59d1ecd6bda639d9ea3511f4ced4303289210cb1e7c6"
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "6578e3d329195eb9625a6902487123b5c22cf5cb8fdb6e4ac7ff6cd567e5741f"
+      "sha256": "66de6ad9be58ffa3fd3ba780f4db3db2bcd48050ce09faea3234288224421bc4"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "d180031de7557b7926019d896a513663f2e0999672a00c12f96dbfe17f1f2245"
+      "sha256": "1b2ecc105fdf5ae736983ffec714aeac8d6a0c5c5e63d98ef69af5da18185d0d"
     },
     {
       "path": "data/release-readiness/licensing-notice-disposition.v1.json",
-      "sha256": "3f1159d1aeb18872d179568e7576a6079cc3eb397c2db834b0d197a6320507e7"
+      "sha256": "2517c49c9d74ad0ff36820ffc96b90b7efefee498a7646071c383aa7f2f770b6"
     },
     {
       "path": "data/release-readiness/tracked-tree-policy.v1.json",
@@ -128,7 +128,7 @@
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
-      "sha256": "187d20dce82e01d6bb295d39dee7c785fad732f129f075a4579fefcb7a85dd25"
+      "sha256": "85db2081b1df5a7bbc9afdf634c471012a8e10cb646b40a487ba65cbcc15e347"
     },
     {
       "path": "scripts/release-readiness/check-distribution-acceptance.mjs",

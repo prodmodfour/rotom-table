@@ -185,7 +185,7 @@
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",
-      "sha256": "1782b533c65a71fc52d7edbdc331bf947bfcac2da7fa5c0d82a7e0e2faabea0d"
+      "sha256": "22fb6f592bd8344ce27118c1aa2ff05b470c3c22491a70067abca97d04956b53"
     },
     {
       "path": "scripts/release-readiness/check-clean-host-install.mjs",
