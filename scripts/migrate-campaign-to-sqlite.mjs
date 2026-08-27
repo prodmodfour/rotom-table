@@ -57,13 +57,14 @@ const HELP_TEXT = `Rotom Table JSON-to-SQLite campaign migration
 
 Usage:
   ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign npm run migrate:sqlite -- [options]
-  ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign node scripts/migrate-campaign-to-sqlite.mjs [options]
+
+The npm command is the release authority: it imports on a staging database, advances it to the current release schema, audits it, and atomically installs it. Do not invoke this legacy import module directly.
 
 Options:
   --backup-root <path>  Directory for the pre-migration backup. Defaults to a sibling "${DEFAULT_MIGRATION_BACKUP_DIRNAME}" directory beside ROTOM_CAMPAIGN_ROOT.
   --help, -h            Show this help.
 
-The command requires ROTOM_CAMPAIGN_ROOT to point at an existing private campaign directory outside the app checkout. JSON source files are left in place.
+The command requires ROTOM_CAMPAIGN_ROOT to point at an existing private campaign directory outside the app checkout. JSON source files are left in place. Existing app-produced SQLite databases use npm run upgrade:campaign.
 `
 
 export class CampaignSqliteMigrationError extends Error {

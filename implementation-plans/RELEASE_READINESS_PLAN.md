@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-011`
+`CURRENT_TICKET: P13-033`
 
 `BLOCKED_BY: NONE`
 
@@ -159,14 +159,14 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | Phase | Tickets | Done |
 | --- | --- | ---: |
 | 1 — Activation adoption, rubric, inventories, gates | P13-001–P13-010 | 10/10 |
-| 2 — Versioning and release identity | P13-011–P13-020 | 0/10 |
-| 3 — Campaign upgrade guarantee | P13-021–P13-032 | 0/12 |
+| 2 — Versioning and release identity | P13-011–P13-020 | 10/10 |
+| 3 — Campaign upgrade guarantee | P13-021–P13-032 | 12/12 |
 | 4 — Release-boundary backup and restore | P13-033–P13-042 | 0/10 |
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 0/10 |
 | 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 0/14 |
 | 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 0/10 |
 | 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 0/10 |
-| **Total** | | **10/86** |
+| **Total** | | **32/86** |
 
 ## Tickets
 
@@ -215,75 +215,97 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 
 ### Phase 2 — Versioning and release identity
 
-- [ ] **P13-011 — Adopt the version policy** — `TODO`
+- [x] **P13-011 — Adopt the version policy** — `DONE`
   - Record activation decision 1 as the reviewed policy: semver rules, single source of truth, rc discipline, annotated-tag convention on `main`, post-1.0 fix policy, and the exactly-once mint rule.
   - Bind the policy to the rubric; out-of-band version edits become a failing gate.
-- [ ] **P13-012 — Implement the single-source release identity module** — `TODO`
+  - Evidence: `version-policy.v1.json`, `docs/release/versioning.md`, the mint ledger, and `check-identity.mjs` enforce SemVer, trunk tags, sequential RCs, and immutable tags.
+- [x] **P13-012 — Implement the single-source release identity module** — `DONE`
   - Add the `package.json` version field and a shared release-identity module deriving version plus storage schema version; no duplicated version literals anywhere.
   - Dev builds resolve identity without a release; missing identity at release time fails closed.
-- [ ] **P13-013 — Implement server identity reporting** — `TODO`
+  - Evidence: `shared/release/identity.ts` derives the version only from package metadata; Nuxt derives schema v56 from the migration authority and marks incomplete dev provenance explicitly.
+- [x] **P13-013 — Implement server identity reporting** — `DONE`
   - Extend health/version reporting with version, storage schema version, and build identity, role-safe for every audience.
   - No campaign data, secrets, or private paths in any identity payload.
-- [ ] **P13-014 — Implement the user-visible version surface** — `TODO`
+  - Evidence: `/api/health` and `/api/version` returned the same rc.1 version, schema, commit, tag, command, and builder fields in a production build; focused privacy assertions pass.
+- [x] **P13-014 — Implement the user-visible version surface** — `DONE`
   - A GM-discoverable About/version presentation per the design authority, sourced from the identity module.
   - Role-safe, accessible, and free of private diagnostics; follows the UI design workflow.
-- [ ] **P13-015 — Implement build-time provenance embedding** — `TODO`
+  - Evidence: the Settings Workshop exposes a semantic About definition list to GM and Player roles; desktop and 412px production browser checks show rc.1/schema v56/commit, zero overflow, and zero console errors. Image generation was skipped because this was an exact mechanical addition using the established Settings group anatomy.
+- [x] **P13-015 — Implement build-time provenance embedding** — `DONE`
   - Capture commit, build command, and builder versions at build time without breaking dev workflows.
   - Missing provenance degrades explicitly in dev and fails closed in the release command, never silently.
-- [ ] **P13-016 — Prove version-surface agreement** — `TODO`
+  - Evidence: `nuxt.config.ts` embeds commit/tag/command/Node/npm posture; `ROTOM_RELEASE_BUILD=1` rejects incomplete or disagreeing values.
+- [x] **P13-016 — Prove version-surface agreement** — `DONE`
   - Tests prove package metadata, server reporting, UI surface, and embedded provenance agree, in dev and production builds.
   - Register the agreement check as a drift gate; disagreement anywhere fails validation.
-- [ ] **P13-017 — Mint the release-candidate identity** — `TODO`
+  - Evidence: `releaseIdentityAgreement.test.ts`, `healthEndpoint.test.ts`, and `check-identity.mjs` pass and are wired into `check:release-readiness`.
+- [x] **P13-017 — Mint the release-candidate identity** — `DONE`
   - Set `1.0.0-rc.1` exactly once through the policy; record the mint in the decision log.
   - Guard tests forbid out-of-band edits to the version source.
-- [ ] **P13-018 — Implement checksum and provenance record generation** — `TODO`
+  - Evidence: the mint authority recorded the exactly-once `NONE → 1.0.0-rc.1` transition in `version-mints.v1.json`; package and lock metadata agree.
+- [x] **P13-018 — Implement checksum and provenance record generation** — `DONE`
   - A bounded command produces SHA-256 checksums of the release build output plus the machine-readable provenance record per activation decision 8.
   - Records are deterministic given the same inputs; secrets and campaign material are structurally absent.
-- [ ] **P13-019 — Rehearse annotated tagging** — `TODO`
+  - Evidence: `generate-build-evidence.mjs` generated and rechecked 13,657 sorted file checksums (manifest SHA-256 `85fa6b9b…`) plus allowlisted provenance with no secret/private fields.
+- [x] **P13-019 — Rehearse annotated tagging** — `DONE`
   - Rehearse the tag convention with a local annotated rc tag proving tag/commit/version/CI agreement; tag publication remains owner-controlled.
   - Record the rehearsal evidence and the divergence-handling procedure.
-- [ ] **P13-020 — Version identity acceptance** — `TODO`
+  - Evidence: local annotated tag `v1.0.0-rc.1` points to candidate commit `863b1a0e…`; `--require-tag` agreement passes and `docs/release/versioning.md` forbids mutation in favor of a next RC.
+- [x] **P13-020 — Version identity acceptance** — `DONE`
   - End-to-end identity agreement in a production build at the rc identity; all Phase 2 rubric rows `Certified`.
   - Phase-exit evidence recorded.
+  - Evidence: `data/release-readiness/version-identity-certification.v1.json` binds the candidate commit/tree/tag, build manifest, provenance hash, focused checks, and production desktop/mobile observations; all nine identity rows are `Certified`.
 
 ### Phase 3 — Campaign upgrade guarantee
 
-- [ ] **P13-021 — Build the historical-head fixture generator** — `TODO`
+- [x] **P13-021 — Build the historical-head fixture generator** — `DONE`
   - Generate deterministic v1–v55 head databases by prefix-application of the contiguous chain, with seeded representative data at reviewed boundary heads.
   - Fixtures are reproducible, hash-recorded, and never derived from private campaigns.
-- [ ] **P13-022 — Certify the full historical upgrade matrix** — `TODO`
+  - Evidence: `generate-historical-heads.ts --check` reproduces 55 prefix heads and their canonical logical SHA-256 descriptors from synthetic authority only.
+- [x] **P13-022 — Certify the full historical upgrade matrix** — `DONE`
   - Every promised head v1–v55 upgrades to the release schema with contiguity, single-application, and post-upgrade integrity audits, under bounded one-worker runs.
   - Failures are defects to repair through owning authorities, never matrix exclusions.
-- [ ] **P13-023 — Certify exact-byte preservation samples** — `TODO`
+  - Evidence: `releaseHistoricalUpgradeMatrix.test.ts` upgrades all 55 heads through the contiguous v56 chain, verifies idempotence, integrity, and zero FK violations.
+- [x] **P13-023 — Certify exact-byte preservation samples** — `DONE`
   - Extend the Plan 12 v50 exact-byte proof pattern to reviewed earlier boundary heads: authority documents survive upgrade byte-exactly where the chain promises preservation.
   - Deviations are contradictions, not tolerances.
-- [ ] **P13-024 — Certify JSON-era campaign import** — `TODO`
+  - Evidence: the 11 reviewed heads (v1, v5, v12, v21, v28, v41, v44–v46, v50, v55) preserve seeded map and Trainer JSON bytes exactly.
+- [x] **P13-024 — Certify JSON-era campaign import** — `DONE`
   - The documented `migrate:sqlite` path on fixture roots: pre-migration backup created, atomic import, resulting database at the release schema, no documentary reads.
   - Malformed roots fail closed with exact reasons and no partial writes.
-- [ ] **P13-025 — Certify rejection of unsupported inputs** — `TODO`
+  - Evidence: the release wrapper stages, advances, audits, and atomically installs v56; representative, rerun, malformed-root, and interruption fixtures pass.
+- [x] **P13-025 — Certify rejection of unsupported inputs** — `DONE`
   - Corrupt files, partial databases, unknown and future schema versions, and non-database files are rejected before any write.
   - Rejection messages state the supported boundary and the recovery procedure.
-- [ ] **P13-026 — Certify interrupted-upgrade behavior** — `TODO`
+  - Evidence: `releaseCampaignUpgradeSafety.test.ts` proves byte-exact rejection of non-SQLite, corrupt, partial, schema-zero, and future-v57 inputs.
+- [x] **P13-026 — Certify interrupted-upgrade behavior** — `DONE`
   - Injected interruption at every migration boundary leaves the original database intact or the upgrade complete — never partial.
   - Re-running after interruption converges to the release schema exactly once.
-- [ ] **P13-027 — Certify sidecar and contention behavior** — `TODO`
+  - Evidence: injected post-migration failures at all 56 boundaries roll back their transaction; staged file failure leaves the original digest intact and rerun converges.
+- [x] **P13-027 — Certify sidecar and contention behavior** — `DONE`
   - Upgrades with WAL/SHM sidecars present, read-only filesystems, and locked or concurrently opened databases behave fail-closed with no corruption.
   - Document the operator-facing behavior for each case.
-- [ ] **P13-028 — Enforce upgrade performance bounds** — `TODO`
+  - Evidence: sidecar, permission, and exclusive-lock corpus passes with exact original hashes; recovery is documented in `docs/release/upgrade.md`.
+- [x] **P13-028 — Enforce upgrade performance bounds** — `DONE`
   - A reviewed large-campaign fixture upgrades within a recorded budget on the supported shape.
   - The budget is a fixture, not a hope; regressions fail the gate.
-- [ ] **P13-029 — Prove the rollback boundary** — `TODO`
+  - Evidence: 10,000 maps plus 10,000 Trainer sheets with 512-byte payloads upgrade from v1 within the frozen 15-second one-worker budget.
+- [x] **P13-029 — Prove the rollback boundary** — `DONE`
   - A restored pre-upgrade backup returns exact pre-upgrade authority; downgrade attempts on upgraded databases fail closed with explicit guidance.
   - The boundary statement in docs matches the proven behavior verbatim.
-- [ ] **P13-030 — Write the operator upgrade guide** — `TODO`
+  - Evidence: backup and restored database SHA-256 equal the original; CLI downgrade options fail closed; artifact and guide share the verbatim restore-only statement.
+- [x] **P13-030 — Write the operator upgrade guide** — `DONE`
   - Supported inputs, procedure, verification, rollback boundary, and troubleshooting, synchronized with the runbooks and the platform matrix.
   - The guide references only certified behavior.
-- [ ] **P13-031 — Record the upgrade certification artifact** — `TODO`
+  - Evidence: `docs/release/upgrade.md` documents stopped-service v1–v56, JSON-era, verification, rollback, sidecar, contention, and rejection procedures.
+- [x] **P13-031 — Record the upgrade certification artifact** — `DONE`
   - Machine-readable certification binding fixture hashes, matrix outcomes, budgets, and evidence commands.
   - Registered in the drift gate.
-- [ ] **P13-032 — Upgrade guarantee acceptance** — `TODO`
+  - Evidence: `upgrade-certification.v1.json` binds ten source hashes and all nine upgrade gate rows; the shared certification checker is wired into `check:release-readiness:upgrades`.
+- [x] **P13-032 — Upgrade guarantee acceptance** — `DONE`
   - Every supported-upgrade-input row `Certified`; zero partial-write paths anywhere in the matrix.
   - Phase-exit evidence recorded.
+  - Evidence: `npm run check:release-readiness:upgrades` passes 13 focused tests plus the 55-head drift generator and certification hash gate under one worker.
 
 ### Phase 4 — Release-boundary backup and restore
 
@@ -501,3 +523,4 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - **2026-08-26 — Draft converted to numbered ledger.** The registered scope draft was reviewed against repository evidence at commit `84c4659e10bec5f39eea674e6439d24ac978e6ee` and converted. The activation baseline (`data/release-readiness/release-baseline.v1.json`, SHA-256 `096e039949d67c926ec82ac860f22569280937da0aa0e4a4576589267b430d11`, 20 rows) and the ten-question activation decision record above are the activation evidence. Ticket count fixed at 86 across 8 phases. Owner-reserved decisions are structured as explicit tickets (P13-058, P13-062, P13-083) plus the start gate; they fail closed until recorded.
 - **2026-08-26 — Owner start gate recorded.** The owner instruction that produced this ledger authorized writing and registering Plan 13, not implementing it. `BLOCKED_BY: OWNER_START_GATE` stands until the owner records an explicit start; the autonomous-continuation rule must not treat this plan as compelling work while the gate stands.
 - **2026-08-27 — Owner start gate lifted.** The owner's explicit instruction to complete Plan 13 authorizes implementation. `BLOCKED_BY` is now `NONE`, execution begins at P13-001, and the ledger, plan order, and agent instructions are synchronized.
+- **2026-08-27 — Release candidate identity minted.** The reviewed mint authority performed the exactly-once `NONE → 1.0.0-rc.1` transition. Package/lock/shared/server/UI/build surfaces agree; local annotated tag `v1.0.0-rc.1` records the Phase 2 rehearsal candidate at `863b1a0ee7b86a393a23936012b47aa704496fbc`. Publication remains owner-controlled and tag mutation is forbidden.

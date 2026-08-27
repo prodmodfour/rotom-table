@@ -1,0 +1,79 @@
+{
+  "artifact": "release-campaign-upgrade-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-campaign-upgrade-v1-v56",
+  "status": "Certified",
+  "releaseSchemaVersion": 56,
+  "matrix": {
+    "historicalHeads": 55,
+    "historicalHeadsPassed": 55,
+    "exactByteBoundaryHeads": 11,
+    "exactByteBoundaryHeadsPassed": 11,
+    "interruptionBoundaries": 56,
+    "interruptionBoundariesPassed": 56,
+    "singleApplicationVerified": true,
+    "freshRootReachedReleaseSchema": true,
+    "foreignKeyViolations": 0,
+    "integrityFailures": 0
+  },
+  "jsonEraImport": {
+    "minimalAndRepresentativePassed": true,
+    "preMigrationBackupCreated": true,
+    "releaseSchemaReached": true,
+    "atomicTargetInstall": true,
+    "malformedRootRejectedWithoutTarget": true,
+    "interruptedImportRejectedWithoutTarget": true,
+    "documentarySourceReads": false
+  },
+  "rejectionCorpus": {
+    "nonDatabase": "passed",
+    "corrupt": "passed",
+    "partial": "passed",
+    "unknownOrZero": "passed",
+    "futureV57": "passed",
+    "readOnly": "passed",
+    "walOrShmSidecars": "passed",
+    "lockedOrConcurrent": "passed"
+  },
+  "performance": {
+    "fixture": "10000 maps + 10000 Trainer sheets with 512-byte payloads from schema v1",
+    "maximumMilliseconds": 15000,
+    "result": "passed",
+    "workers": 1
+  },
+  "rollback": {
+    "statement": "Database downgrade is unsupported; rollback means restoring the exact pre-upgrade backup.",
+    "preUpgradeBackupByteExact": true,
+    "restoredAuthorityByteExact": true,
+    "reverseMigrationAvailable": false,
+    "rerunAfterInterruptionConverges": true
+  },
+  "gateRows": [
+    { "id": "upgrade-historical-heads", "state": "Certified" },
+    { "id": "upgrade-byte-preservation", "state": "Certified" },
+    { "id": "upgrade-json-era", "state": "Certified" },
+    { "id": "upgrade-rejections", "state": "Certified" },
+    { "id": "upgrade-interruption", "state": "Certified" },
+    { "id": "upgrade-contention", "state": "Certified" },
+    { "id": "upgrade-performance", "state": "Certified" },
+    { "id": "upgrade-rollback", "state": "Certified" },
+    { "id": "upgrade-guide", "state": "Certified" }
+  ],
+  "commands": [
+    "npm run check:release-readiness:upgrades",
+    "npm run upgrade:campaign -- --help",
+    "npm run migrate:sqlite -- --help"
+  ],
+  "sourceEvidence": [
+    { "path": "data/release-readiness/historical-head-fixtures.v1.json", "sha256": "38440fa9d0ee529a40b4285091fb14c53bdc9b9f975592d4c2b965f82aeb5735" },
+    { "path": "data/release-readiness/supported-upgrade-inputs.v1.json", "sha256": "ac8ed10d6623d27d6aa23d3001a11dadeb3ea661646f0545ff505c4167f55447" },
+    { "path": "data/release-readiness/upgrade-performance-budget.v1.json", "sha256": "42a602b81a6c47763265d23b08e384c3eef43b1b5969c44e7ad6541a67282f20" },
+    { "path": "server/storage/migrations.ts", "sha256": "73eac7c1ec04bedb1c386c776b9a99e8c9af9defebc7b7fdd2878f2baccd927e" },
+    { "path": "server/storage/releaseUpgrade.ts", "sha256": "78944d964dadbe412d2f988b0b8a076669e0de2e0e2f9bdc9078d36d5803ec21" },
+    { "path": "scripts/release-readiness/migrate-json-campaign.ts", "sha256": "ab913a0abf1f5c42cf3acd52baf64ccdde09bff780d9b0a79060e9eb60c940d4" },
+    { "path": "tests/server/releaseHistoricalUpgradeMatrix.test.ts", "sha256": "4972b7ffabd23c161bb81a4e91655d637b4327a45cdca0981c3320407b74892f" },
+    { "path": "tests/server/releaseCampaignUpgradeSafety.test.ts", "sha256": "6b9023b655fe15805e921e5576f3e42a437e6f7dbe62af22366481730f47192d" },
+    { "path": "tests/scripts/releaseJsonCampaignImport.test.ts", "sha256": "8f26b96acc48eff52c3aecc6617078a2884e7dcdd25f4409f7b4d365ed0dde15" },
+    { "path": "docs/release/upgrade.md", "sha256": "dec4a3a26427444fe18f2612efc30c52112cf7b0ab50bf63d9cba26d0ce5d162" }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "artifact": "release-upgrade-performance-budget",
+  "schemaVersion": 1,
+  "status": "Certified",
+  "supportedShape": "Linux x86-64, Node 24.x, one bounded Vitest worker",
+  "fixture": {
+    "sourceSchemaVersion": 1,
+    "mapRows": 10000,
+    "trainerRows": 10000,
+    "payloadBytes": 512,
+    "privateCampaignSource": false
+  },
+  "maximumMilliseconds": 15000,
+  "command": "vitest run tests/server/releaseHistoricalUpgradeMatrix.test.ts --maxWorkers=1 --no-file-parallelism"
+}

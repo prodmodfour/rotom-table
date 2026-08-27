@@ -1,0 +1,46 @@
+{
+  "artifact": "release-version-identity-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-phase-2-rc1-identity",
+  "status": "Certified",
+  "version": "1.0.0-rc.1",
+  "storageSchemaVersion": 56,
+  "candidate": {
+    "commit": "863b1a0ee7b86a393a23936012b47aa704496fbc",
+    "tree": "9d7bc6bb5271efa40042fd6e9e095452a9fdd652",
+    "tag": "v1.0.0-rc.1",
+    "annotatedTagObject": "399200a526dc66342b1fbc8d3bf0a802a38ed6d4"
+  },
+  "buildEvidence": {
+    "outputFileCount": 13657,
+    "checksumManifestSha256": "85fa6b9becebe81b13979d264fd9ac2627bae93291d45169d369c37a0ee86af4",
+    "provenanceSha256": "65e932f171b0bb6c1083925076eab916bd8a0bd8b939a9569de55fd1ac9e0316",
+    "evidenceLocation": "release-evidence/ (operator-local and git-ignored)"
+  },
+  "gateRows": [
+    { "id": "identity-policy", "state": "Certified" },
+    { "id": "identity-package", "state": "Certified" },
+    { "id": "identity-server", "state": "Certified" },
+    { "id": "identity-ui", "state": "Certified" },
+    { "id": "identity-build", "state": "Certified" },
+    { "id": "identity-agreement", "state": "Certified" },
+    { "id": "identity-rc", "state": "Certified" },
+    { "id": "identity-checksums", "state": "Certified" },
+    { "id": "identity-tag", "state": "Certified" }
+  ],
+  "evidence": [
+    "npm run check:release-readiness:identity",
+    "node scripts/release-readiness/check-identity.mjs --require-tag",
+    "ROTOM_RELEASE_BUILD=1 npm run build",
+    "npm run release:evidence -- --output .output --evidence-dir release-evidence --release --check",
+    "production /api/health and /api/version identity agreement",
+    "desktop and 412px Settings About panel browser checks with zero console errors and zero horizontal overflow"
+  ],
+  "privacy": {
+    "campaignDataInPayload": false,
+    "playerDataInPayload": false,
+    "privatePathsInPayload": false,
+    "secretsInPayload": false
+  },
+  "divergenceProcedure": "docs/release/versioning.md"
+}

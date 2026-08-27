@@ -270,6 +270,6 @@ describe('SQLite campaign migration script', () => {
       scripts?: Record<string, string>
     }
 
-    expect(packageJson.scripts?.['migrate:sqlite']).toBe('node scripts/migrate-campaign-to-sqlite.mjs')
+    expect(packageJson.scripts?.['migrate:sqlite']).toBe('vite-node --config vitest.config.ts scripts/release-readiness/migrate-json-campaign-cli.ts')
   })
 })

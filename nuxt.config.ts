@@ -55,6 +55,18 @@ const releaseIdentity = createReleaseIdentity({
     provenanceComplete: buildProvenanceComplete,
   },
 })
+// Nuxt runtime-config defaults cannot carry null even though the public API
+// models unavailable development provenance as null. Encode absence as an
+// empty string here; parseReleaseIdentity restores the role-safe null shape.
+const runtimeReleaseIdentity = {
+  ...releaseIdentity,
+  build: {
+    ...releaseIdentity.build,
+    commit: releaseIdentity.build.commit ?? '',
+    tag: releaseIdentity.build.tag ?? '',
+    npmVersion: releaseIdentity.build.npmVersion ?? '',
+  },
+}
 const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps|player-profiles|reference-overrides)(?:[\\/]|$)/]
 
 export default defineNuxtConfig({
@@ -101,7 +113,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       // Nuxt applies runtime-config defaults mutably; clone the shared immutable identity.
-      releaseIdentity: structuredClone(releaseIdentity),
+      releaseIdentity: structuredClone(runtimeReleaseIdentity),
       // Browser contract fixtures are absent from normal production. The
       // production-build Playwright harness opts in explicitly.
       presentationContractPreview: false,

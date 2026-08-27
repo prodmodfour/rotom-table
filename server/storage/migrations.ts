@@ -18,6 +18,11 @@ export interface StorageMigrationResult {
   readonly appliedVersions: readonly number[]
 }
 
+export interface StorageMigrationHooks {
+  readonly beforeMigration?: (migration: StorageMigration) => void
+  readonly afterMigration?: (migration: StorageMigration) => void
+}
+
 const createInitialSchema = (connection: DatabaseSync): void => {
   connection.exec(`
     CREATE TABLE IF NOT EXISTS maps (
@@ -2563,7 +2568,10 @@ const sortedMigrations = (): readonly StorageMigration[] => {
 
 export const getStorageSchemaVersion = (connection: DatabaseSync): number => readPragmaUserVersion(connection)
 
-export const applyStorageMigrations = (connection: DatabaseSync): StorageMigrationResult => {
+export const applyStorageMigrations = (
+  connection: DatabaseSync,
+  hooks: StorageMigrationHooks = {},
+): StorageMigrationResult => {
   const fromVersion = readPragmaUserVersion(connection)
 
   if (fromVersion > LATEST_STORAGE_SCHEMA_VERSION) {
@@ -2581,10 +2589,12 @@ export const applyStorageMigrations = (connection: DatabaseSync): StorageMigrati
     let currentVersion = fromVersion
     for (const migration of sortedMigrations()) {
       if (migration.version <= currentVersion) continue
+      hooks.beforeMigration?.(migration)
       migration.up(connection)
       setPragmaUserVersion(connection, migration.version)
       currentVersion = migration.version
       appliedVersions.push(migration.version)
+      hooks.afterMigration?.(migration)
     }
     connection.exec('COMMIT')
     if (suspendForeignKeyActions) {

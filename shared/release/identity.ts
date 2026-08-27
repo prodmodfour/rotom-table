@@ -75,7 +75,7 @@ export const parseReleaseIdentity = (value: unknown): ReleaseIdentity | null => 
   if (!['nuxt dev', 'npm run build'].includes(String(build.command))) return null
   const nodeVersion = nonEmpty(build.nodeVersion)
   const npmVersion = build.npmVersion === null ? null : nonEmpty(build.npmVersion)
-  if (!nodeVersion || (build.npmVersion !== null && !npmVersion)) return null
+  if (!nodeVersion) return null
   return {
     service: ROTOM_TABLE_SERVICE,
     version: ROTOM_TABLE_VERSION,
