@@ -588,12 +588,12 @@
     },
     {
       "path": "package.json",
-      "sha256": "217427fefa6c5a2a21158a6a1a980c95b7072b05a27d856f572a20b258acd023"
+      "sha256": "e3efb38c0e1f8bfd4dd505ffd58d5858b70737f9535dfb6286c391d5fc634de0"
     },
     {
       "path": "scripts/quality-gate.sh",
       "sha256": "df68ef83a489ee3a6a0be53dff69c9290bbd4ed073ab740b6fdde3c098b970fe"
     }
   ],
-  "completionEvidenceSha256": "4c873faa3dd2bbc55c33630968885f14375872377235cded74194514b153313f"
+  "completionEvidenceSha256": "1473a73e5e7ec2670ae0652cfcc29f9775d4100438b1d189b2c117740dfd4a29"
 }

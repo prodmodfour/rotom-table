@@ -2,7 +2,7 @@
   "artifact": "release-licensing-notice-disposition",
   "schemaVersion": 1,
   "dispositionId": "p13-062-owner-license-notice-disposition-v1",
-  "releaseVersion": "1.0.0-rc.6",
+  "releaseVersion": "1.0.0-rc.7",
   "ticket": "P13-062",
   "status": "OWNER_APPROVED_AND_IMPLEMENTED",
   "automationMayApprove": false,
@@ -215,11 +215,11 @@
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
-      "sha256": "0b4f27c741db70a072bf72514846eacf09892be64d7416584de8ce65563941e2"
+      "sha256": "78c272415ff9ee921d57625b1fabaf195b4cbac98bd61d41cfddb9edf61c00ca"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "b104da45c547e586925b2f2fe2f3c99f7305415b299df566ba921abb2107c39c"
+      "sha256": "cb5a31ed8925986e4302ae8d483a840d314b66cd301ac145b7cf900578327e61"
     },
     {
       "path": "data/release-readiness/dependency-license-policy.v1.json",
@@ -227,7 +227,7 @@
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
-      "sha256": "b69415fd6db7d8bd150e3c34bd01a180cfa5aaaa54b5ccb10bcee0cc440fa936"
+      "sha256": "78896465557b330865a7c484993f1c6de0c8a7af3ce216cbd1d8571370df17a3"
     },
     {
       "path": "data/release-readiness/media-asset-policy.v1.json",
@@ -235,7 +235,7 @@
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "4139c24de6b065f34394f8bc837b703797c6c66b3f05dfb7c0218b705cffeff8"
+      "sha256": "0d22c7a493f2d718ff8e959a7649c092d5c9e22a744d6b6a85d7a3e075e77f50"
     },
     {
       "path": "src/components/TypeBadge.vue",
@@ -271,11 +271,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "217427fefa6c5a2a21158a6a1a980c95b7072b05a27d856f572a20b258acd023"
+      "sha256": "e3efb38c0e1f8bfd4dd505ffd58d5858b70737f9535dfb6286c391d5fc634de0"
     },
     {
       "path": "package-lock.json",
-      "sha256": "38839c7c0042ba46d674384bafd5d2b8a95223c3cd45a070f1a3cade1c7b6be9"
+      "sha256": "bab447155e73ab5a210c04b3ae5e6e8ade9ffa526fa9e7390102b5abacf4f190"
     }
   ]
 }

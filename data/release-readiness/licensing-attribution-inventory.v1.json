@@ -1,7 +1,7 @@
 {
   "artifact": "release-licensing-attribution-inventory",
   "schemaVersion": 1,
-  "releaseVersion": "1.0.0-rc.6",
+  "releaseVersion": "1.0.0-rc.7",
   "status": "OWNER_DISPOSITION_RECORDED",
   "automationMayApprove": false,
   "reports": {

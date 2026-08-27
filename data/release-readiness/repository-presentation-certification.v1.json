@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "certificationId": "p13-repository-presentation-and-tree-classification-v1",
   "status": "Certified",
-  "releaseVersion": "1.0.0-rc.6",
+  "releaseVersion": "1.0.0-rc.7",
   "repositoryLanding": {
     "framework": "Nuxt 4",
     "persistence": "SQLite-authoritative",
@@ -81,7 +81,7 @@
   "sourceEvidence": [
     {
       "path": "README.md",
-      "sha256": "200deb8a77105d4cb8e8081d22d79a1e7dcbf3aba382e3eccd7002c9691050a6"
+      "sha256": "c79672694508e001fa9d8d546df23c0ac5d8d87c5b2842ca49f62612302fe696"
     },
     {
       "path": "docs/README.md",
@@ -105,11 +105,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "217427fefa6c5a2a21158a6a1a980c95b7072b05a27d856f572a20b258acd023"
+      "sha256": "e3efb38c0e1f8bfd4dd505ffd58d5858b70737f9535dfb6286c391d5fc634de0"
     },
     {
       "path": "package-lock.json",
-      "sha256": "38839c7c0042ba46d674384bafd5d2b8a95223c3cd45a070f1a3cade1c7b6be9"
+      "sha256": "bab447155e73ab5a210c04b3ae5e6e8ade9ffa526fa9e7390102b5abacf4f190"
     },
     {
       "path": "scripts/release-readiness/check-presentation.mjs",

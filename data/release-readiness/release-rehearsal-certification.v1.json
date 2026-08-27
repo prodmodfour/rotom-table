@@ -295,7 +295,7 @@
     },
     {
       "path": "data/release-readiness/version-mints.v1.json",
-      "sha256": "e056084124459209f97f4a60319d68c9c75b558dff3478681a6cd1d459b75f5c"
+      "sha256": "a769404b2b22d841515846ac8b3fd3d9c036c5f4784fcddf272266838520da5b"
     },
     {
       "path": "data/release-readiness/supported-platform-matrix.v1.json",

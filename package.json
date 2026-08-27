@@ -1,6 +1,6 @@
 {
   "name": "rotom-table",
-  "version": "1.0.0-rc.6",
+  "version": "1.0.0-rc.7",
   "description": "Private-VPS trusted-table liveplay companion for Pokémon Tabletop United campaigns.",
   "private": true,
   "license": "SEE LICENSE IN LICENSE",

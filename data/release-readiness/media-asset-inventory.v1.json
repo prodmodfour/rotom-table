@@ -2,7 +2,7 @@
   "artifact": "release-media-asset-inventory",
   "schemaVersion": 1,
   "inventoryId": "p13-media-asset-inventory-v1",
-  "releaseVersion": "1.0.0-rc.6",
+  "releaseVersion": "1.0.0-rc.7",
   "status": "OWNER_DISPOSITION_RECORDED",
   "sources": {
     "policy": {

@@ -7718,6 +7718,30 @@
       ],
       "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:data-complete-play-loop-authority-guardrails-v1-json:p13-successor-v4",
+      "ticket": "P13-046",
+      "surface": "data/complete-play-loop/authority-guardrails.v1.json",
+      "beforeSha256": "8811b871008402fb99e6da91099337381d9a13abb9db1f1071f447e5574f2152",
+      "afterSha256": "2ebe3f9082e72e70ef5abc363d44db949ace98cc31924b1f0857a083a025de3a",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:package-json:p13-successor-v8",
+      "ticket": "P13-046",
+      "surface": "package.json",
+      "beforeSha256": "217427fefa6c5a2a21158a6a1a980c95b7072b05a27d856f572a20b258acd023",
+      "afterSha256": "e3efb38c0e1f8bfd4dd505ffd58d5858b70737f9535dfb6286c391d5fc634de0",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [

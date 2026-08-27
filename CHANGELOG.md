@@ -17,6 +17,16 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 
 No changes have been recorded after the current candidate.
 
+## [1.0.0-rc.7] - 2026-08-27
+
+### Fixed
+
+- Refreshed the deterministic source-distribution content digest after the final release-rehearsal checker repair, so the bounded full-repository gate validates the exact candidate tree.
+
+### Boundaries
+
+- This successor includes the complete rc.6 source scope plus the generated digest refresh only. The failed rc.6 tag remains immutable and unpublished; its validation run did not reach the full Vitest, browser, or final production-build stages.
+
 ## [1.0.0-rc.6] - 2026-08-27
 
 ### Fixed
@@ -28,6 +38,10 @@ No changes have been recorded after the current candidate.
 ### Boundaries
 
 - This successor includes the complete rc.5 rehearsal scope plus only the validation and accessibility repairs found after that immutable tag. The successful rc.5 rehearsal tag and its operator-local evidence remain unchanged and unpublished.
+
+### Validation outcome
+
+- The local annotated `v1.0.0-rc.6` tag was created immutably. Its bounded repository gate passed the early domain and release-readiness checks, then stopped at the source-distribution drift check because the tracked-content digest predated the final rehearsal-checker repair. The run did not reach the full Vitest, browser, or final production-build stages; the digest was repaired in rc.7 rather than moving the tag.
 
 ## [1.0.0-rc.5] - 2026-08-27
 

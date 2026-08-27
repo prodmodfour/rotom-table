@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inventoryId": "p13-tracked-tree-inventory-v1",
-  "releaseVersion": "1.0.0-rc.6",
+  "releaseVersion": "1.0.0-rc.7",
   "status": "COMPLETE",
   "policy": {
     "id": "p13-tracked-tree-classification-v1",
@@ -11,7 +11,7 @@
   "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
   "trackedPathCount": 16876,
   "trackedPathSetSha256": "4f93de93b23cc7a4238d8cb80c5f8008c91446de1d8fcdd9401f65f2c3d7eaa8",
-  "trackedContentSetSha256": "df26ea2cb7f3e48a8904341257188a2005920c4723883938b47fe0525cd772e1",
+  "trackedContentSetSha256": "c5e05a2a687f1a6307f8b59cfc119cd7557a9cba32dd41a7d53066ce6ae1e964",
   "contentDigestExclusions": [
     "data/release-readiness/distribution-manifest.v1.json",
     "data/release-readiness/tracked-tree-inventory.v1.json"
@@ -448,7 +448,7 @@
       "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 7956,
       "pathSetSha256": "b6f870724e3edb2ca4c8d981d0361f28724c18d6061f9a7728b3f5258291bd07",
-      "contentSetSha256": "dbdb73b9fec34d634d818f3ccbe8d6a7b0c953181a2ba62b18aa545c1e16fea2"
+      "contentSetSha256": "0504f10e24b90d9f8d75c208c372acc3a8b4837ce649e9530564ae05c451193e"
     },
     {
       "id": "P13-LICENSE-REFERENCE-DATA",
@@ -470,7 +470,7 @@
       "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 1,
       "pathSetSha256": "62d1b5e7751856dfa5d7d9fb28996e1e32b47223f0098ea6169c4984ad0d2645",
-      "contentSetSha256": "0633e0e770b6bbcaf34e96bba4ad098c2bf39e00040ab5eabd631fd8df388a98"
+      "contentSetSha256": "1de7b2c1a54eb3a5de19f4572b8fa726e0a7dd6f0b0a84366ebf9ca97d5e6cb3"
     }
   ],
   "resolvedPrunedTrees": [
