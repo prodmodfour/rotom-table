@@ -2,9 +2,9 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-062`
+`CURRENT_TICKET: P13-073`
 
-`BLOCKED_BY: OWNER_DECISION_P13_062`
+`BLOCKED_BY: NONE`
 
 `DEPENDS_ON: implementation-plans/done/POKEMON_CONTESTS_PLAN.md, implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md, implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md`
 
@@ -163,10 +163,10 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 3 — Campaign upgrade guarantee | P13-021–P13-032 | 12/12 |
 | 4 — Release-boundary backup and restore | P13-033–P13-042 | 10/10 |
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 10/10 |
-| 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 9/14 |
-| 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 0/10 |
+| 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 14/14 |
+| 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 6/10 |
 | 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 0/10 |
-| **Total** | | **61/86** |
+| **Total** | | **72/86** |
 
 ## Tickets
 
@@ -431,43 +431,53 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
   - Provenance and posture for every shipped visual, audio, and font asset, including `public/` and `trainer_sizes/` third-party material.
   - Unknown-provenance assets are flagged for owner disposition.
   - Evidence: `media-asset-inventory.v1.json` classifies and content-binds all 9,472 source-distribution media files in 14 families plus nine CSS imports and 18 OFL font binaries; zero media files are unclassified. It flags 29 unknown-provenance files, 7,949 files without an explicit redistribution license, and 1,460 edited Trainer profiles conflicting with the source index's do-not-edit warning.
-- [ ] **P13-062 — Owner disposition: license and notices** — `BLOCKED`
+- [x] **P13-062 — Owner disposition: license and notices** — `DONE`
   - The owner explicitly approves or amends the license scope, `NOTICE.md`, the fan-content notice, dependency attributions, and asset postures; recorded per family.
   - Unresolved families fail the release gate under rule 7; automation approves nothing.
-  - Blocker: all eight licensing/notice families are inventoried in `licensing-attribution-inventory.v1.json`, but the owner must choose the disposition or required remediation for each. In particular, automation cannot approve unknown sprite redistribution rights, unknown-provenance assets, edited Trainer profiles subject to a do-not-edit warning, or the unpinned Python graph.
-- [ ] **P13-063 — Review support and contribution boundaries** — `TODO`
+  - Evidence: `licensing-notice-disposition.v1.json` records the owner's acceptance of recommendations 1–4 and 6–8 plus the explicit recommendation-5 risk exception. The 29 unknown-source images were replaced with original Vue/CSS/SVG/canvas work; the complete six-package Python graph is exact-version pinned; generated notices preserve all lock-bound npm root notices and OFL texts; all eight families are owner-approved with zero unknown-provenance media. The retained 1,460 edited Trainer profiles remain a named owner-accepted risk, not automated legal clearance. Focused 13-test, typecheck, lint, production build, desktop/mobile Chromium, favicon, and built-notice checks pass.
+- [x] **P13-063 — Review support and contribution boundaries** — `DONE`
   - `SECURITY.md`, `CONTRIBUTING.md`, and support expectations state the trusted-table, single-operator reality at 1.0.
   - No implied public-service or commercial support promises.
-- [ ] **P13-064 — Validate production deployment instructions** — `TODO`
+  - Evidence: `SECURITY.md` and `CONTRIBUTING.md` now state SQLite/private-root authority, outer-gate requirements, development-only local setup, current complete mechanics gates, synthetic-data rules, and owner-reserved distribution decisions. `docs/support.md` fixes the one-private-VPS/current-release best-effort boundary with no SLA, uptime, hosted service, paid support, recovery service, or public-service promise. `npm run check:release-readiness:support` validates five linked entry documents and the supported-platform fixture.
+- [x] **P13-064 — Validate production deployment instructions** — `DONE`
   - The VPS runbook, systemd unit, proxy guidance, and env examples are walked through against a clean supported host; every step works as written.
   - Deviations are fixed in the docs or the deploy templates, not tolerated.
-- [ ] **P13-065 — Record the distribution manifest and exclusion audit** — `TODO`
+  - Evidence: a source-distribution-only Debian 12 x86-64 host exercised Node 24.15/npm 11.12, explicit dev-tool installation, zero-vulnerability audit, typecheck, production build, hardened systemd 252 start/restart, service-account storage permissions, loopback-only health, and Caddy 2.6 authenticated proxy behavior. Four observed deviations were repaired rather than waived: production-environment dependency omission, production-environment test contamination, the Caddy 2.8-only directive spelling, and unintended automatic local TLS. `deployment-instruction-certification.v1.json` binds 14 deployment authorities, and `npm run check:release-readiness:deployment` passes.
+- [x] **P13-065 — Record the distribution manifest and exclusion audit** — `DONE`
   - Machine-readable manifest binding tree classifications, dispositions, exclusion audit results, and notice locations.
   - Registered in the drift gate.
-- [ ] **P13-066 — Distribution and notices acceptance** — `TODO`
+  - Evidence: `distribution-manifest.v1.json` binds all 16,872 source-distribution paths to the final tracked-tree policy and category/rule counts, all six documentary decisions, all eight licensing families, the one named recommendation-5 risk, zero private/secret/exclusion findings, dependency/media summaries, the deployment certification, and nine notice locations. The manifest transparently excludes only its own bytes from the tracked aggregate to avoid self-reference; its generator compares its full deterministic content. `npm run check:release-readiness:distribution` now checks both tree classification and the manifest.
+- [x] **P13-066 — Distribution and notices acceptance** — `DONE`
   - Every distribution and licensing rubric row `Certified` or `Approved`; zero `UNRESOLVED` disposition families.
   - Phase-exit evidence recorded.
+  - Evidence: `distribution-notices-certification.v1.json` closes all ten distribution/licensing rubric rows (eight `Certified`/`Repaired`, two owner `Approved`) and binds 16 source authorities. The final 16,872-path manifest has nine notice locations, zero exclusion findings, zero unknown dependency licenses, zero unknown-provenance media, zero unresolved families, and exactly one non-cleared 1,460-file recommendation-5 owner-accepted risk. Phase 6 passes through `npm run check:release-readiness:distribution-acceptance`.
 
 ### Phase 7 — Release notes, artifacts, and rehearsal
 
-- [ ] **P13-067 — Write the changelog spine** — `TODO`
+- [x] **P13-067 — Write the changelog spine** — `DONE`
   - A maintained `CHANGELOG.md` recording plan-level history from inception to 1.0 and the convention for future entries.
   - Entries reference guarantees and boundaries, not internal ticket noise.
-- [ ] **P13-068 — Write operator release notes** — `TODO`
+  - Evidence: `CHANGELOG.md` records all 13 plan-level milestones, the immutable `1.0.0-rc.1` identity foundation, current unreleased release guarantees and boundaries, and a future SemVer/tag/privacy convention. It deliberately does not claim final `1.0.0` before the owner-authorized atomic transaction and contains no implementation ticket IDs. `npm run check:release-readiness:changelog` passes.
+- [x] **P13-068 — Write operator release notes** — `DONE`
   - Storage and upgrade guarantees, backup/restore procedures, retired seams, environment and settings requirements, and recovery boundaries.
   - Every statement traces to a certified gate.
-- [ ] **P13-069 — Write GM and player release notes** — `TODO`
+  - Evidence: `docs/releases/1.0.0.md` contains nine operator sections covering supported deployment, identity/health, source install, schema-v56 authority, supported SQLite/JSON upgrade paths, deterministic backup/restore, retired fallback seams, notice boundaries, and post-deploy acceptance. Each section links its runbook and certified machine authority; the document remains explicitly candidate-only and owner-controlled. `npm run check:release-readiness:release-notes` verifies 15 certification traces, required commands/boundaries, identity agreement, credential/IP hygiene, and every local link.
+- [x] **P13-069 — Write GM and player release notes** — `DONE`
   - Capability highlights across the complete trusted-table loop, workflow boundaries, and role expectations.
   - Player-safe: no GM-private mechanics leakage in examples.
-- [ ] **P13-070 — Freeze the known-limitations section** — `TODO`
+  - Evidence: `docs/releases/1.0.0.md` adds five traced GM sections and five traced player sections spanning Field Guide, Workshop, Live Encounter, onboarding, settlement/continuation, breeding, Contests, deterministic private preparation, reconnect/revision behavior, and role expectations. The player example uses only an owned active Pokémon and visible target and explicitly excludes hidden targets, unrevealed stat blocks, generation seeds, GM notes, and private rewards. The notes gate rejects all six GM-only projection field families and validates every evidence/runbook link.
+- [x] **P13-070 — Freeze the known-limitations section** — `DONE`
   - The P13-009 register rendered into the notes verbatim and owner-accepted.
   - Boundaries and blockers cannot be blurred after freeze.
-- [ ] **P13-071 — Implement the release command** — `TODO`
+  - Evidence: the six activation-decision-9 statements are rendered verbatim and in register order under `docs/releases/1.0.0.md#known-limitations-frozen`. `known-limitations.v1.json` now records `OWNER_ACCEPTED_FROZEN`, its owner-acceptance basis, and the exact render target. The notes gate enforces exact row count/text/order and the rule that only these rows may close as `Documented boundary`; all unlisted failures remain blockers.
+- [x] **P13-071 — Implement the release command** — `DONE`
   - One reproducible command: clean-tree check, version agreement, bounded gate summary, production build, checksum generation, provenance record, notes-presence check.
   - Fails closed on any missing input; produces the release evidence bundle deterministically.
-- [ ] **P13-072 — Audit the built artifact** — `TODO`
+  - Evidence: `npm run release:prepare` accepts no arguments or bypasses and sequences supported-platform, clean-tree, annotated-tag/identity, bounded aggregate, clean-after-gates, provenance-bound build, checksums, built-artifact audit, deterministic gate summary, five-file bundle manifest, exact evidence recheck, and final clean-tree proof. `release-command-certification.v1.json` binds 12 authorities; `npm run check:release-readiness:release-command` passes, and a dirty-tree invocation exits before gates. End-to-end tagged execution remains the P13-074 rehearsal rather than being falsely claimed here.
+- [x] **P13-072 — Audit the built artifact** — `DONE`
   - The `.output` bundle scans clean of secrets, campaign databases, private traces, and documentary-tree runtime dependence.
   - The scan is a registered command bound into the release command.
+  - Evidence: the production `.output` snapshot contained 13,629 files (379,044,254 bytes), 24 lock-reviewed runtime package instances, the exact generated third-party notice, zero forbidden paths/secrets/SQLite headers/unreviewed JSON/symlinks/unknown dependencies/packaged documentary files, and zero documentary runtime dependence; 11 bundled files contain only permitted immutable documentary provenance labels. `npm run check:release-readiness:artifact-audit` also proves one clean synthetic bundle and six fail-closed injections (database, credential, documentary file, unknown package, private JSON, browser trace). The dynamic `npm run release:audit-artifact` is mandatory inside `release:prepare`; `built-artifact-audit-certification.v1.json` closes the rubric row.
 - [ ] **P13-073 — Rehearse the clean-host install** — `TODO`
   - Fresh clone → documented install → production build → start → smoke on the supported shape, using only published documentation.
   - Friction is fixed in docs or tooling; the rehearsal is repeatable.
@@ -557,3 +567,5 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - **2026-08-27 — Phase 6 presentation/classification checkpoint and owner disposition gate.** P13-053–P13-057 completed: repository and documentation entry points are truthful, three privacy-reviewed screenshots are hash-bound, package plus authenticated GitHub metadata now state Nuxt 4/SQLite/private-VPS liveplay, and all 16,864 distribution paths are uniquely classified. The six documentary/provenance candidates are exact path/content-set bound with prune consequences; per rule 10 automation takes no disposition. Execution is blocked at P13-058 by `OWNER_DECISION_P13_058` until the owner chooses `retain-and-label` or `prune` for each candidate.
 - **2026-08-27 — P13-058 owner documentary-tree disposition applied.** The owner explicitly accepted the reviewed recommendation: retain-and-label `books/`, `ptu-data/`, `encounter_tables/`, and runtime-required `trainer_sizes/`; prune the unused `pokesheet.pdf` and `notepad/`. Labels state runtime and license boundaries, pre-prune hashes remain recorded, no runtime authority changed, and the P13-058 blocker is lifted.
 - **2026-08-27 — P13-059–P13-061 inventory checkpoint and licensing gate.** Registered checks prove zero tracked private/secret artifacts, classify 971 npm instances plus the reviewed Python families, and uniquely bind all 9,472 shipped media files plus 18 runtime font binaries. The inventories surface no mandatory dependency copyleft conflict, but they do surface unknown sprite redistribution rights, 29 unknown-provenance files, 1,460 edited Trainer profiles against an explicit source warning, and an unpinned Python graph. Rule 10 therefore blocks execution at P13-062 under `OWNER_DECISION_P13_062`; automation records facts and takes no legal disposition.
+- **2026-08-27 — P13-062 owner licensing/notices disposition implemented.** The owner instructed implementation of recommendations 1–4 and 6–8 and explicitly declined recommendation 5 while accepting its risk. The limited MIT/fan-project/PTU-outside-grant posture is retained; primary sprite families remain with source and artist attribution plus redistribution uncertainty; all 29 unknown-source images are removed and replaced by project-authored Vue/CSS/SVG/canvas work; npm/OFL notices are preserved in the built distribution; the six-package Python helper graph is exact-pinned; and all notices are expanded. The 1,460 edited Trainer profiles remain under a named, content-bound owner-accepted exception that neither automation nor notice language represents as legal clearance. All eight disposition families are approved and the owner gate is lifted.
+- **2026-08-27 — Phase 6 distribution and notices accepted.** The supported source-build/systemd/Caddy path was exercised on a clean Linux x86-64 host and four deviations were repaired. The final 16,872-path source manifest binds tree classification, all owner dispositions, zero private/secret exclusion findings, dependency/media inventories, deployment evidence, and nine notice locations. All ten distribution/licensing rubric rows are final with zero `UNRESOLVED` families; the recommendation-5 Trainer-profile exception remains explicit and is not represented as legal clearance.

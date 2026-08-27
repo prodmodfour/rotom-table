@@ -297,7 +297,7 @@ Use a rollback when a deploy corrupts live-play state, points the app at the wro
    cd /srv/rotom-table/app
    git fetch --tags
    git checkout <known-good-commit-or-tag>
-   npm ci
+   npm ci --include=dev
    npm run build
    sudo systemctl daemon-reload
    ```

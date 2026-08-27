@@ -1,6 +1,6 @@
 # Private VPS hosting scope
 
-Rotom Table's first VPS target is **private trusted-table hosting**: one GM/operator-controlled Node/Nitro process for a known campaign group. It runs the same filesystem-backed campaign workflow on a private host, but it does not turn Rotom Table into a public website or managed service.
+Rotom Table's first VPS target is **private trusted-table hosting**: one GM/operator-controlled Node/Nitro process for a known campaign group. It runs the SQLite-authoritative campaign workflow, with remaining profile/override/maintenance JSON, in private operator-controlled storage; it does not turn Rotom Table into a public website or managed service.
 
 ## Safe first use
 
@@ -9,8 +9,8 @@ Use this mode only when all of these are true:
 - the VPS is operated by the GM or another trusted table operator;
 - access to the app is restricted by an outer gate such as a private network, VPN/Tailscale, reverse-proxy authentication, Cloudflare Access, SSH tunnel, or equivalent provider controls; see [Outer access gate](#outer-access-gate) before sharing the URL;
 - participants are known table members who already trust the GM/operator and campaign data;
-- campaign JSON and campaign-owned reference override diffs stay in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
-- the operator understands the filesystem-backed campaign model in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
+- the campaign database and remaining campaign-owned JSON/reference override diffs stay in private operator-controlled storage, preferably through `ROTOM_CAMPAIGN_ROOT` as described in [Campaign repositories](campaign-repositories.md);
+- the operator understands the SQLite and residual-file authority boundaries in [Local development](local-development.md) and the security expectations in [Security](../SECURITY.md).
 
 The built Nitro server can be used for private host smoke checks with Node.js 24 LTS, `npm run build`, `npm run start`, and the no-secret `/api/health` endpoint. `/api/health` is only a process health check; it does not prove that live-play SSE, command routes, revisions, conflict handling, or persistence are ready. After every deploy, follow the [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md), then run the [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) before sharing the private URL with players for a session. Keep normal profile-based play intact: the GM manages profiles from `/players`, players choose **Player Login**, and players open the regular player-visible routes such as `/maps/<slug>`.
 
@@ -26,13 +26,21 @@ Data separation matters more than branch names. The app checkout and `ROTOM_CAMP
 
 ## Primary process management path
 
-The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. This keeps Rotom Table close to the existing filesystem-backed campaign model: the service runs the built Nitro server from the app checkout, while campaign JSON and reference override diffs stay in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
+The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. The service runs the built Nitro server from the app checkout, while SQLite authority and remaining campaign-owned JSON/reference override diffs stay in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
+
+Install Node 24 and npm **system-wide** so both the deployment shell and the unprivileged `rotom-table` service account can find them through `/usr/local/bin`, `/usr/bin`, or `/bin`. An operator-only `nvm` installation is not sufficient for the example unit's service account. A source checkout also needs Git; Python 3 is needed only for the optional complete source-test pass, not for the built server at runtime. Verify the runtime before building:
+
+```bash
+node --version # must be v24.x
+npm --version
+```
 
 A manual smoke for the same command that systemd should supervise is:
 
 ```bash
 cd /srv/rotom-table/app
-npm ci
+git status --short # must be empty for a release build
+npm ci --include=dev
 npm run build
 NODE_ENV=production \
 NITRO_HOST=127.0.0.1 \
@@ -51,22 +59,27 @@ curl -fsS http://127.0.0.1:3000/api/health
 
 For unattended VPS operation, use the example unit at [`deploy/systemd/rotom-table.service`](../deploy/systemd/rotom-table.service) as a reviewable starting point and install the reviewed copy as `/etc/systemd/system/rotom-table.service`. The example runs as a non-root `rotom-table` user/group, sets `WorkingDirectory=/srv/rotom-table/app`, loads app settings from `EnvironmentFile=/etc/rotom-table/rotom-table.env`, starts the built server with `npm run start`, and defines `Restart=on-failure` with a short `RestartSec` delay. If an operator does not want the npm wrapper, the equivalent command is `node .output/server/index.mjs` from the same working directory.
 
-The real systemd environment file should live outside the app checkout, for example at `/etc/rotom-table/rotom-table.env`, and should be copied from `.env.vps.example` or written with the same key names and host-specific values. Keep it untracked and root-readable only, for example `0600`, because it may contain private paths or future secrets. It should set the selected private host values such as `NODE_ENV=production`, `NITRO_HOST=127.0.0.1`, `NITRO_PORT=3000`, `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign`, optional `ROTOM_DB_PATH` only when the SQLite database should not use the campaign-root default, and the optional exact hosted-write opt-in only when the private host is ready for campaign writes. Keep the database path in private operator-controlled campaign storage, not in the app checkout, and include the database plus WAL sidecars in backup/restore practice.
+The real systemd environment file should live outside the app checkout, for example at `/etc/rotom-table/rotom-table.env`, and should be copied from `.env.vps.example` or written with the same key names and host-specific values. Keep it untracked and root-readable only, for example `0600`, because it may contain private paths or future secrets. It should set the selected private host values such as `NODE_ENV=production`, `NITRO_HOST=127.0.0.1`, `NITRO_PORT=3000`, `ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign`, optional `ROTOM_DB_PATH` only when the SQLite database should not use the campaign-root default, and the optional exact hosted-write opt-in only when the private host is ready for campaign writes. The example unit makes only `/srv/rotom-table/campaign` writable with `ProtectSystem=strict`; if either storage variable points elsewhere, add the exact private path to the reviewed unit's `ReadWritePaths` before starting it. Keep the database path in private operator-controlled campaign storage, not in the app checkout, and include the database plus WAL sidecars in backup/restore practice.
 
 A minimal install flow after creating `/srv/rotom-table/app` and building the app is:
 
 ```bash
-id -u rotom-table >/dev/null 2>&1 || sudo useradd --system --home-dir /srv/rotom-table --shell /usr/sbin/nologin rotom-table
+getent group rotom-table >/dev/null 2>&1 || sudo groupadd --system rotom-table
+id -u rotom-table >/dev/null 2>&1 || sudo useradd --system --gid rotom-table --home-dir /srv/rotom-table --shell /usr/sbin/nologin rotom-table
 sudo install -d -o rotom-table -g rotom-table -m 0750 /srv/rotom-table/campaign /srv/rotom-table/backups
 sudo install -d -o root -g root -m 0750 /etc/rotom-table
 sudo install -o root -g root -m 0600 .env.vps.example /etc/rotom-table/rotom-table.env
 sudo editor /etc/rotom-table/rotom-table.env
 sudo install -o root -g root -m 0644 deploy/systemd/rotom-table.service /etc/systemd/system/rotom-table.service
+sudo -u rotom-table /usr/bin/env node --version
+sudo -u rotom-table /usr/bin/env npm --version
+sudo -u rotom-table test -r /srv/rotom-table/app/.output/server/index.mjs
+sudo -u rotom-table test -w /srv/rotom-table/campaign
 sudo systemctl daemon-reload
 sudo systemctl enable --now rotom-table.service
 ```
 
-Ensure the `rotom-table` service user can read `/srv/rotom-table/app` and write the configured campaign root before enabling the service. After each planned deploy, rebuild the app and use `systemctl restart rotom-table.service`; standard output and error go to journald so logs are available with `journalctl -u rotom-table.service` or `journalctl -u rotom-table.service -f`.
+The four service-account checks must succeed before enabling the service. For an existing host, first make a release-boundary backup, stop the service, update the checkout to the reviewed immutable revision, run `npm ci --include=dev` and `npm run build`, then start the service and complete both smoke checklists. Do not overwrite `.output/` while a session or the old Node process is active. Standard output and error go to journald, available with `journalctl -u rotom-table.service` or `journalctl -u rotom-table.service -f`.
 
 Docker and Compose are not the primary deployment path for the initial private VPS target. Keep the Node service bound to loopback until a reverse proxy and outer access gate are configured.
 

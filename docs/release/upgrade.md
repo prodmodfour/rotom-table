@@ -29,7 +29,7 @@ Unknown, schema-zero non-empty, partial, corrupt, non-database, future-version, 
 
 ```bash
 cd /srv/rotom-table/app
-npm ci
+npm ci --include=dev
 npm run upgrade:campaign -- \
   --database /srv/rotom-table/campaign/rotom-table.sqlite \
   --backup /srv/rotom-table/backups/pre-1.0-rotom-table.sqlite

@@ -24,7 +24,7 @@
     },
     {
       "path": "data/release-readiness/supported-platform-matrix.v1.json",
-      "sha256": "60865f9f8ba6f221b01937c35af52798c7c7061a78f92f3d5958fde9826b305e"
+      "sha256": "c95943b4bf35347e54bda339ec944bdcb40148260a857c8e65dd617cb9a6626c"
     },
     {
       "path": "data/release-readiness/supported-upgrade-inputs.v1.json",
@@ -32,19 +32,19 @@
     },
     {
       "path": "data/release-readiness/distribution-inventory.v1.json",
-      "sha256": "275a5c4273b861a59fdea1ce1d581bb3576acffff4e51bd6899c9c8a375d00ff"
+      "sha256": "02dbcc267e3acfa12796f0969b25cc6727cc617c11e3b36a9b8a07c004f2affa"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "c5d9d1ec0ce20669660598ccf08fadfaf62219354d28363a98986afc56382c47"
+      "sha256": "e6643858065018d66708663d96f05cd7d94e856c8c56f53b9113d285c5bef7d7"
     },
     {
       "path": "data/release-readiness/known-limitations.v1.json",
-      "sha256": "423bd85d927711b3e0d23cbcbce3e2a6ee844c23f46e7abe4066b3efd7dbaffe"
+      "sha256": "cf731b8144de936de353afc4cab676123f3acab366066c5a2c714bbd9e2abc4b"
     },
     {
       "path": "data/release-readiness/evidence-command-index.v1.json",
-      "sha256": "c2bcf351dc0cd5c505ead28eb8af796d57f4d39dd87e8df32bbf7c5fe2758d46"
+      "sha256": "99f5ab900045b5b10232bdfc9c16ef0eeef6984a2dd88781ebe560152674666e"
     },
     {
       "path": "data/release-readiness/schemas/certification.schema.v1.json",

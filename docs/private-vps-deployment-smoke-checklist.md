@@ -6,8 +6,9 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 
 ## Preconditions
 
-- [ ] The deployed checkout is the intended app revision under `/srv/rotom-table/app` or the operator's equivalent app path; if branch names are part of the deploy process, prefer `main` plus short-lived feature branches instead of unnecessary long-lived branch tiers.
-- [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to private operator-controlled campaign storage rather than the app checkout, and the database plus WAL sidecars are included in backups.
+- [ ] The deployed checkout is the intended immutable app revision under `/srv/rotom-table/app` or the operator's equivalent app path; if branch names are part of the deploy process, prefer `main` plus short-lived feature branches instead of unnecessary long-lived branch tiers.
+- [ ] Node 24 and npm are installed system-wide and are visible to the service account: `sudo -u rotom-table /usr/bin/env node --version` reports `v24.x`, and `sudo -u rotom-table /usr/bin/env npm --version` succeeds. An operator-only `nvm` installation does not satisfy the example systemd unit.
+- [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to private operator-controlled campaign storage rather than the app checkout, and the database plus WAL sidecars are included in backups. Any nonstandard storage path is also listed in the reviewed systemd unit's `ReadWritePaths`, because the example unit otherwise keeps the host filesystem read-only.
 - [ ] The Node service binds to loopback, for example `NITRO_HOST=127.0.0.1` and `NITRO_PORT=3000`, unless the private host uses an equivalent non-public bind.
 - [ ] The private host is protected by an outer access gate before Rotom Table's `/login` page, `/api/events`, `/api/health`, all `/api/*` routes, mutating `/api/maps/*` command routes, and WebSocket upgrade paths are reachable.
 - [ ] A current private backup exists or the operator is comfortable discarding the disposable smoke edits. Backups include `rotom-table.sqlite` plus `rotom-table.sqlite-wal` and `rotom-table.sqlite-shm` when present. See the [Private VPS backup runbook](private-vps-backups.md).
@@ -16,16 +17,28 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 
 ## Build and process checks
 
-From the private VPS app checkout, run the same install and verification commands used by CI:
+On an existing host, create the release-boundary backup first, stop the old service before replacing `.output/`, and then update the checkout to the reviewed immutable revision. From the private VPS app checkout, install all source-build dependencies explicitly and build:
 
 ```bash
 cd /srv/rotom-table/app
-node --version
-npm ci
-npm run typecheck
-npm test
+git status --short # must be empty before a release build
+git rev-parse HEAD
+node --version # must report v24.x
+npm --version
+npm ci --include=dev
 npm run build
 ```
+
+`--include=dev` is required because the source build uses checked-in development tooling even if the deployment shell inherited `NODE_ENV=production`. Do not run `npm run build` over a checkout still serving a session.
+
+For a first-host source-build rehearsal, also run the deployment-specific static check and TypeScript check before the build:
+
+```bash
+npm run check:release-readiness:deployment
+npm run typecheck
+```
+
+The complete repository test and quality gates belong to the published, hash-bound release certification rather than to a production host: they include contributor and archived evidence surfaces that are not runtime prerequisites. A tagged release deployment may rely on that certification, but it may not skip the install, deployment check, typecheck, build, systemd, health, persistence, access-gate, and liveplay smoke checks in this document.
 
 Then confirm the built server starts with the documented command. For a manual one-shell smoke, run:
 
@@ -37,10 +50,12 @@ ROTOM_CAMPAIGN_ROOT=/srv/rotom-table/campaign \
 npm run start
 ```
 
-If systemd is supervising the real process, restart and inspect that service instead of leaving a duplicate manual process running:
+If systemd is supervising the real process, start and inspect that service instead of leaving a duplicate manual process running:
 
 ```bash
-sudo systemctl restart rotom-table.service
+sudo -u rotom-table test -r /srv/rotom-table/app/.output/server/index.mjs
+sudo -u rotom-table test -w /srv/rotom-table/campaign
+sudo systemctl start rotom-table.service
 sudo systemctl status --no-pager rotom-table.service
 journalctl -u rotom-table.service -n 80 --no-pager
 ```

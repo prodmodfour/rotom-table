@@ -1,0 +1,74 @@
+{
+  "artifact": "release-command-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-071-release-command-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "ticket": "P13-071",
+  "status": "Certified",
+  "gateRows": [
+    {
+      "id": "provenance-release-command",
+      "state": "Certified"
+    }
+  ],
+  "evidence": {
+    "command": "npm run check:release-readiness:release-command",
+    "releaseCommand": "npm run release:prepare",
+    "identity": "clean annotated v<package-version> tag at HEAD",
+    "boundedAggregate": "npm run check:release-readiness",
+    "build": "provenance-bound production Nuxt build",
+    "bundleFiles": 5,
+    "bypassArguments": 0,
+    "endToEndRehearsalTicket": "P13-074"
+  },
+  "sourceEvidence": [
+    {
+      "path": "package.json",
+      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "b2b6c4bed73dcd30013cc55724afc2330a84c0f904f44572007341a2f764fcc8"
+    },
+    {
+      "path": "scripts/release-readiness/release-command.mjs",
+      "sha256": "7c2afb46e7dbdd70707ed1c783e6930fc40d56505028fe96452ebafb9200d0fa"
+    },
+    {
+      "path": "scripts/release-readiness/generate-build-evidence.mjs",
+      "sha256": "1dbf218a31719c08c720ac2a18e35fe3ff3ba747b086a4f05dc6a33727277014"
+    },
+    {
+      "path": "scripts/release-readiness/check-release-evidence.mjs",
+      "sha256": "a8eb5e452496bac634ee07af74811edabb0caacd5eb6033d032c520563f11a38"
+    },
+    {
+      "path": "scripts/release-readiness/check-release-command.mjs",
+      "sha256": "a045f1e97726e591dff19b1c281b914bde8615ead8e14074525785e8c312fc97"
+    },
+    {
+      "path": "docs/release/releasing.md",
+      "sha256": "7c6e62ae19e0ef6ba07b2d9352e4d7791be274bc1ff3851f8e993ab93b40f784"
+    },
+    {
+      "path": "docs/releases/1.0.0.md",
+      "sha256": "f51eedd2d83f3f9b92d03ddc57fb272892426d6f090c0950e848a145315b1b08"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "42e4c8b0081bff83031888a7edd6c60a46ba891e412d416b360c7c4ff8789a61"
+    },
+    {
+      "path": "data/release-readiness/version-policy.v1.json",
+      "sha256": "3e65a10e9d29b1bce604bc52a2b3873272632f13a6ae396345782054257e533f"
+    },
+    {
+      "path": "data/release-readiness/supported-platform-matrix.v1.json",
+      "sha256": "c95943b4bf35347e54bda339ec944bdcb40148260a857c8e65dd617cb9a6626c"
+    },
+    {
+      "path": "data/release-readiness/known-limitations.v1.json",
+      "sha256": "cf731b8144de936de353afc4cab676123f3acab366066c5a2c714bbd9e2abc4b"
+    }
+  ]
+}

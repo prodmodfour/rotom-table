@@ -33,6 +33,8 @@ Then validate and start:
 
 `deploy/local-prodlike/bin/validate.sh`
 
+The default validation is deployment-focused (template check, typecheck, and build). The complete repository test suite is release/contributor evidence rather than a production-host prerequisite; run it only when needed with `ROTOM_RUN_FULL_TESTS=1 deploy/local-prodlike/bin/validate.sh`.
+
 `deploy/local-prodlike/bin/start-prodlike.sh`
 
 `deploy/local-prodlike/bin/health-prodlike.sh`

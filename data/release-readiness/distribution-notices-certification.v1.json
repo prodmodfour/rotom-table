@@ -1,0 +1,138 @@
+{
+  "artifact": "release-distribution-and-notices-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-066-distribution-and-notices-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "ticket": "P13-066",
+  "status": "Certified",
+  "gateRows": [
+    {
+      "id": "distribution-landing",
+      "state": "Certified"
+    },
+    {
+      "id": "distribution-screenshots",
+      "state": "Certified"
+    },
+    {
+      "id": "distribution-metadata",
+      "state": "Certified"
+    },
+    {
+      "id": "distribution-tree-classification",
+      "state": "Certified"
+    },
+    {
+      "id": "distribution-tree-disposition",
+      "state": "Approved"
+    },
+    {
+      "id": "distribution-private-exclusion",
+      "state": "Certified"
+    },
+    {
+      "id": "distribution-deployment",
+      "state": "Repaired"
+    },
+    {
+      "id": "licensing-dependencies",
+      "state": "Certified"
+    },
+    {
+      "id": "licensing-assets",
+      "state": "Certified"
+    },
+    {
+      "id": "licensing-disposition",
+      "state": "Approved"
+    }
+  ],
+  "evidence": {
+    "command": "npm run check:release-readiness:distribution-acceptance",
+    "distributionManifest": "data/release-readiness/distribution-manifest.v1.json",
+    "sourcePaths": 16872,
+    "noticeLocations": 9,
+    "documentaryFamilies": 6,
+    "licensingFamilies": 8,
+    "unresolvedFamilies": 0,
+    "privateOrSecretFindings": 0,
+    "unknownProvenanceMedia": 0,
+    "acceptedRisks": [
+      "RECOMMENDATION_5_RETAIN_EDITED_TRAINER_PROFILES"
+    ]
+  },
+  "phaseExit": {
+    "phase": 6,
+    "tickets": "P13-053–P13-066",
+    "completedTickets": 14,
+    "totalTickets": 14,
+    "zeroUnresolvedDispositionFamilies": true,
+    "legalClearanceClaimed": false
+  },
+  "sourceEvidence": [
+    {
+      "path": "data/release-readiness/repository-presentation-certification.v1.json",
+      "sha256": "40146c3e435c56a2bcd9da662e3cc96767fee6d62107541698cf09eeb522f946"
+    },
+    {
+      "path": "data/release-readiness/distribution-inventory.v1.json",
+      "sha256": "02dbcc267e3acfa12796f0969b25cc6727cc617c11e3b36a9b8a07c004f2affa"
+    },
+    {
+      "path": "data/release-readiness/distribution-manifest.v1.json",
+      "sha256": "9c346a4f8671045be93235d0b45fb7fdf370a8e7823e2807416075bc22688965"
+    },
+    {
+      "path": "data/release-readiness/documentary-tree-disposition.v1.json",
+      "sha256": "94ef35f3ea65db79ca3278fca74c72f2b8681397982407bfae34be96e73b91ec"
+    },
+    {
+      "path": "data/release-readiness/private-artifact-audit.v1.json",
+      "sha256": "f8537f8275d05900711275fdd4d0125d3ff3031396e68d2b580fff1d86f4d13d"
+    },
+    {
+      "path": "data/release-readiness/deployment-instruction-certification.v1.json",
+      "sha256": "33b648dde397e12cb7238c21ac0bd11956ffb685aa5fe4da18a69f0800962e97"
+    },
+    {
+      "path": "data/release-readiness/dependency-license-report.v1.json",
+      "sha256": "ef31adea2bd9fb232f38b092c93c15d586b1d887720c1c9c88efa5bfb0630114"
+    },
+    {
+      "path": "data/release-readiness/media-asset-inventory.v1.json",
+      "sha256": "595cde15cb6e2c58a332668b06b81c9b889d1bf16ba99e317210259cfcb8d418"
+    },
+    {
+      "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
+      "sha256": "e6643858065018d66708663d96f05cd7d94e856c8c56f53b9113d285c5bef7d7"
+    },
+    {
+      "path": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "sha256": "69ee55d873077e058c43e94108f9fc0fe6e534fbabe3f53cdfed11dfa750f199"
+    },
+    {
+      "path": "data/release-readiness/tracked-tree-policy.v1.json",
+      "sha256": "842b2993a5b449eec4f2091f900ad1357477a127219b5d6bd1cf821255e6b9a6"
+    },
+    {
+      "path": "NOTICE.md",
+      "sha256": "f9e6f713e9dec14c3efebf4c904f9c0cd31775b29c75eb20c4729cde6fb485aa"
+    },
+    {
+      "path": "docs/fan-project-notice.md",
+      "sha256": "d0849b3dd2659c63d430c3f788a6c19fee7dcd2e8b3c7496c3aa2e217990be1c"
+    },
+    {
+      "path": "docs/media-attribution.md",
+      "sha256": "be7a9066271bd1c9020f40e9bfd2a934e90f3344b44e8ea9fefcb2041232c2a2"
+    },
+    {
+      "path": "public/THIRD_PARTY_NOTICES.txt",
+      "sha256": "a0bc8368f748f524bd99fef03ca7677eff83575bd46c75f43a43cc03d41e863e"
+    },
+    {
+      "path": "scripts/release-readiness/check-distribution-acceptance.mjs",
+      "sha256": "4a02a163754bd07f48fbf2e4cf77cd50051f33029c04e00ee009699f4f1a851c"
+    }
+  ]
+}

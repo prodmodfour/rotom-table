@@ -7,7 +7,7 @@ Rotom Table's VPS update is ready for review as **private trusted-table hosting*
 - Selected runtime: **Node.js 24 LTS** with npm.
 - Repo-level version files: `.nvmrc` and `.node-version` both request Node 24.
 - Package metadata: `package.json` declares `engines.node` as `>=24 <25`.
-- CI/runtime validation: GitHub Actions uses Node 24, and the standard install/typecheck/test/build checks were validated under Node 24.
+- CI/runtime validation: GitHub Actions uses Node 24, and the system-wide service runtime plus explicit source-build install/deployment-check/typecheck/build checks were validated under Node 24.
 - Fallback: no Node 22 fallback is documented for this branch because no concrete Node 24 incompatibility was found.
 
 ## Deployment path chosen
@@ -35,9 +35,9 @@ Covered routes include map, sheet, encounter-table, persistent encounter-generat
 The branch was validated with the standard commands:
 
 ```bash
-npm ci
+npm ci --include=dev
+npm run check:release-readiness:deployment
 npm run typecheck
-npm test
 npm run build
 ```
 

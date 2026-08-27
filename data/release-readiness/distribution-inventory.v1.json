@@ -2,12 +2,12 @@
   "artifact": "release-distribution-inventory",
   "schemaVersion": 1,
   "releaseVersion": "1.0.0-rc.1",
-  "status": "OWNER_DISTRIBUTION_DISPOSITION_APPLIED_LICENSING_PENDING",
+  "status": "CERTIFIED",
   "distributable": "tagged-source-repository-plus-documented-production-build",
   "trackedTreeAuthority": {
     "policy": "data/release-readiness/tracked-tree-policy.v1.json",
     "inventory": "data/release-readiness/tracked-tree-inventory.v1.json",
-    "classificationStatus": "COMPLETE_WITH_DECLARED_LICENSING_ANOMALIES"
+    "classificationStatus": "COMPLETE"
   },
   "classes": [
     {
@@ -58,6 +58,7 @@
       "id": "documentation-and-presentation",
       "includes": [
         "README.md",
+        "CHANGELOG.md",
         "docs/",
         "DESIGN.md"
       ]
@@ -133,7 +134,7 @@
     "release-evidence/"
   ],
   "productionBuild": {
-    "command": "npm ci && npm run build",
+    "command": "npm ci --include=dev && npm run build",
     "generatedOutput": ".output/",
     "sourceTreeMembership": false,
     "supportedDeployment": "private Linux x86-64 VPS",
@@ -191,5 +192,5 @@
     "pokesheet.pdf",
     "notepad/"
   ],
-  "disposition": "OWNER_DECISION_APPLIED_AT_P13_058"
+  "disposition": "PHASE_6_DISTRIBUTION_AND_NOTICES_CERTIFIED"
 }

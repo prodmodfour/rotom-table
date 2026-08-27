@@ -12,6 +12,8 @@ const repositoryRoot = path.resolve(scriptDirectory, '../..')
 const policyPath = path.join(repositoryRoot, 'data/release-readiness/tracked-tree-policy.v1.json')
 const inventoryPath = path.join(repositoryRoot, 'data/release-readiness/tracked-tree-inventory.v1.json')
 const inventoryRepositoryPath = 'data/release-readiness/tracked-tree-inventory.v1.json'
+const manifestRepositoryPath = 'data/release-readiness/distribution-manifest.v1.json'
+const contentDigestExclusions = new Set([inventoryRepositoryPath, manifestRepositoryPath])
 const allowedCategories = new Set([
   'authored',
   'generated',
@@ -148,7 +150,7 @@ async function buildInventory(policy, policySource) {
   const contentHashes = new Map()
   const contentLines = []
   for (const repositoryPath of distributionPaths) {
-    if (repositoryPath === inventoryRepositoryPath) continue
+    if (contentDigestExclusions.has(repositoryPath)) continue
     const digest = await contentHash(repositoryPath)
     contentHashes.set(repositoryPath, digest)
     contentLines.push(`${repositoryPath}\0${digest}`)
@@ -204,7 +206,7 @@ async function buildInventory(policy, policySource) {
     trackedPathCount: distributionPaths.length,
     trackedPathSetSha256: sha256(`${distributionPaths.join('\n')}\n`),
     trackedContentSetSha256: sha256(`${contentLines.join('\n')}\n`),
-    contentDigestExclusions: [inventoryRepositoryPath],
+    contentDigestExclusions: [...contentDigestExclusions].sort(),
     categoryPathCounts: sortObjectEntries(categoryCounts.entries()),
     rulePathCounts: sortObjectEntries(ruleCounts.entries()),
     topLevelTrees: topLevelEntries.map((tree) => ({

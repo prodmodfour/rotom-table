@@ -167,7 +167,7 @@ async function buildReport() {
     schemaVersion: 1,
     inventoryId: 'p13-media-asset-inventory-v1',
     releaseVersion: '1.0.0-rc.1',
-    status: 'INVENTORIED_PENDING_OWNER_DISPOSITION',
+    status: 'OWNER_DISPOSITION_RECORDED',
     sources: {
       policy: { path: 'data/release-readiness/media-asset-policy.v1.json', sha256: sha256(policySource) },
       nuxtConfig: { path: 'nuxt.config.ts', sha256: sha256(nuxtConfigSource) },
@@ -200,13 +200,13 @@ async function buildReport() {
         id: family.id,
         affectedFiles: family.pathCount,
         rightsPosture: family.rightsPosture,
-        severity: family.potentialBlocker ? 'potential-blocker' : 'owner-review',
+        severity: family.ownerDisposition?.includes('ACCEPTED_RISK')
+          ? 'owner-accepted-risk'
+          : family.ownerDisposition
+            ? 'owner-remediated'
+            : 'owner-reviewed',
       })),
-    ownerGate: {
-      ticket: 'P13-062',
-      automationMayApprove: false,
-      disposition: 'UNRESOLVED',
-    },
+    ownerGate: policy.ownerGate,
   }
 }
 

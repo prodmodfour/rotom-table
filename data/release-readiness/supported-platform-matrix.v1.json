@@ -13,7 +13,7 @@
     "node": ">=24 <25",
     "nodeFile": ".nvmrc",
     "packageManager": "npm",
-    "install": "npm ci"
+    "install": "npm ci --include=dev"
   },
   "application": {
     "framework": "Nuxt 4",

@@ -41,7 +41,7 @@ export const paintResolvedBlockTexturePattern = (
       paintStoneTexture(ctx, role, seed)
       break
     case 'water':
-      paintWaterTexture(ctx, role, seed)
+      paintWaterTexture(ctx, role, seed, baseColor)
       break
     case 'snow':
       paintSnowTexture(ctx, role, seed)

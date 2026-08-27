@@ -8,11 +8,11 @@ The tagged Rotom Table source repository is public code and documentation, not c
 git clone https://github.com/prodmodfour/rotom-table.git
 cd rotom-table
 nvm use
-npm ci
+npm ci --include=dev
 npm run check:release-readiness:private-artifacts
 ```
 
-A clean clone contains no campaign database, profile, environment file, backup, release evidence, Playwright result, or operator log. `npm ci` creates ignored dependencies and Nuxt preparation output; it must not create tracked campaign authority.
+A clean clone contains no campaign database, profile, environment file, backup, release evidence, Playwright result, or operator log. `npm ci --include=dev` creates ignored source-build dependencies and Nuxt preparation output; it must not create tracked campaign authority.
 
 ## Keep these outside Git
 

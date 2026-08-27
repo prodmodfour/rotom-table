@@ -26,9 +26,9 @@ if [ -d "$APP_DIR/.git" ]; then
   git -C "$APP_DIR" rev-parse HEAD || true
 fi
 
-log "Installing dependencies with npm ci"
+log "Installing source-build dependencies with npm ci --include=dev"
 cd "$APP_DIR"
-npm ci
+npm ci --include=dev
 
 log "Building production output"
 npm run build

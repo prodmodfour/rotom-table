@@ -2,40 +2,41 @@
   "schemaVersion": 1,
   "inventoryId": "p13-tracked-tree-inventory-v1",
   "releaseVersion": "1.0.0-rc.1",
-  "status": "COMPLETE_WITH_DECLARED_LICENSING_ANOMALIES",
+  "status": "COMPLETE",
   "policy": {
     "id": "p13-tracked-tree-classification-v1",
     "path": "data/release-readiness/tracked-tree-policy.v1.json",
-    "sha256": "25efdc6587c21b6b8399dee40a17d493e5f54d5a3c5a49cbcd740212ae1e82db"
+    "sha256": "842b2993a5b449eec4f2091f900ad1357477a127219b5d6bd1cf821255e6b9a6"
   },
   "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
-  "trackedPathCount": 16875,
-  "trackedPathSetSha256": "fe6962a2bbce6d35f6fd85f6392c0b7424df9ef4c6ee8e988dce76e04cc28dba",
-  "trackedContentSetSha256": "a03d5d5eb7209284fadebc91b5f35ffac902422f3f8ad52abfe3cc96dcc44e17",
+  "trackedPathCount": 16872,
+  "trackedPathSetSha256": "4c6048db458da08dfab13eed29a3c43a549f312614a81f6f597a31cbec5efbcd",
+  "trackedContentSetSha256": "1c3c115322b362c8c41e541a5e35adfb36a7eeaaa9833d31984f731a20fad7b0",
   "contentDigestExclusions": [
+    "data/release-readiness/distribution-manifest.v1.json",
     "data/release-readiness/tracked-tree-inventory.v1.json"
   ],
   "categoryPathCounts": {
-    "authored": 5037,
-    "documentary": 1318,
-    "generated": 1062,
+    "authored": 5051,
+    "documentary": 1323,
+    "generated": 1068,
     "private-data-sensitive": 5,
-    "third-party": 9453
+    "third-party": 9425
   },
   "rulePathCounts": {
     "authored-data": 359,
     "authored-root-files": 20,
-    "authored-source-trees": 4657,
+    "authored-source-trees": 4671,
     "authored-trainer-generator": 1,
-    "documentary-root-files": 8,
-    "documentary-trees": 1310,
+    "documentary-root-files": 9,
+    "documentary-trees": 1314,
     "generated-dependency-lock": 1,
-    "generated-release-evidence": 41,
+    "generated-release-evidence": 47,
     "generated-screenshots": 3,
     "generated-sheet-examples": 1015,
     "generated-trainer-datasets": 2,
     "private-encounter-tables": 5,
-    "third-party-public-media": 7984,
+    "third-party-public-media": 7956,
     "third-party-reference-authorities": 14,
     "third-party-trainer-sprites": 1455
   },
@@ -104,6 +105,13 @@
       }
     },
     {
+      "path": "CHANGELOG.md",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
       "path": "CONTRIBUTING.md",
       "pathCount": 1,
       "categories": {
@@ -154,10 +162,10 @@
     },
     {
       "path": "data",
-      "pathCount": 1429,
+      "pathCount": 1435,
       "categories": {
         "authored": 359,
-        "generated": 1056,
+        "generated": 1062,
         "third-party": 14
       }
     },
@@ -170,9 +178,9 @@
     },
     {
       "path": "docs",
-      "pathCount": 221,
+      "pathCount": 225,
       "categories": {
-        "documentary": 218,
+        "documentary": 222,
         "generated": 3
       }
     },
@@ -276,9 +284,9 @@
     },
     {
       "path": "public",
-      "pathCount": 7984,
+      "pathCount": 7956,
       "categories": {
-        "third-party": 7984
+        "third-party": 7956
       }
     },
     {
@@ -297,9 +305,9 @@
     },
     {
       "path": "scripts",
-      "pathCount": 130,
+      "pathCount": 143,
       "categories": {
-        "authored": 130
+        "authored": 143
       }
     },
     {
@@ -325,9 +333,9 @@
     },
     {
       "path": "tests",
-      "pathCount": 1822,
+      "pathCount": 1823,
       "categories": {
-        "authored": 1822
+        "authored": 1823
       }
     },
     {
@@ -429,24 +437,26 @@
       "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 1459,
       "pathSetSha256": "88b0fc3b208d684c5551f69398ad6d126bd15529593320025feacb1801ea25db",
-      "contentSetSha256": "f780c92d3678272a95b78073d01c95848b0e50131db7c70681140af5408efb78"
+      "contentSetSha256": "e8befeaa55c175a9be5abcad858512668c0a5e9434c6f2220199636d31dd9b54"
     },
     {
       "id": "P13-LICENSE-PUBLIC-MEDIA",
       "pathPrefix": "public/",
       "kind": "third-party-rights-review",
       "requiredTicket": "P13-062",
-      "status": "AWAITING_OWNER",
-      "matchedPathCount": 7984,
-      "pathSetSha256": "37ca9deab87033f61f379f5605c5c832ac0c360de1ccb3be937f90a6bd822d26",
-      "contentSetSha256": "428f95e426da7124f41e74cbf03e161c526d46e5658241cf65b8d77106747a4e"
+      "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "status": "OWNER_APPROVED_APPLIED",
+      "matchedPathCount": 7956,
+      "pathSetSha256": "b6f870724e3edb2ca4c8d981d0361f28724c18d6061f9a7728b3f5258291bd07",
+      "contentSetSha256": "29777f78f2ff95eca23c9573b1cd057ff862ef13c3a140babda30c66e1f98d3b"
     },
     {
       "id": "P13-LICENSE-REFERENCE-DATA",
       "pathPrefix": "data/reference/",
       "kind": "third-party-rights-review",
       "requiredTicket": "P13-062",
-      "status": "AWAITING_OWNER",
+      "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 14,
       "pathSetSha256": "786ae0eeb0affd71750d704113965ee86db161385ac6dbdaebf7f62e9af14e29",
       "contentSetSha256": "337a8f2f93789712d019d5e6284c2f3db1a4874d7ac8662b24b6f031125806e3"
@@ -456,10 +466,11 @@
       "exactPath": "package-lock.json",
       "kind": "dependency-license-review",
       "requiredTicket": "P13-062",
-      "status": "AWAITING_OWNER",
+      "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 1,
       "pathSetSha256": "62d1b5e7751856dfa5d7d9fb28996e1e32b47223f0098ea6169c4984ad0d2645",
-      "contentSetSha256": "41aef3d4d5268271c18b8aefb0d8c360cf8f27657ad12b2a544142c985a16484"
+      "contentSetSha256": "051a01ca95015125ea7983a7cc26d1de380f16e3a0731aedc75895f1e7306639"
     }
   ],
   "resolvedPrunedTrees": [
@@ -488,7 +499,7 @@
     "distributionDispositionTicket": "P13-058",
     "distributionDispositionStatus": "RESOLVED",
     "licensingDispositionTicket": "P13-062",
-    "licensingDispositionStatus": "AWAITING_OWNER",
+    "licensingDispositionStatus": "RESOLVED",
     "automationMayApprove": false
   }
 }

@@ -1,3 +1,8 @@
-# Python helpers for sprite download/conversion scripts.
-requests>=2.31
-Pillow>=10.0
+# Exact Python helper graph reviewed for the 1.0 source distribution.
+# Regenerate only through a reviewed dependency-license update.
+certifi==2026.7.22
+charset-normalizer==3.5.1
+idna==3.19
+Pillow==12.3.0
+requests==2.34.2
+urllib3==2.7.0

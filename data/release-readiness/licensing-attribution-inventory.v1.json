@@ -2,21 +2,22 @@
   "artifact": "release-licensing-attribution-inventory",
   "schemaVersion": 1,
   "releaseVersion": "1.0.0-rc.1",
-  "status": "INVENTORIED_PENDING_OWNER_DISPOSITION",
+  "status": "OWNER_DISPOSITION_RECORDED",
   "automationMayApprove": false,
   "reports": {
     "dependencies": "data/release-readiness/dependency-license-report.v1.json",
     "mediaAssets": "data/release-readiness/media-asset-inventory.v1.json",
-    "documentaryTrees": "data/release-readiness/documentary-tree-disposition.v1.json"
+    "documentaryTrees": "data/release-readiness/documentary-tree-disposition.v1.json",
+    "ownerDisposition": "data/release-readiness/licensing-notice-disposition.v1.json"
   },
   "inventorySummary": {
     "npmPackageInstances": 971,
     "npmUnknownLicenses": 0,
     "npmPotentiallyIncompatibleCopyleft": 0,
-    "pythonResolutionLockBound": false,
-    "sourceDistributionMediaFiles": 9472,
+    "pythonResolutionLockBound": true,
+    "sourceDistributionMediaFiles": 9444,
     "unclassifiedMediaFiles": 0,
-    "unknownProvenanceMediaFiles": 29,
+    "unknownProvenanceMediaFiles": 0,
     "unknownRedistributionMediaFiles": 7949,
     "explicitSourceRestrictionConflictFiles": 1460,
     "runtimeFontBinaries": 18,
@@ -29,8 +30,8 @@
         "LICENSE",
         "package.json"
       ],
-      "finding": "The Rotom MIT grant is already limited to original project work and excludes third-party Pokémon/PTU material.",
-      "disposition": "UNRESOLVED"
+      "finding": "The Rotom MIT grant is limited to original project work and excludes third-party Pokémon/PTU material.",
+      "disposition": "APPROVED_AS_WRITTEN"
     },
     {
       "id": "fan-content-posture",
@@ -38,8 +39,8 @@
         "NOTICE.md",
         "docs/fan-project-notice.md"
       ],
-      "finding": "The project is non-commercial and unofficial, but that notice is not permission to redistribute third-party material.",
-      "disposition": "UNRESOLVED"
+      "finding": "The project is non-commercial and unofficial; expanded notices explicitly state that posture and attribution are not redistribution permission.",
+      "disposition": "APPROVED_EXPANDED_NOTICE"
     },
     {
       "id": "ptu-derived-data-and-text",
@@ -51,8 +52,8 @@
       "prunedSources": [
         "pokesheet.pdf"
       ],
-      "finding": "Canonical runtime data plus retained documentary/parser trees contain third-party PTU-derived material outside the Rotom grant.",
-      "disposition": "UNRESOLVED"
+      "finding": "Canonical runtime data plus retained documentary/parser trees contain third-party PTU-derived material and remain explicitly outside the Rotom grant.",
+      "disposition": "APPROVED_RETAIN_OUTSIDE_GRANT"
     },
     {
       "id": "sprites-and-media",
@@ -62,9 +63,10 @@
         "docs/screenshots/",
         "tests/e2e/**/*-snapshots/"
       ],
-      "finding": "Most Pokémon/item/trainer art has no explicit redistribution license; 29 files lack upstream provenance and 1,460 edited trainer-profile derivatives conflict with the source index do-not-edit warning.",
+      "finding": "Most Pokémon/item/Trainer art has no explicit redistribution license. The 29 unknown-source images were replaced with original code/vector work; 1,460 edited Trainer profiles remain by explicit owner risk acceptance under the recommendation-5 exception.",
       "potentialBlocker": true,
-      "disposition": "UNRESOLVED"
+      "acceptedRisk": "RECOMMENDATION_5_RETAIN_EDITED_TRAINER_PROFILES",
+      "disposition": "APPROVED_REMEDIATED_WITH_RECORDED_EXCEPTION"
     },
     {
       "id": "fonts",
@@ -73,37 +75,42 @@
         "@fontsource/eb-garamond",
         "@fontsource/jetbrains-mono"
       ],
-      "finding": "Three Fontsource families produce 18 runtime binaries under OFL-1.1 and require attribution/notice preservation.",
-      "disposition": "UNRESOLVED"
+      "finding": "Three Fontsource families produce 18 runtime binaries under OFL-1.1; package copyright and license texts are preserved in the generated third-party notice bundle.",
+      "disposition": "APPROVED_NOTICE_PRESERVED"
     },
     {
       "id": "npm-dependencies",
       "sources": [
         "package-lock.json",
+        "public/THIRD_PARTY_NOTICES.txt",
         "data/release-readiness/dependency-license-report.v1.json"
       ],
-      "finding": "971 lock-bound instances: zero unknown after one reviewed MIT metadata override, zero mandatory copyleft conflicts, with MPL, attribution, and one permissive dual-license review set.",
-      "disposition": "UNRESOLVED"
+      "finding": "971 lock-bound instances have zero unknown or mandatory incompatible-copyleft entries; flagged licenses and root notices are indexed and preserved, and node-forge uses its BSD-3-Clause option.",
+      "disposition": "APPROVED_NOTICE_PRESERVED"
     },
     {
       "id": "python-dependencies",
       "sources": [
         "requirements.txt",
+        "public/THIRD_PARTY_NOTICES.txt",
         "data/release-readiness/dependency-license-report.v1.json"
       ],
-      "finding": "Direct licenses are known, but minimum-version requirements do not freeze exact versions or the future transitive graph; certifi is a known MPL family.",
-      "potentialBlocker": true,
-      "disposition": "UNRESOLVED"
+      "finding": "The complete two-direct/four-transitive Python helper graph is exact-version pinned; certifi's MPL-2.0 posture is indexed in the notice bundle.",
+      "potentialBlocker": false,
+      "disposition": "APPROVED_PINNED_AND_NOTICED"
     },
     {
       "id": "existing-notices",
       "sources": [
         "NOTICE.md",
-        "docs/fan-project-notice.md"
+        "docs/fan-project-notice.md",
+        "docs/media-attribution.md",
+        "public/THIRD_PARTY_NOTICES.txt"
       ],
-      "finding": "Current notices state ownership boundaries but do not yet enumerate Fontsource, PokéSprite, PokémonDB, Pokémon Showdown, or trainer-artist provenance.",
-      "disposition": "UNRESOLVED"
+      "finding": "Expanded repository, fan-project, media-attribution, and generated dependency notices enumerate Fontsource, PokéSprite, PokémonDB, Pokémon Showdown, Trainer artist strings, derivatives, and the accepted risk.",
+      "disposition": "APPROVED_EXPANDED"
     }
   ],
-  "releaseGate": "Every family requires an explicit owner disposition at P13-062; potential-blocker findings cannot be silently accepted by automation."
+  "ownerDispositionArtifact": "data/release-readiness/licensing-notice-disposition.v1.json",
+  "releaseGate": "All eight families carry explicit owner dispositions. The only retained potential-blocker condition is recommendation 5, preserved as a named owner-accepted risk rather than silently cleared by automation."
 }

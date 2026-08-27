@@ -428,7 +428,9 @@ defineExpose({ focusPokemon, focusCell })
         role="status"
         aria-live="polite"
       >
-        <img src="/map/live-play-saving-icon.png" alt="" aria-hidden="true" />
+        <span class="live-play-saving-icon__glyph" aria-hidden="true">
+          <span class="live-play-saving-icon__core"></span>
+        </span>
         <span class="live-play-saving-icon__label">{{ livePlaySavingIconLabel }}</span>
       </div>
 
@@ -665,13 +667,42 @@ defineExpose({ focusPokemon, focusCell })
   pointer-events: none;
 }
 
-.live-play-saving-icon img {
-  display: block;
+.live-play-saving-icon__glyph {
+  position: relative;
+  display: grid;
   width: 100%;
   height: 100%;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 78%, var(--rule-soft));
   border-radius: inherit;
-  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--pokemon-black) 28%, transparent));
-  object-fit: cover;
+  background:
+    radial-gradient(circle at 50% 44%, color-mix(in srgb, var(--info) 16%, transparent), transparent 44%),
+    color-mix(in srgb, var(--paper-soft) 92%, transparent);
+  box-shadow:
+    0 10px 22px color-mix(in srgb, var(--pokemon-black) 28%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.live-play-saving-icon__glyph::before {
+  position: absolute;
+  width: 68%;
+  height: 68%;
+  border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-top-color: var(--accent);
+  border-right-color: var(--info);
+  border-radius: 50%;
+  content: '';
+}
+
+.live-play-saving-icon__core {
+  position: relative;
+  width: 24%;
+  height: 24%;
+  transform: rotate(45deg);
+  border: 1px solid color-mix(in srgb, var(--info) 72%, white);
+  border-radius: 0.16rem;
+  background: color-mix(in srgb, var(--info) 72%, var(--paper-soft));
+  box-shadow: 0 0 0.75rem color-mix(in srgb, var(--info) 42%, transparent);
 }
 
 .live-play-saving-icon__label {
@@ -689,21 +720,22 @@ defineExpose({ focusPokemon, focusCell })
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .live-play-saving-icon {
+  .live-play-saving-icon__glyph::before {
+    animation: live-play-saving-icon-spin 0.9s linear infinite;
+  }
+
+  .live-play-saving-icon__core {
     animation: live-play-saving-icon-pulse 0.9s ease-in-out infinite alternate;
   }
 }
 
-@keyframes live-play-saving-icon-pulse {
-  from {
-    opacity: 0.72;
-    transform: scale(0.96);
-  }
+@keyframes live-play-saving-icon-spin {
+  to { transform: rotate(360deg); }
+}
 
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+@keyframes live-play-saving-icon-pulse {
+  from { opacity: 0.62; }
+  to { opacity: 1; }
 }
 
 .live-play-state-banner {

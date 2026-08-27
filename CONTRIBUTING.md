@@ -1,128 +1,89 @@
 # Contributing
 
-Rotom Table is a private trusted-table fan project and long-running hobby tool with filesystem-backed campaign data. Contributions should preserve that shape unless a future project direction explicitly changes it.
+Rotom Table is a private trusted-table, liveplay-only fan project maintained for a known campaign group. Contributions are welcome for review, but acceptance, response time, roadmap inclusion, and ongoing support are not guaranteed. Contributions must preserve the supported private-VPS/SQLite shape unless a separately reviewed plan explicitly changes it.
 
-## Local setup
+Read [`DESIGN.md`](DESIGN.md), [`docs/architecture.md`](docs/architecture.md), and the relevant subsystem guide before editing. The active numbered implementation ledger and repository instructions own execution order.
+
+## Development setup (not a liveplay host)
+
+Use Node 24 and the lockfile:
 
 ```bash
-npm install
-npm run dev
+nvm use
+npm ci --include=dev
+ROTOM_CAMPAIGN_ROOT=/tmp/rotom-table-contributor npm run dev
 ```
 
-Open the local Nuxt URL and choose **GM Login** or **Player Login** depending on the workflow you want to inspect.
+`npm run dev` is for development only. Supported table hosting uses the production build on the documented private VPS shape; see [`docs/private-vps-hosting.md`](docs/private-vps-hosting.md).
 
-Optional helpers:
+Use a disposable synthetic campaign root. Never point tests, scripts, screenshots, or review tooling at a real campaign. The GM/Player picker is not public authentication, even in development.
+
+## Authority boundaries
+
+- Runtime PTU identities and mechanics come only from the fourteen `data/reference/*.json` authorities and `shared/ruleset/natures.ts`.
+- `books/`, `ptu-data/`, parser inputs, PDFs, websites, and wikis are documentary/provenance material, never runtime fallback authority.
+- SQLite repositories and existing versioned contracts own campaign mutations. Do not add parallel JSON, browser, or UI authority.
+- Role-safe server projections own privacy. Do not send broad GM/private payloads and hide them with client CSS.
+- Supported deployment remains one private Linux x86-64 VPS per trusted campaign group, behind an outer access gate. Public authentication, SaaS, multi-tenancy, federation, and public-service hardening are out of scope.
+
+## Change workflow
+
+1. Start from a clean tree and identify the owning plan, contract, registry, or migration.
+2. Make the smallest authority-preserving change and add focused tests.
+3. Run the focused generator/check/test command for the affected domain with bounded workers where practical.
+4. Batch related work before `npm run typecheck` and broad checks; run memory-heavy processes one at a time.
+5. Before sharing, inspect `git status`, `git diff --check`, and every generated artifact diff.
+
+Baseline checks for an ordinary code change:
 
 ```bash
-just
-just encounter <region> <table> <count> preview
-```
-
-## Suggested checks
-
-Before sharing a change, run:
-
-```bash
-npm run check:encounter-presentation
 npm run lint
 npm run typecheck
-npm test
-npm run test:nuxt
-npm run test:e2e
+npx vitest run <focused-test-files> --maxWorkers=1 --no-file-parallelism
 npm run build
 ```
 
-The canonical quality gate runs Ability and Move metadata/plan/budget validation, encounter-contract consistency, lint, pure and Nuxt-runtime tests, production-build Playwright/axe acceptance, typecheck, and the build:
+Use the complete repository gate only at a meaningful integration or release milestone:
 
 ```bash
 bash scripts/quality-gate.sh
 ```
 
-Move authors must follow [`docs/move-automation.md`](docs/move-automation.md). It covers the spec/handler boundary, capability contracts, branch evidence, hashes, status promotion, recovery invariants, and common validation failures.
-
-All new live-play action or presentation sources must follow [`docs/encounter-presentation-contract.md`](docs/encounter-presentation-contract.md), the [schema/API reference](docs/encounter-presentation-api.md), and [ADR 012](docs/adrs/012-server-authoritative-encounter-presentation-contract.md). Do not add a source-specific snapshot bundle, infer legality from sheet/menu labels, expose private choices in map-public realtime, or derive accepted visuals from optimistic state. Run `npm run check:encounter-presentation` after changing commands, catalogs, adapters, fixtures, or docs.
-
-Ability authors must follow [`docs/ability-automation.md`](docs/ability-automation.md), [ADR 011](docs/adrs/011-authoritative-ability-automation-runtime.md), and the ordered [`ABILITY_AUTOMATION_PLAN.md`](implementation-plans/done/ABILITY_AUTOMATION_PLAN.md). During the migration, run:
+Release-boundary work must also pass:
 
 ```bash
-npm run check:ability-automation
-npm run check:ability-automation-links
-npm run check:ability-automation-plan
-npm run check:ability-automation-budgets
+npm run check:release-readiness
 ```
 
-`npm run check:ability-automation-complete` intentionally remains red until all 483 canonical abilities have reviewed AbilitySpec runtimes and executable evidence. Existing helper or menu coverage does not promote a manifest row.
+Do not weaken a gate, rebase a performance budget, rewrite archived evidence, or mark a blocked row complete to make validation pass.
 
-Run the same non-strict validation directly while developing move automation:
+## Domain-specific changes
 
-```bash
-npm run check:move-automation
-```
+- Move automation: [`docs/move-automation.md`](docs/move-automation.md) and `npm run check:move-automation-complete`.
+- Ability automation: [`docs/ability-automation.md`](docs/ability-automation.md) and `npm run check:ability-automation-complete`.
+- Encounter presentation and liveplay: [`docs/encounter-presentation-contract.md`](docs/encounter-presentation-contract.md), [`docs/encounter-workspace/design-system.md`](docs/encounter-workspace/design-system.md), `npm run check:encounter-presentation`, and `npm run check:encounter-design`.
+- Breeding: [`docs/breeding/contributor-guide.md`](docs/breeding/contributor-guide.md).
+- Contests: [`docs/contests/README.md`](docs/contests/README.md).
+- GM Campaign Toolkit: [`docs/gm-campaign-toolkit/contributor-guide.md`](docs/gm-campaign-toolkit/contributor-guide.md).
+- Visible UI: follow `DESIGN.md`, existing tokens/primitives, accessibility semantics, responsive behavior, and reduced-motion requirements.
 
-This command validates the canonical catalog, semantic manifest, runtime and scenario references, hashes, and metadata invariants. It intentionally permits honest `assisted` and `blocked` rows while implementation is in progress. The quality gate also verifies that committed legacy v1 fingerprints still match the evaluated registry definitions.
+## Data and evidence hygiene
 
-Generate deterministic planning output from reviewed manifest metadata in Markdown or JSON:
+Never commit or attach real campaign data, player information, credentials, environment files, backups, production logs, browser traces, private screenshots, release-evidence directories, or one-off scratch material. Use only synthetic fixtures and app-owned test roots.
 
-```bash
-npm run check:move-automation -- --report
-npm run check:move-automation -- --json
-```
+Generated artifacts must be reproducible, sorted, source-hash-bound, and reviewed. A report that inventories risk is not owner approval or legal clearance.
 
-Both formats group canonical move IDs by semantic status, capability blocker, rollout cohort, and missing scenario-evidence class. The legacy `--worklist` prose classifier remains available only as an informational heuristic; its regex buckets and candidate sample are not an implementation queue or completion evidence.
+## Fan-project, dependency, and asset boundaries
 
-After changing a manifest row's base status, interaction status, runtime kind, blockers, limitations, or manual steps, refresh the bounded browser-facing move-menu projection and review both data diffs:
+- Do not present Rotom Table as official, endorsed, or commercial.
+- Do not claim ownership of Pokémon/PTU names, images, rules terms, concepts, text, or sprites.
+- Do not add or download third-party media without recorded source, author where supplied, license/usage posture, and distribution review.
+- Use the existing project-authored CSS/SVG/canvas visual language before introducing another asset.
+- Preserve dependency and font notices in `public/THIRD_PARTY_NOTICES.txt`; regenerate it with `npm run generate:release-readiness:third-party-notices` after lock changes.
+- Keep [`LICENSE`](LICENSE), [`NOTICE.md`](NOTICE.md), [`docs/fan-project-notice.md`](docs/fan-project-notice.md), and [`docs/media-attribution.md`](docs/media-attribution.md) aligned.
 
-```bash
-npm run generate:move-automation-menu-status
-npm run check:move-automation-menu-status
-```
+Licensing and distribution decisions remain owner-reserved. Contributors may surface facts and propose remediation but may not label uncertain material legally cleared.
 
-A move can become `complete` only after its reviewed mechanic and branch tags resolve through `data/move-automation/scenario-requirements.json`. Every resulting evidence class must be linked to a declared scenario, or carry a bounded not-applicable reason and review date. A scenario ID alone is not completion evidence.
+## Reporting and support
 
-After an intentional legacy script, version, or source-attribution change, refresh both the fingerprint index and manifest links, then review the resulting data diff:
-
-```bash
-npm run link:move-automation-legacy
-npm run check:move-automation-legacy-links
-```
-
-The linker updates runtime metadata only; it does not promote an `assisted` move or remove semantic debt.
-
-Before reviewing a legacy v1 move, generate its deterministic implementation audit metadata:
-
-```bash
-npm run audit:move-automation-legacy -- --report
-npm run --silent audit:move-automation-legacy -- --json
-```
-
-The audit lists each registered move's source module, v1 version, deterministic definition hash, script shape, targeting and suggestion fields, automation notes, and inferred capability hints. The hints are non-authoritative planning aids; this report never decides semantic completion or promotes manifest status.
-
-The strict completion and bounded-engine checks are also available directly:
-
-```bash
-npm run check:move-automation-complete
-npm run check:move-automation-budgets
-```
-
-For move VFX work, copy the PR checklist from `docs/move-animations.md#copyable-pr-checklist-for-move-vfx-changes` into the PR description and run the focused tests/manual QA listed there when they apply.
-
-## Data hygiene
-
-- Do not commit personal campaign data, private player details, credentials, unreleased story notes, or one-off local scratch data.
-- Check `git status` carefully before committing changes under `data/`, `encounter_tables/`, or any generated-output folder.
-- Keep JSON data readable, formatted, and inspectable. Prefer explicit fields over opaque blobs.
-- Generated wild sheets should be reviewed before committing and should only be committed if they are meant to serve as examples.
-
-## Behaviour changes
-
-- Update or add tests for behaviour changes.
-- Keep server route handlers, use cases, shared helpers, and UI utilities separated by responsibility.
-- Preserve private trusted-table and filesystem-backed assumptions unless the change explicitly includes a reviewed persistence/auth design.
-- Avoid changing application behaviour in documentation-only or presentation-only passes.
-
-## Fan-project boundaries
-
-- Do not present the project as official, endorsed, or commercial.
-- Do not claim ownership of Pokémon/PTU-related names, images, rules terms, or concepts.
-- Do not add third-party assets or content unless their source and usage boundaries are understood.
-- Keep notices in `NOTICE.md` and `docs/fan-project-notice.md` aligned when changing presentation language.
+Use a private channel for vulnerabilities as described in [`SECURITY.md`](SECURITY.md). Public issues and contributions must contain only synthetic, redacted evidence. This project provides best-effort hobby maintenance with no SLA, uptime, commercial-support, or compatibility promise outside the reviewed supported matrix; see [`docs/support.md`](docs/support.md).

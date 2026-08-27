@@ -1,43 +1,62 @@
 # Security
 
-## Private trusted-table trust model
+## Supported security boundary
 
-Rotom Table is currently a private trusted-table, filesystem-backed tabletop tool. The GM/Player local role model is a role picker backed by a cookie; it is not hardened public authentication.
+Rotom Table is a private trusted-table application for one known campaign group. The supported deployment is the production Nuxt/Nitro build on a private Linux x86-64 VPS, managed by a GM/operator and protected by an outer access gate.
 
-The archived legacy `/sessions` surface includes a guarded session-local join flow for trusted tables, but it does not turn Rotom Table into a hardened public service and is not the current multiplayer architecture. See [docs/archive/live-session/README.md](docs/archive/live-session/README.md) for the archive index, [docs/archive/live-session/live-session-security-boundaries.md](docs/archive/live-session/live-session-security-boundaries.md) for legacy trust boundaries, [docs/archive/live-session/live-session-security-secret-hygiene-readiness.md](docs/archive/live-session/live-session-security-secret-hygiene-readiness.md) for public exposure warnings and data hygiene, [docs/archive/live-session/live-session-persistence-recovery-maintenance.md](docs/archive/live-session/live-session-persistence-recovery-maintenance.md) for legacy snapshots/event logs, and [docs/archive/live-session/live-session-dependency-runtime-maintenance.md](docs/archive/live-session/live-session-dependency-runtime-maintenance.md) for the guarded runtime flag and Cloudflare tunnel assumptions.
+The GM/Player picker stores a trusted role choice in browser state. It is **not public authentication**, does not establish a real-world identity, and is not sufficient protection for an internet-reachable URL. Player-profile links enforce in-app role projection only after a participant is already inside the trusted table boundary.
 
-## Private VPS mode
+Use VPN/Tailscale, Cloudflare Access, reverse-proxy authentication, private-network controls, or an equivalent gate before traffic reaches Rotom Table. Bind Nitro to loopback unless the private network design provides an equivalent boundary. See [the private VPS runbook](docs/private-vps-hosting.md) and [deployment checklist](docs/private-vps-deployment-smoke-checklist.md).
 
-Private VPS hosting is still private trusted-table hosting. It can keep a known campaign group online through a GM/operator-controlled Node process, but it does not harden the app for arbitrary public visitors.
+## Campaign and operator authority
 
-Private VPS mode still requires an outer access gate such as VPN/Tailscale, Cloudflare Access, private network controls, or reverse-proxy basic authentication for the trusted table. That gate is separate from the GM/Player role picker; **GM Login is not enough** to protect a URL that arbitrary internet users can reach. See [docs/private-vps-hosting.md](docs/private-vps-hosting.md) for the current private VPS boundary and access-gate checklist.
+SQLite under `ROTOM_CAMPAIGN_ROOT` is authoritative for campaign runtime state. Residual campaign JSON, reference overrides, signing secrets, environment configuration, logs, and backup archives are also private operator material. Keep all of them outside the shareable source checkout and restrict filesystem access to the service operator.
 
-Covered campaign writes, including filesystem-backed JSON writes and SQLite-backed live-play command persistence, fail closed in production unless the private operator explicitly sets `ROTOM_ENABLE_HOSTED_WRITES=1`, but that flag is not authentication, authorization, rate limiting, abuse monitoring, or a replacement for backups. Campaign JSON, SQLite database/WAL files, private deployment configuration, and backup archives remain sensitive operator-controlled data and should stay outside the public/shareable app checkout. Campaign-owned reference override diffs, such as Pokédex edits under `data/reference-overrides/`, are treated as private campaign data rather than public/static app reference data.
+Production campaign writes fail closed unless the operator sets `ROTOM_ENABLE_HOSTED_WRITES=1`. That flag is only a deliberate write opt-in. It is not authentication, authorization, rate limiting, abuse protection, encryption, monitoring, or a backup.
 
-## Public service mode is separate
+Follow the documented [backup and restore procedure](docs/private-vps-backups.md). Never use an ordinary live-file copy of an active SQLite/WAL database as a backup.
 
-Do not expose this application publicly without replacing the current auth and persistence assumptions. A public service design should include, at minimum:
+## Unsupported public-service exposure
 
-- real authentication and authorization;
-- a persistence layer designed for hosted use instead of repository-tree JSON writes;
-- route-by-route review of mutating API surfaces (see the current private-hosting [API route mutation audit](docs/api-route-mutation-audit.md));
-- content/asset rights review;
-- separation of private campaign data from public/static reference data;
-- operational controls appropriate for public exposure, such as abuse monitoring, rate limiting, backup/restore practice, and incident response.
+Do not expose the current application as a public SaaS, multi-tenant service, or arbitrary-internet application. A separately reviewed public-service design would need, at minimum:
 
-## Sensitive data
+- real authentication, authorization, account recovery, and session hardening;
+- tenant and campaign isolation;
+- route-by-route mutating-surface review (start with the [API mutation audit](docs/api-route-mutation-audit.md));
+- rate limiting, abuse monitoring, operational alerting, and incident response;
+- a hosted persistence and secret-management design;
+- public-service privacy, retention, and legal/content-rights review.
 
-Do not share or commit real campaign/private data, credentials, secrets, private player information, unreleased story notes, production environment files, deployment logs, screenshots that show private campaign state, or backup archives in Git, issue trackers, reviews, logs, or chat.
+No current release claim covers those properties.
 
-The repository ignores common local environment files such as `.env` and `.env.*`; keep secrets, real deployment configuration, private campaign data, and generated backups out of Git.
+## Sensitive-data handling
 
-## Reporting issues
+Do not put any of the following in Git, issues, pull requests, browser traces, screenshots, logs shared for support, or chat:
 
-If you find a security issue, report it privately to the repository owner/maintainer rather than posting exploit details publicly. Include:
+- real campaign databases, WAL/SHM files, JSON exports, or backups;
+- credentials, tokens, signing secrets, environment files, hostnames, or access-gate configuration;
+- player identities, private profile links, character notes, unreleased story material, or GM-only mechanics;
+- production request bodies, deployment logs, or screenshots containing private campaign state.
 
-- a short description of the issue
-- reproduction steps
-- affected routes or files, if known
-- whether private data, filesystem writes, or role boundaries are involved
+Use synthetic fixtures and redact paths, identifiers, and values before sharing a reproduction. The registered source-tree hygiene gate is documented in [docs/release/source-tree-hygiene.md](docs/release/source-tree-hygiene.md).
 
-Because this is a hobby/private trusted-table project, response times may vary, but reports that affect data safety or public exposure assumptions should be treated seriously.
+## Supported versions and response expectations
+
+Security maintenance is best effort for the current release line only. During release-candidate preparation that means the current `1.0.0-rc.N` source; after 1.0 it means the latest published `1.0.x` unless a later policy says otherwise. Older commits, modified forks, development hosting, unsupported platforms, and public exposure receive no security compatibility promise.
+
+This is a hobby/private-table project. There is no paid support contract, bug bounty, response-time SLA, uptime guarantee, or promise of a private patch. Data-safety and boundary failures are treated seriously, but maintainer availability varies. See [support expectations](docs/support.md).
+
+## Reporting a vulnerability
+
+Report suspected vulnerabilities privately to the repository owner/maintainer using GitHub private vulnerability reporting when available, or another existing private owner channel. Do not open a public issue with exploit details or private evidence.
+
+Include only a redacted, synthetic report:
+
+- affected version or commit;
+- short impact statement;
+- minimal reproduction steps;
+- affected route, projection, or storage boundary;
+- whether the issue can expose private data, cross a GM/Player projection, mutate storage, or bypass the outer-gate assumption;
+- a safe proposed mitigation, if known.
+
+If a report concerns an internet-exposed deployment without an outer gate, first remove that deployment from public reach; public exposure is outside the supported security boundary.

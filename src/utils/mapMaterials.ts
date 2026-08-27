@@ -8,10 +8,10 @@ const mat = (
   options: Partial<MaterialDefinition> = {},
 ): MaterialDefinition => ({ id, displayName, color, tags, ...options })
 
-// The Clear Water 4.0 pack in temp/ provides clear-water fog/wave/caustic
-// settings but no explicit block opacity, so water voxels use the requested
-// 50% opacity fallback.
-const CLEAR_WATER_TEXTURE_PACK = 'clear-water-4.0'
+// Rotom-authored procedural water keeps the field-map texture deterministic
+// without shipping an opaque third-party texture pack. Water voxels retain the
+// established 50% opacity used by the tactical scene.
+const PROCEDURAL_WATER_TEXTURE = 'rotom-procedural-water-v1'
 const CLEAR_WATER_OPACITY = 0.5
 
 /**
@@ -38,8 +38,8 @@ export const MATERIAL_DEFINITIONS: readonly MaterialDefinition[] = [
   mat('river_gravel', 'River Gravel', '#8e8a7b', ['habitat', 'sediment', 'river', 'gravel', 'alluvial']),
   mat('compacted_clay', 'Compacted Clay Hardpan', '#6f5f50', ['habitat', 'sediment', 'clay', 'hardpan']),
   mat('shoreline_pebbles', 'Shoreline Pebbles', '#8a876d', ['habitat', 'shoreline', 'pebble', 'wetland']),
-  mat('shallow_water', 'Shallow Water', '#48a9d6', ['habitat', 'water', 'transparent'], { texture: CLEAR_WATER_TEXTURE_PACK, transparent: true, opacity: CLEAR_WATER_OPACITY, blocksMovementDefault: false, blocksSightDefault: false }),
-  mat('deep_water', 'Deep Water', '#2376a8', ['habitat', 'water', 'deep', 'transparent'], { texture: CLEAR_WATER_TEXTURE_PACK, transparent: true, opacity: CLEAR_WATER_OPACITY, blocksMovementDefault: true, blocksSightDefault: false }),
+  mat('shallow_water', 'Shallow Water', '#48a9d6', ['habitat', 'water', 'transparent'], { texture: PROCEDURAL_WATER_TEXTURE, transparent: true, opacity: CLEAR_WATER_OPACITY, blocksMovementDefault: false, blocksSightDefault: false }),
+  mat('deep_water', 'Deep Water', '#2376a8', ['habitat', 'water', 'deep', 'transparent'], { texture: PROCEDURAL_WATER_TEXTURE, transparent: true, opacity: CLEAR_WATER_OPACITY, blocksMovementDefault: true, blocksSightDefault: false }),
   mat('wetland_bank', 'Wetland Bank', '#7f8f4f', ['habitat', 'wetland', 'bank']),
   mat('cave_stone', 'Cave Stone', '#64656b', ['habitat', 'stone', 'cave'], { blocksMovementDefault: true, blocksSightDefault: true }),
   mat('cave_shadow_stone', 'Cave Shadow Stone', '#4f5058', ['habitat', 'stone', 'cave', 'shadow'], { blocksMovementDefault: true, blocksSightDefault: true }),

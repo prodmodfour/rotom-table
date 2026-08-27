@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Rotom Table">
+  <rect width="64" height="64" rx="14" fill="#111820"/>
+  <rect x="3" y="3" width="58" height="58" rx="11" fill="none" stroke="#ff3b4f" stroke-width="5"/>
+  <path d="M17 18h18c8 0 13 4.5 13 11 0 4.7-2.7 8.2-7.4 9.8L49 51H38.5l-7-10.5H27V51H17V18Zm10 8v7h7.2c2.4 0 3.8-1.2 3.8-3.5S36.6 26 34.2 26H27Z" fill="#f4f7fb"/>
+  <path d="m43 11-8 13h7l-5 12 14-17h-8l5-8Z" fill="#74e6ff"/>
+</svg>

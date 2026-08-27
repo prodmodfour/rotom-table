@@ -13,7 +13,12 @@
     "staleClaims": 0
   },
   "documentationIndex": {
-    "audiencePaths": ["operator", "GM", "player", "contributor"],
+    "audiencePaths": [
+      "operator",
+      "GM",
+      "player",
+      "contributor"
+    ],
     "historicalSeamsLabelled": true,
     "missingLocalLinks": 0
   },
@@ -41,11 +46,31 @@
     "ownerLicensingDispositionsTaken": false
   },
   "gateRows": [
-    { "id": "repository-landing", "ticket": "P13-053", "state": "Certified" },
-    { "id": "documentation-entry-points", "ticket": "P13-054", "state": "Certified" },
-    { "id": "presentation-assets", "ticket": "P13-055", "state": "Certified" },
-    { "id": "package-and-repository-metadata", "ticket": "P13-056", "state": "Certified" },
-    { "id": "tracked-tree-classification", "ticket": "P13-057", "state": "Certified" }
+    {
+      "id": "repository-landing",
+      "ticket": "P13-053",
+      "state": "Certified"
+    },
+    {
+      "id": "documentation-entry-points",
+      "ticket": "P13-054",
+      "state": "Certified"
+    },
+    {
+      "id": "presentation-assets",
+      "ticket": "P13-055",
+      "state": "Certified"
+    },
+    {
+      "id": "package-and-repository-metadata",
+      "ticket": "P13-056",
+      "state": "Certified"
+    },
+    {
+      "id": "tracked-tree-classification",
+      "ticket": "P13-057",
+      "state": "Certified"
+    }
   ],
   "commands": [
     "npm run build",
@@ -54,17 +79,53 @@
     "npm run check:release-readiness:distribution"
   ],
   "sourceEvidence": [
-    { "path": "README.md", "sha256": "2f497006efe72e70fb2ced0923a7cb90c661e2c5623390c467653b18ad448c87" },
-    { "path": "docs/README.md", "sha256": "a9bfe901cde696145525bd63ad27566ef20b46552376fd23a67144e4edfb8801" },
-    { "path": "docs/screenshots.md", "sha256": "2d30c16c8830ec2f64535e384d008edd988ead6f7cd0fd4ae79a7e9d49a7eea4" },
-    { "path": "docs/screenshots/field-guide-pikachu.png", "sha256": "a943d2688b4746c19f7d95fb1c4878ecefd7a8754faef8bb303c5041e274ceaf" },
-    { "path": "docs/screenshots/release-settings.png", "sha256": "c6ac7ba34e9923d07565d49d7d7d02853b6a66a25ac87d2c26bc5c6797469516" },
-    { "path": "docs/screenshots/role-picker.png", "sha256": "3440b686f43b9bf3e4cb09ba71fef1bc30cc798e94fee303b322f828db839d3e" },
-    { "path": "package.json", "sha256": "a0d129af2f465a70597697e2cca3e8e98e87eee6cc9b83c5a4dd4d5c3c128064" },
-    { "path": "package-lock.json", "sha256": "5fc5315e6325fa715d19e5a78d9fb62d8784073dc6e6bf64b2f9ab2b8a3e955a" },
-    { "path": "scripts/release-readiness/check-presentation.mjs", "sha256": "424ff548cc2c62c6990db8f271f8509f8b84d6a7ec283a05dc979906d815b2a0" },
-    { "path": "scripts/release-readiness/classify-tracked-trees.mjs", "sha256": "267edeac2761401af39b2a83736b0f0741787590e090652ac0d9e592c620f26a" },
-    { "path": "data/release-readiness/tracked-tree-policy.v1.json", "sha256": "25efdc6587c21b6b8399dee40a17d493e5f54d5a3c5a49cbcd740212ae1e82db" },
-    { "path": "data/release-readiness/repository-metadata-disposition.v1.json", "sha256": "4dddd548b7ce0a849c993f2ed2117352fdc0bed2833cb3c0c96898675ab703c6" }
+    {
+      "path": "README.md",
+      "sha256": "ec147b6a3a6a821d2b8f4142f6c6b585cf8eaa022a651e24a3290df54111e3e0"
+    },
+    {
+      "path": "docs/README.md",
+      "sha256": "d773702e538549fba1e506878586d1fc94e1c5daf538e893e0bedb37a5e787f3"
+    },
+    {
+      "path": "docs/screenshots.md",
+      "sha256": "2d30c16c8830ec2f64535e384d008edd988ead6f7cd0fd4ae79a7e9d49a7eea4"
+    },
+    {
+      "path": "docs/screenshots/field-guide-pikachu.png",
+      "sha256": "a943d2688b4746c19f7d95fb1c4878ecefd7a8754faef8bb303c5041e274ceaf"
+    },
+    {
+      "path": "docs/screenshots/release-settings.png",
+      "sha256": "c6ac7ba34e9923d07565d49d7d7d02853b6a66a25ac87d2c26bc5c6797469516"
+    },
+    {
+      "path": "docs/screenshots/role-picker.png",
+      "sha256": "3440b686f43b9bf3e4cb09ba71fef1bc30cc798e94fee303b322f828db839d3e"
+    },
+    {
+      "path": "package.json",
+      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
+    },
+    {
+      "path": "scripts/release-readiness/check-presentation.mjs",
+      "sha256": "424ff548cc2c62c6990db8f271f8509f8b84d6a7ec283a05dc979906d815b2a0"
+    },
+    {
+      "path": "scripts/release-readiness/classify-tracked-trees.mjs",
+      "sha256": "5955f603fb13b5e20c4d4da8eed4533fa5326249fba6cd204d220f6a662e6980"
+    },
+    {
+      "path": "data/release-readiness/tracked-tree-policy.v1.json",
+      "sha256": "842b2993a5b449eec4f2091f900ad1357477a127219b5d6bd1cf821255e6b9a6"
+    },
+    {
+      "path": "data/release-readiness/repository-metadata-disposition.v1.json",
+      "sha256": "4dddd548b7ce0a849c993f2ed2117352fdc0bed2833cb3c0c96898675ab703c6"
+    }
   ]
 }

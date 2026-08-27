@@ -92,14 +92,20 @@ export const paintWaterTexture = (
   ctx: CanvasRenderingContext2D,
   role: BlockTextureRole,
   seed: number,
+  baseColor: number,
 ) => {
-  const base = shadeBlockColor(0x2e77d0, role)
-  const light = shadeBlockColor(0x5aa7ff, role)
-  const deep = shadeBlockColor(0x194f9c, role)
+  const base = shadeBlockColor(baseColor, role)
+  const light = mixBlockColor(base, 0xffffff, role === 'top' ? 0.34 : 0.24)
+  const deep = mixBlockColor(base, 0x061421, role === 'top' ? 0.24 : 0.38)
   for (let y = 0; y < BLOCK_TEXTURE_SIZE; y += 1) {
     for (let x = 0; x < BLOCK_TEXTURE_SIZE; x += 1) {
-      const wave = (x * 3 + y * 2 + Math.floor(pixelNoise(seed, x, y) * 4)) % 9
-      const color = wave < 2 ? light : wave > 6 ? deep : jitterBlockColor(base, seed, x, y, 10)
+      const broadWave = (x + Math.floor(y / 2) + Math.floor(pixelNoise(seed ^ 0x51a7e2, x, y) * 3)) % 8
+      const ripple = (x * 3 + y * 2 + Math.floor(pixelNoise(seed, x, y) * 4)) % 11
+      const color = broadWave === 0 || ripple < 2
+        ? light
+        : ripple > 8
+          ? deep
+          : jitterBlockColor(base, seed, x, y, 8)
       putBlockPixel(ctx, x, y, color)
     }
   }

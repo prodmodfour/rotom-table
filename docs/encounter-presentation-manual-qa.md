@@ -5,7 +5,7 @@ Use an isolated campaign or the local production-like workspace. Do not alter pr
 ## Automated release floor
 
 ```bash
-npm ci
+npm ci --include=dev
 npm run check:encounter-presentation
 npm run lint
 npm run typecheck

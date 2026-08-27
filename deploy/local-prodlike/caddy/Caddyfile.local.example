@@ -9,8 +9,10 @@
 # Then replace <PASTE_CADDY_HASH_HERE> below. Do not store real shared or
 # production passwords in this repository.
 
-127.0.0.1:8080 {
-	basic_auth {
+http://127.0.0.1:8080 {
+	# `basicauth` works with distribution-packaged Caddy 2.6 and remains a
+	# compatibility alias in newer Caddy releases (where `basic_auth` is canonical).
+	basicauth {
 		ranger <PASTE_CADDY_HASH_HERE>
 	}
 

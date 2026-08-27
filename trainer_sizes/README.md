@@ -4,7 +4,7 @@
 
 Unlike the documentary-only trees, this dataset currently has a narrow runtime role: `data/trainerCatalog.ts` imports the generated metadata and `nuxt.config.ts` mounts the sprite tree as public assets. Pruning it requires a reviewed replacement for both surfaces.
 
-The downloaded sprites and represented Pokémon-related names are third-party material outside Rotom Table's license grant. Retention here records distribution intent only; the explicit media/notice posture remains owner-reserved at P13-062. Do not place private campaign portraits or player media in this tree.
+The downloaded sprites and represented Pokémon-related names are third-party material outside Rotom Table's license grant. P13-062 retained the source set with per-row artist/source attribution and disclosed that explicit redistribution permission remains uncertain. The generated `public/profile-sprites/trainers/` crops conflict with the source index's do-not-edit warning; the owner explicitly accepted that risk instead of implementing recommendation 5. See [`../NOTICE.md`](../NOTICE.md) and [`../docs/media-attribution.md`](../docs/media-attribution.md). Do not place private campaign portraits or player media in this tree.
 
 Source:
 - https://play.pokemonshowdown.com/sprites/trainers/?view=sprites

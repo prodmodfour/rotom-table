@@ -13,46 +13,58 @@
   ],
   "pythonDeclaredDependencies": [
     {
-      "name": "requests",
-      "requirement": "requests>=2.31",
-      "direct": true,
-      "license": "Apache-2.0",
-      "knownDependencyFamilies": ["certifi", "charset-normalizer", "idna", "urllib3"]
-    },
-    {
-      "name": "Pillow",
-      "requirement": "Pillow>=10.0",
-      "direct": true,
-      "license": "HPND",
-      "knownDependencyFamilies": []
-    },
-    {
       "name": "certifi",
-      "requirement": "transitive-unpinned",
+      "version": "2026.7.22",
+      "requirement": "certifi==2026.7.22",
       "direct": false,
       "license": "MPL-2.0",
-      "knownDependencyFamilies": []
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/certifi/2026.7.22/"
     },
     {
       "name": "charset-normalizer",
-      "requirement": "transitive-unpinned",
+      "version": "3.5.1",
+      "requirement": "charset-normalizer==3.5.1",
       "direct": false,
       "license": "MIT",
-      "knownDependencyFamilies": []
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/charset-normalizer/3.5.1/"
     },
     {
       "name": "idna",
-      "requirement": "transitive-unpinned",
+      "version": "3.19",
+      "requirement": "idna==3.19",
       "direct": false,
       "license": "BSD-3-Clause",
-      "knownDependencyFamilies": []
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/idna/3.19/"
+    },
+    {
+      "name": "Pillow",
+      "version": "12.3.0",
+      "requirement": "Pillow==12.3.0",
+      "direct": true,
+      "license": "HPND",
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/pillow/12.3.0/"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2",
+      "requirement": "requests==2.34.2",
+      "direct": true,
+      "license": "Apache-2.0",
+      "knownDependencyFamilies": ["certifi", "charset-normalizer", "idna", "urllib3"],
+      "sourceUrl": "https://pypi.org/project/requests/2.34.2/"
     },
     {
       "name": "urllib3",
-      "requirement": "transitive-unpinned",
+      "version": "2.7.0",
+      "requirement": "urllib3==2.7.0",
       "direct": false,
       "license": "MIT",
-      "knownDependencyFamilies": []
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/urllib3/2.7.0/"
     }
   ],
   "classification": {
@@ -80,6 +92,6 @@
     "weakCopyleft": "flag-for-owner-and-notice-review",
     "attribution": "flag-for-owner-and-attribution-review",
     "dualLicense": "record-permissive-option-and-flag-for-owner",
-    "unpinnedPythonResolution": "flag-for-owner"
+    "unpinnedPythonResolution": "reject; every direct and transitive Python helper dependency must be exact-version lock-bound"
   }
 }

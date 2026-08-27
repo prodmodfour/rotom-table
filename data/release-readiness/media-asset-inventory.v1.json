@@ -3,32 +3,32 @@
   "schemaVersion": 1,
   "inventoryId": "p13-media-asset-inventory-v1",
   "releaseVersion": "1.0.0-rc.1",
-  "status": "INVENTORIED_PENDING_OWNER_DISPOSITION",
+  "status": "OWNER_DISPOSITION_RECORDED",
   "sources": {
     "policy": {
       "path": "data/release-readiness/media-asset-policy.v1.json",
-      "sha256": "eb4c14ee4ee89e46fc42c8084e9fe7c2f746c341100d6881184ed1ccb9fbd9a4"
+      "sha256": "ef9232e8d3233851fc2b34b5a52062729d718c849514a78a1925680cf7be9958"
     },
     "nuxtConfig": {
       "path": "nuxt.config.ts",
-      "sha256": "3d223cb42e108909d57c2de508a144ee123ef159228f05d3c140f9a89e4e1a34"
+      "sha256": "2cd37228092584874f3862aa3cc24ab9660302de074a755452ff5d00bd2a1498"
     },
     "trackedAndCandidateCommand": "git ls-files --cached --others --exclude-standard -z"
   },
   "summary": {
-    "sourceDistributionMediaFiles": 9472,
-    "uniquelyClassifiedMediaFiles": 9472,
+    "sourceDistributionMediaFiles": 9444,
+    "uniquelyClassifiedMediaFiles": 9444,
     "unclassifiedMediaFiles": 0,
     "ambiguousMediaFiles": 0,
-    "mediaFamilies": 14,
+    "mediaFamilies": 11,
     "runtimeFontPackages": 3,
     "runtimeFontCssImports": 9,
     "runtimeFontBinariesAfterNpmCi": 18,
     "audioFiles": 0,
-    "unknownProvenanceFiles": 29,
+    "unknownProvenanceFiles": 0,
     "unknownRedistributionFiles": 7949,
     "explicitRestrictionConflictFiles": 1460,
-    "potentialBlockerFiles": 1489
+    "potentialBlockerFiles": 1460
   },
   "families": [
     {
@@ -127,6 +127,7 @@
       ],
       "rightsPosture": "edited-third-party-trainer-artwork-conflicts-with-source-do-not-edit-warning",
       "ownerReview": "P13-062",
+      "ownerDisposition": "RETAIN_OWNER_ACCEPTED_RISK_RECOMMENDATION_5",
       "potentialBlocker": true,
       "pathCount": 1460,
       "extensionCounts": {
@@ -156,76 +157,22 @@
       "contentSetSha256": "f1670161ab80e24fd2ce0035e5bdd7d458571a6e93e2f94b3c72431ceb61eb62"
     },
     {
-      "id": "public-badges",
-      "prefixes": [
-        "public/badges/"
-      ],
-      "kind": "runtime-image",
-      "provenance": "Repository history records a source badge sheet and cropped category/type badges but no upstream source or license",
-      "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
-      "ownerReview": "P13-062",
-      "potentialBlocker": true,
-      "pathCount": 23,
-      "extensionCounts": {
-        ".png": 23
-      },
-      "pathSetSha256": "7187a7f3ee17a7dbc2a1fe0a4abda9b75d1f047f9875e714bbca391f5b4d0dc3",
-      "contentSetSha256": "f712fcef207acac70a589d4319a294d5707ee2e014d25502996662e909e3024f"
-    },
-    {
-      "id": "public-favicon",
+      "id": "rotom-original-brand-assets",
       "exactPaths": [
-        "public/favicon.png"
+        "public/favicon.svg"
       ],
-      "kind": "runtime-image",
-      "provenance": "Repository history labels this a Pokéball favicon; no upstream source or license is recorded",
+      "kind": "runtime-vector",
+      "provenance": "Project-authored field-terminal RT mark introduced under the owner-approved P13-062 remediation; no external artwork or font binary is embedded",
       "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
+      "rightsPosture": "rotom-original-mit-scoped",
       "ownerReview": "P13-062",
-      "potentialBlocker": true,
+      "ownerDisposition": "APPROVED_REMEDIATED",
       "pathCount": 1,
       "extensionCounts": {
-        ".png": 1
+        ".svg": 1
       },
-      "pathSetSha256": "a2e05c774645e9f3c0d12b35500f3691a781720e46cf51d3fee1539b445319ad",
-      "contentSetSha256": "cb29205407cd4d9f0c7bff906711e9e12e9f81a14c585d165b41edc713dd90f5"
-    },
-    {
-      "id": "public-liveplay-saving-icon",
-      "prefixes": [
-        "public/map/"
-      ],
-      "kind": "runtime-image",
-      "provenance": "Repository history records the liveplay icon addition but no upstream source or license",
-      "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
-      "ownerReview": "P13-062",
-      "potentialBlocker": true,
-      "pathCount": 1,
-      "extensionCounts": {
-        ".png": 1
-      },
-      "pathSetSha256": "e650f806062dd19f0ed807aa772d64589946e7e9db5091fd8cf82ff6079b1d63",
-      "contentSetSha256": "0ef43bc948317c85da66ad16531f86a981e009de604f82b4e0a472351aec8ee9"
-    },
-    {
-      "id": "public-water-textures",
-      "prefixes": [
-        "public/textures/"
-      ],
-      "kind": "runtime-image",
-      "provenance": "A source settings JSON names modmcpe identifiers, but no upstream asset URL, author, or license is recorded",
-      "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-texture-artwork",
-      "ownerReview": "P13-062",
-      "potentialBlocker": true,
-      "pathCount": 4,
-      "extensionCounts": {
-        ".png": 4
-      },
-      "pathSetSha256": "8f38fc318a0eef86939ee2f32b30997369d84166ef0031fb9546a4318a06aee9",
-      "contentSetSha256": "faed5873f029f8c5bcf008cc33e801e25741ff8eb22a01b6cdd0420bb7d2f59d"
+      "pathSetSha256": "357e0058396994b3c6e5cc31f79d167e9080c1dd5c9535918ba49fb980eb66b9",
+      "contentSetSha256": "2471c07b91876c20043a6bf9d07c96d9a1ad317ff7bf43e81ee239a7a9705a5d"
     },
     {
       "id": "release-screenshots",
@@ -503,90 +450,73 @@
       "id": "public-item-sprites",
       "affectedFiles": 888,
       "rightsPosture": "third-party-pokemon-artwork-redistribution-license-unknown",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
       "id": "public-pokemon-sprites",
       "affectedFiles": 2280,
       "rightsPosture": "third-party-official-or-community-pokemon-artwork-redistribution-license-unknown",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
       "id": "public-pokemon-spritesheets",
       "affectedFiles": 2178,
       "rightsPosture": "derived-third-party-pokemon-artwork-redistribution-license-unknown",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
       "id": "public-pokemon-profile-sprites",
       "affectedFiles": 1148,
       "rightsPosture": "edited-third-party-pokemon-artwork-redistribution-license-unknown",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
       "id": "public-trainer-profile-sprites",
       "affectedFiles": 1460,
       "rightsPosture": "edited-third-party-trainer-artwork-conflicts-with-source-do-not-edit-warning",
-      "severity": "potential-blocker"
+      "severity": "owner-accepted-risk"
     },
     {
       "id": "trainer-source-sprites",
       "affectedFiles": 1455,
       "rightsPosture": "third-party-trainer-artwork-artist-credit-required-redistribution-license-unknown",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
-      "id": "public-badges",
-      "affectedFiles": 23,
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
-      "severity": "potential-blocker"
-    },
-    {
-      "id": "public-favicon",
+      "id": "rotom-original-brand-assets",
       "affectedFiles": 1,
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
-      "severity": "potential-blocker"
-    },
-    {
-      "id": "public-liveplay-saving-icon",
-      "affectedFiles": 1,
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
-      "severity": "potential-blocker"
-    },
-    {
-      "id": "public-water-textures",
-      "affectedFiles": 4,
-      "rightsPosture": "unknown-provenance-texture-artwork",
-      "severity": "potential-blocker"
+      "rightsPosture": "rotom-original-mit-scoped",
+      "severity": "owner-remediated"
     },
     {
       "id": "release-screenshots",
       "affectedFiles": 3,
       "rightsPosture": "rotom-generated-capture-containing-third-party-pokemon-presentation",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
       "id": "encounter-baseline-screenshots",
       "affectedFiles": 5,
       "rightsPosture": "rotom-generated-capture-may-contain-third-party-sprite-presentation",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
       "id": "visual-regression-snapshots",
       "affectedFiles": 15,
       "rightsPosture": "rotom-generated-test-capture-may-contain-third-party-sprite-presentation",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     },
     {
       "id": "retained-documentary-pdfs",
       "affectedFiles": 11,
       "rightsPosture": "third-party-ptu-documentary-material-outside-rotom-license",
-      "severity": "owner-review"
+      "severity": "owner-reviewed"
     }
   ],
   "ownerGate": {
     "ticket": "P13-062",
     "automationMayApprove": false,
-    "disposition": "UNRESOLVED"
+    "disposition": "OWNER_APPROVED_WITH_REMEDIATION_AND_RECORDED_EXCEPTION",
+    "dispositionArtifact": "data/release-readiness/licensing-notice-disposition.v1.json"
   }
 }

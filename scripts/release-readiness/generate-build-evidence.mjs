@@ -48,14 +48,16 @@ if (releaseMode) {
   if (gitTag !== `v${packageMetadata.version}`) fail(`Release tag must be v${packageMetadata.version}`)
 }
 
-const entries = filesUnder(outputRoot).map(path => {
-  const bytes = readFileSync(path)
-  return {
-    path: posix(relative(outputRoot, path)),
-    size: bytes.length,
-    sha256: sha256(bytes),
-  }
-})
+const entries = filesUnder(outputRoot)
+  .map(path => {
+    const bytes = readFileSync(path)
+    return {
+      path: posix(relative(outputRoot, path)),
+      size: bytes.length,
+      sha256: sha256(bytes),
+    }
+  })
+  .sort((a, b) => a.path.localeCompare(b.path))
 if (entries.length === 0) fail('Build output is empty')
 const checksumText = `${entries.map(entry => `${entry.sha256}  ${entry.path}`).join('\n')}\n`
 const checksumManifestSha256 = sha256(checksumText)
@@ -77,7 +79,7 @@ const provenance = {
     architecture: process.arch,
   },
   build: {
-    command: 'npm ci && npm run build',
+    command: 'npm ci --include=dev && npm run build',
     sourceDateEpoch,
     outputFileCount: entries.length,
     checksumManifestSha256,

@@ -1,0 +1,281 @@
+{
+  "artifact": "release-licensing-notice-disposition",
+  "schemaVersion": 1,
+  "dispositionId": "p13-062-owner-license-notice-disposition-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "ticket": "P13-062",
+  "status": "OWNER_APPROVED_AND_IMPLEMENTED",
+  "automationMayApprove": false,
+  "legalClearanceClaimed": false,
+  "ownerDecision": {
+    "recordedOn": "2026-08-27",
+    "normalizedInstruction": "Implement the prior recommendations except recommendation 5; the owner explicitly accepts the risk of skipping recommendation 5.",
+    "scope": "All eight P13-062 licensing and notice families",
+    "exception": "RECOMMENDATION_5"
+  },
+  "recommendations": [
+    {
+      "number": 1,
+      "recommendation": "Keep the limited MIT grant and unofficial non-commercial fan-project posture.",
+      "decision": "ACCEPTED_IMPLEMENTED"
+    },
+    {
+      "number": 2,
+      "recommendation": "Keep Pokémon/PTU-derived data, text, names, and concepts outside the Rotom Table license grant.",
+      "decision": "ACCEPTED_IMPLEMENTED"
+    },
+    {
+      "number": 3,
+      "recommendation": "Retain the primary item, Pokémon, and Trainer sprite libraries with source and artist attribution where available and with redistribution uncertainty disclosed.",
+      "decision": "ACCEPTED_IMPLEMENTED"
+    },
+    {
+      "number": 4,
+      "recommendation": "Remove the 29 unknown-source badge, favicon, saving-icon, and water-texture images and replace their runtime functions with original project work.",
+      "decision": "ACCEPTED_IMPLEMENTED"
+    },
+    {
+      "number": 5,
+      "recommendation": "Remove or replace the 1,460 edited Trainer profile portraits that conflict with the source index do-not-edit warning.",
+      "decision": "DECLINED_OWNER_ACCEPTED_RISK",
+      "riskNotCuredByNotice": true
+    },
+    {
+      "number": 6,
+      "recommendation": "Preserve OFL font notices and lock-bound npm dependency notices in the source and production distributions.",
+      "decision": "ACCEPTED_IMPLEMENTED"
+    },
+    {
+      "number": 7,
+      "recommendation": "Pin the complete Python helper dependency graph to exact versions and record its licenses.",
+      "decision": "ACCEPTED_IMPLEMENTED"
+    },
+    {
+      "number": 8,
+      "recommendation": "Expand the repository notice, fan-project notice, and media attribution so all retained postures and the accepted exception are explicit.",
+      "decision": "ACCEPTED_IMPLEMENTED"
+    }
+  ],
+  "familyDispositions": [
+    {
+      "id": "license-scope",
+      "disposition": "APPROVED_AS_WRITTEN",
+      "evidence": [
+        "LICENSE",
+        "package.json"
+      ]
+    },
+    {
+      "id": "fan-content-posture",
+      "disposition": "APPROVED_EXPANDED_NOTICE",
+      "evidence": [
+        "NOTICE.md",
+        "docs/fan-project-notice.md"
+      ]
+    },
+    {
+      "id": "ptu-derived-data-and-text",
+      "disposition": "APPROVED_RETAIN_OUTSIDE_GRANT",
+      "evidence": [
+        "LICENSE",
+        "NOTICE.md",
+        "books/README.md",
+        "ptu-data/README.md"
+      ]
+    },
+    {
+      "id": "sprites-and-media",
+      "disposition": "APPROVED_REMEDIATED_WITH_RECORDED_EXCEPTION",
+      "evidence": [
+        "docs/media-attribution.md",
+        "data/release-readiness/media-asset-inventory.v1.json"
+      ]
+    },
+    {
+      "id": "fonts",
+      "disposition": "APPROVED_NOTICE_PRESERVED",
+      "evidence": [
+        "public/THIRD_PARTY_NOTICES.txt",
+        "data/release-readiness/media-asset-inventory.v1.json"
+      ]
+    },
+    {
+      "id": "npm-dependencies",
+      "disposition": "APPROVED_NOTICE_PRESERVED",
+      "selectedDualLicenseOption": "node-forge@1.4.0 BSD-3-Clause",
+      "evidence": [
+        "package-lock.json",
+        "public/THIRD_PARTY_NOTICES.txt",
+        "data/release-readiness/dependency-license-report.v1.json"
+      ]
+    },
+    {
+      "id": "python-dependencies",
+      "disposition": "APPROVED_PINNED_AND_NOTICED",
+      "evidence": [
+        "requirements.txt",
+        "public/THIRD_PARTY_NOTICES.txt",
+        "data/release-readiness/dependency-license-report.v1.json"
+      ]
+    },
+    {
+      "id": "existing-notices",
+      "disposition": "APPROVED_EXPANDED",
+      "evidence": [
+        "NOTICE.md",
+        "docs/fan-project-notice.md",
+        "docs/media-attribution.md",
+        "public/THIRD_PARTY_NOTICES.txt"
+      ]
+    }
+  ],
+  "mediaRemediation": {
+    "preDecisionInventory": {
+      "path": "data/release-readiness/media-asset-inventory.v1.json@fea9bf9a9fff1e2ff5a43f7f57c12ba962ea97a5",
+      "sha256": "6608f6087b62f86dcce6c98a9c097a27f981200fb240ae07cf4b00e2e2537371",
+      "unknownProvenanceFiles": 29,
+      "unknownBadgeContentSetSha256": "f712fcef207acac70a589d4319a294d5707ee2e014d25502996662e909e3024f",
+      "unknownFaviconContentSetSha256": "cb29205407cd4d9f0c7bff906711e9e12e9f81a14c585d165b41edc713dd90f5",
+      "unknownSavingIconContentSetSha256": "0ef43bc948317c85da66ad16531f86a981e009de604f82b4e0a472351aec8ee9",
+      "unknownWaterContentSetSha256": "faed5873f029f8c5bcf008cc33e801e25741ff8eb22a01b6cdd0420bb7d2f59d"
+    },
+    "postRemediation": {
+      "unknownProvenanceFiles": 0,
+      "replacementKind": "project-authored-vue-css-svg-canvas",
+      "removedPrefixes": [
+        "public/badges/",
+        "public/map/",
+        "public/textures/clear-water-4.0/"
+      ],
+      "removedExactPaths": [
+        "public/favicon.png"
+      ],
+      "replacementPaths": [
+        "src/components/TypeBadge.vue",
+        "src/components/DamageClassBadge.vue",
+        "src/components/map/MapScenePanel.vue",
+        "src/utils/isometric/blockTexturePrimitivePainters.ts",
+        "public/favicon.svg"
+      ]
+    }
+  },
+  "acceptedRisk": {
+    "id": "RECOMMENDATION_5_RETAIN_EDITED_TRAINER_PROFILES",
+    "affectedFiles": 1460,
+    "pathSetSha256": "d46ca0e23f23299b6e8119359fa9a7dbcf3ed556ec73f19346ff63122ed06b4b",
+    "contentSetSha256": "b57868421d79e8ad5a6b3a43ab3839e8dc296ba4940f3063f348f9f4e8342b19",
+    "sourceWarningConflict": "edited-third-party-trainer-artwork-conflicts-with-source-do-not-edit-warning",
+    "sourceUrls": [
+      "https://play.pokemonshowdown.com/sprites/trainers/",
+      "https://pokemonshowdown.com/credits"
+    ],
+    "downstreamRightsGranted": false,
+    "noticeCuresRisk": false
+  },
+  "dependencyRemediation": {
+    "preDecisionReportSha256": "8f6b817ff198fa921946d9d267f223ce99bd210964bd3ab00790179bac01cd77",
+    "pythonGraph": {
+      "directPackages": 2,
+      "transitivePackages": 4,
+      "exactVersionLockBound": true
+    },
+    "npm": {
+      "packageInstances": 971,
+      "unknownLicenses": 0,
+      "mandatoryIncompatibleCopyleft": 0,
+      "noticeBundle": "public/THIRD_PARTY_NOTICES.txt",
+      "securityAuditHighOrGreater": 0,
+      "postDispositionSecurityPatchSuccessors": [
+        "brace-expansion@5.0.9",
+        "js-yaml@4.3.2",
+        "nanoid@3.3.18"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "path": "LICENSE",
+      "sha256": "35b20218fab22627bcde68237aba3984510b365f6ff9dc45f5402a2890b76a6f"
+    },
+    {
+      "path": "NOTICE.md",
+      "sha256": "f9e6f713e9dec14c3efebf4c904f9c0cd31775b29c75eb20c4729cde6fb485aa"
+    },
+    {
+      "path": "docs/fan-project-notice.md",
+      "sha256": "d0849b3dd2659c63d430c3f788a6c19fee7dcd2e8b3c7496c3aa2e217990be1c"
+    },
+    {
+      "path": "docs/media-attribution.md",
+      "sha256": "be7a9066271bd1c9020f40e9bfd2a934e90f3344b44e8ea9fefcb2041232c2a2"
+    },
+    {
+      "path": "requirements.txt",
+      "sha256": "19ee84e6949569d05851b042fe73c9d00ab362b2f37d5691657c6884d7a61c03"
+    },
+    {
+      "path": "public/THIRD_PARTY_NOTICES.txt",
+      "sha256": "a0bc8368f748f524bd99fef03ca7677eff83575bd46c75f43a43cc03d41e863e"
+    },
+    {
+      "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
+      "sha256": "e6643858065018d66708663d96f05cd7d94e856c8c56f53b9113d285c5bef7d7"
+    },
+    {
+      "path": "data/release-readiness/dependency-license-policy.v1.json",
+      "sha256": "5bb713d8c824d8c4bc8f121bee8aa296ca58213c479ee42d7fe138ed461eafef"
+    },
+    {
+      "path": "data/release-readiness/dependency-license-report.v1.json",
+      "sha256": "ef31adea2bd9fb232f38b092c93c15d586b1d887720c1c9c88efa5bfb0630114"
+    },
+    {
+      "path": "data/release-readiness/media-asset-policy.v1.json",
+      "sha256": "ef9232e8d3233851fc2b34b5a52062729d718c849514a78a1925680cf7be9958"
+    },
+    {
+      "path": "data/release-readiness/media-asset-inventory.v1.json",
+      "sha256": "595cde15cb6e2c58a332668b06b81c9b889d1bf16ba99e317210259cfcb8d418"
+    },
+    {
+      "path": "src/components/TypeBadge.vue",
+      "sha256": "b98a09ced90942ebfbd0e98477a9e32b2f68d07aa16936c446fc600738f5f695"
+    },
+    {
+      "path": "src/components/DamageClassBadge.vue",
+      "sha256": "c4a1ba994fe7b555d79a63e655ea95c6613ba611834c3297d6b9ba4e630ba8ed"
+    },
+    {
+      "path": "src/components/map/MapScenePanel.vue",
+      "sha256": "a90b0e322797b3b82b075e9c5f46d078ba3d36e1c9834db1f68ca84edfcc17bc"
+    },
+    {
+      "path": "src/utils/mapMaterials.ts",
+      "sha256": "2138f9d5491e5d32bd4076e4c4a0b2d46323d6341ddc72955c042b540bc42bb4"
+    },
+    {
+      "path": "src/utils/isometric/blockTextures.ts",
+      "sha256": "9bec367c57763a279c280451f0208789fd9a07e66ce2624ebd8acc61f147ad41"
+    },
+    {
+      "path": "src/utils/isometric/blockTexturePrimitivePainters.ts",
+      "sha256": "557f0934271739a89b90587b46eba5e8803dbb924178f676eee567437a20f808"
+    },
+    {
+      "path": "public/favicon.svg",
+      "sha256": "77d5366c5d1c39c5cd063af5df926bf24c7120284d4dcf2ab93362ccfd53628a"
+    },
+    {
+      "path": "trainer_sizes/sprite_manifest.json",
+      "sha256": "f79e7280edc0358d6deda3d0262db8e9ece4655ecc781ad76225a85caa3bdb45"
+    },
+    {
+      "path": "package.json",
+      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
+    }
+  ]
+}

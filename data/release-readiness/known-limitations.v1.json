@@ -1,6 +1,12 @@
 {
   "artifact": "release-known-limitations",
   "schemaVersion": 1,
+  "status": "OWNER_ACCEPTED_FROZEN",
+  "ownerAcceptance": {
+    "basis": "Plan 13 activation decision 9",
+    "ticket": "P13-070",
+    "renderedAt": "docs/releases/1.0.0.md#known-limitations-frozen"
+  },
   "freezePolicy": "Only reviewed rows may close as Documented boundary; all other gate failures are blockers.",
   "rows": [
     {

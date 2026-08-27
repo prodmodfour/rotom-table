@@ -5,6 +5,8 @@
 # and backup archives outside Git. The EnvironmentFile should set
 # ROTOM_CAMPAIGN_ROOT, any ROTOM_DB_PATH override, and the exact
 # ROTOM_ENABLE_HOSTED_WRITES=1 opt-in only when the private host is ready.
+# The standard campaign root below is the unit's only writable host path;
+# review ReadWritePaths if either configured storage path is changed.
 
 [Unit]
 Description=Rotom Table private table server
@@ -23,7 +25,19 @@ Restart=on-failure
 RestartSec=5s
 TimeoutStopSec=30s
 NoNewPrivileges=true
+CapabilityBoundingSet=
 PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/srv/rotom-table/campaign
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
 UMask=0077
 
 [Install]

@@ -47,6 +47,7 @@ The GM/Player picker is role projection for a known table, not public authentica
 Start with:
 
 - [Contributing](../CONTRIBUTING.md)
+- [Support expectations](support.md)
 - [Architecture](architecture.md)
 - [Data model](data-model.md)
 - [Liveplay authority](live-play-authority.md)
@@ -88,7 +89,9 @@ Release checks are machine-owned under `data/release-readiness/` and `scripts/re
 - [Fan-project notice](fan-project-notice.md)
 - [Repository notice](../NOTICE.md)
 - [Security](../SECURITY.md)
+- [Support expectations](support.md)
 - [Contributing/data hygiene](../CONTRIBUTING.md)
+- [Third-party media attribution](media-attribution.md)
 
 Never commit campaign databases, profiles, environment files, backup archives, release evidence, or screenshots containing private campaign material.
 

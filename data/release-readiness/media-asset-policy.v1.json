@@ -47,6 +47,7 @@
       "sourceUrls": ["https://play.pokemonshowdown.com/sprites/trainers/", "https://pokemonshowdown.com/credits"],
       "rightsPosture": "edited-third-party-trainer-artwork-conflicts-with-source-do-not-edit-warning",
       "ownerReview": "P13-062",
+      "ownerDisposition": "RETAIN_OWNER_ACCEPTED_RISK_RECOMMENDATION_5",
       "potentialBlocker": true
     },
     {
@@ -59,44 +60,14 @@
       "ownerReview": "P13-062"
     },
     {
-      "id": "public-badges",
-      "prefixes": ["public/badges/"],
-      "kind": "runtime-image",
-      "provenance": "Repository history records a source badge sheet and cropped category/type badges but no upstream source or license",
+      "id": "rotom-original-brand-assets",
+      "exactPaths": ["public/favicon.svg"],
+      "kind": "runtime-vector",
+      "provenance": "Project-authored field-terminal RT mark introduced under the owner-approved P13-062 remediation; no external artwork or font binary is embedded",
       "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
+      "rightsPosture": "rotom-original-mit-scoped",
       "ownerReview": "P13-062",
-      "potentialBlocker": true
-    },
-    {
-      "id": "public-favicon",
-      "exactPaths": ["public/favicon.png"],
-      "kind": "runtime-image",
-      "provenance": "Repository history labels this a Pokéball favicon; no upstream source or license is recorded",
-      "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
-      "ownerReview": "P13-062",
-      "potentialBlocker": true
-    },
-    {
-      "id": "public-liveplay-saving-icon",
-      "prefixes": ["public/map/"],
-      "kind": "runtime-image",
-      "provenance": "Repository history records the liveplay icon addition but no upstream source or license",
-      "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-pokemon-related-artwork",
-      "ownerReview": "P13-062",
-      "potentialBlocker": true
-    },
-    {
-      "id": "public-water-textures",
-      "prefixes": ["public/textures/"],
-      "kind": "runtime-image",
-      "provenance": "A source settings JSON names modmcpe identifiers, but no upstream asset URL, author, or license is recorded",
-      "sourceUrls": [],
-      "rightsPosture": "unknown-provenance-texture-artwork",
-      "ownerReview": "P13-062",
-      "potentialBlocker": true
+      "ownerDisposition": "APPROVED_REMEDIATED"
     },
     {
       "id": "release-screenshots",
@@ -166,6 +137,8 @@
   ],
   "ownerGate": {
     "ticket": "P13-062",
-    "automationMayApprove": false
+    "automationMayApprove": false,
+    "disposition": "OWNER_APPROVED_WITH_REMEDIATION_AND_RECORDED_EXCEPTION",
+    "dispositionArtifact": "data/release-readiness/licensing-notice-disposition.v1.json"
   }
 }

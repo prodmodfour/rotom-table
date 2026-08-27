@@ -34,8 +34,48 @@
       "bounded": true
     },
     {
+      "id": "licensing",
+      "command": "npm run check:release-readiness:licensing-inventories",
+      "bounded": true
+    },
+    {
+      "id": "support",
+      "command": "npm run check:release-readiness:support",
+      "bounded": true
+    },
+    {
+      "id": "deployment",
+      "command": "npm run check:release-readiness:deployment",
+      "bounded": true
+    },
+    {
       "id": "distribution",
       "command": "npm run check:release-readiness:distribution",
+      "bounded": true
+    },
+    {
+      "id": "distribution-acceptance",
+      "command": "npm run check:release-readiness:distribution-acceptance",
+      "bounded": true
+    },
+    {
+      "id": "changelog",
+      "command": "npm run check:release-readiness:changelog",
+      "bounded": true
+    },
+    {
+      "id": "release-notes",
+      "command": "npm run check:release-readiness:release-notes",
+      "bounded": true
+    },
+    {
+      "id": "release-command",
+      "command": "npm run check:release-readiness:release-command",
+      "bounded": true
+    },
+    {
+      "id": "artifact-audit",
+      "command": "npm run check:release-readiness:artifact-audit",
       "bounded": true
     },
     {

@@ -1,0 +1,92 @@
+{
+  "artifact": "release-built-artifact-audit-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-072-built-artifact-audit-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "ticket": "P13-072",
+  "status": "Certified",
+  "gateRows": [
+    {
+      "id": "provenance-artifact-audit",
+      "state": "Certified"
+    }
+  ],
+  "evidence": {
+    "command": "npm run check:release-readiness:artifact-audit",
+    "dynamicCommand": "npm run release:audit-artifact",
+    "productionBuildSnapshot": {
+      "posture": "P13-072 production working-tree audit; immutable clean tagged execution is required again by P13-074",
+      "sourceHead": "fea9bf9a9fff1e2ff5a43f7f57c12ba962ea97a5",
+      "outputFileCount": 13629,
+      "totalBytes": 379044254,
+      "checksumManifestSha256": "dba7b340f521f5a42fc4f8a72994b5a8d4b887921ac1055e0c98e2095865fe76",
+      "auditReportSha256": "2bfed7aa03c9f228ea4342e82c2ffc45c25a837dd51b50f65f475bcd9dfa7a5b"
+    },
+    "cleanScans": {
+      "forbiddenPathFindings": 0,
+      "secretOrPrivateContentFindings": 0,
+      "sqliteHeaderFindings": 0,
+      "unexpectedJsonPayloads": 0,
+      "symbolicOrSpecialFiles": 0,
+      "unknownRuntimeDependencies": 0,
+      "packagedDocumentaryTreeFiles": 0
+    },
+    "runtimeDependencyInstances": 24,
+    "documentaryProvenanceLiteralFiles": 11,
+    "documentaryRuntimeDependence": false,
+    "fixtureCorpus": {
+      "cleanFixtures": 1,
+      "injectedFailures": 6,
+      "families": [
+        "campaign database/sidecar",
+        "credential",
+        "documentary file",
+        "unknown runtime dependency",
+        "unreviewed JSON",
+        "browser trace"
+      ]
+    }
+  },
+  "sourceEvidence": [
+    {
+      "path": "package.json",
+      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+    },
+    {
+      "path": "scripts/release-readiness/audit-built-artifact.mjs",
+      "sha256": "d7a9c547d6f4ddec0a4873fcbef01fa783e692853601ff986ad3e1708c8970e7"
+    },
+    {
+      "path": "scripts/release-readiness/check-built-artifact-audit.mjs",
+      "sha256": "fb58daa3f7375b78c91002257553937e1ee45d21aaeb41863dd7abe966e65085"
+    },
+    {
+      "path": "scripts/release-readiness/generate-build-evidence.mjs",
+      "sha256": "1dbf218a31719c08c720ac2a18e35fe3ff3ba747b086a4f05dc6a33727277014"
+    },
+    {
+      "path": "scripts/release-readiness/release-command.mjs",
+      "sha256": "7c2afb46e7dbdd70707ed1c783e6930fc40d56505028fe96452ebafb9200d0fa"
+    },
+    {
+      "path": "data/release-readiness/dependency-license-report.v1.json",
+      "sha256": "ef31adea2bd9fb232f38b092c93c15d586b1d887720c1c9c88efa5bfb0630114"
+    },
+    {
+      "path": "data/release-readiness/documentary-read-proof.v1.json",
+      "sha256": "4c64e97a1df3d967239bd750bf5c49974923bb8ceac2eda6afbb0d01d36e139a"
+    },
+    {
+      "path": "data/release-readiness/distribution-manifest.v1.json",
+      "sha256": "9c346a4f8671045be93235d0b45fb7fdf370a8e7823e2807416075bc22688965"
+    },
+    {
+      "path": "public/THIRD_PARTY_NOTICES.txt",
+      "sha256": "a0bc8368f748f524bd99fef03ca7677eff83575bd46c75f43a43cc03d41e863e"
+    },
+    {
+      "path": "docs/release/releasing.md",
+      "sha256": "7c6e62ae19e0ef6ba07b2d9352e4d7791be274bc1ff3851f8e993ab93b40f784"
+    }
+  ]
+}

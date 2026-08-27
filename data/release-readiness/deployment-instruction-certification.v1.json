@@ -1,0 +1,186 @@
+{
+  "artifact": "release-deployment-instruction-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-064-private-vps-deployment-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "ticket": "P13-064",
+  "status": "Repaired",
+  "gateRows": [
+    {
+      "id": "distribution-deployment",
+      "state": "Repaired"
+    }
+  ],
+  "cleanHost": {
+    "isolation": "disposable source-distribution-only Linux host with systemd as PID 1",
+    "operatingSystem": "Debian GNU/Linux 12 (bookworm)",
+    "operatingSystemFamily": "Linux",
+    "architecture": "x86_64",
+    "runtime": "Node v24.15.0",
+    "packageManager": "npm 11.12.1",
+    "serviceManager": "systemd 252",
+    "reverseProxy": "Caddy 2.6.2",
+    "sourceState": "candidate worktree snapshot copied without node_modules, build output, private campaign data, logs, or ignored evidence",
+    "standardLayout": {
+      "app": "/srv/rotom-table/app",
+      "campaign": "/srv/rotom-table/campaign",
+      "backups": "/srv/rotom-table/backups",
+      "environment": "/etc/rotom-table/rotom-table.env",
+      "unit": "/etc/systemd/system/rotom-table.service"
+    }
+  },
+  "deviationsRepaired": [
+    {
+      "id": "production-env-dev-dependency-omission",
+      "observed": "An inherited NODE_ENV=production made plain npm ci omit @nuxt/eslint and fail postinstall.",
+      "repair": "Source deployment now uses npm ci --include=dev in policy, docs, and local-prodlike setup."
+    },
+    {
+      "id": "production-env-test-contamination",
+      "observed": "An inherited NODE_ENV=production activated the hosted-write fail-closed policy inside route tests.",
+      "repair": "The package test authority now sets NODE_ENV=test explicitly."
+    },
+    {
+      "id": "caddy-directive-version-mismatch",
+      "observed": "Distribution Caddy 2.6 rejected the Caddy 2.8 basic_auth spelling.",
+      "repair": "The local proxy template uses the backwards-compatible basicauth spelling and documents the newer alias."
+    },
+    {
+      "id": "caddy-loopback-scheme-mismatch",
+      "observed": "A bare 127.0.0.1:8080 site address enabled automatic local TLS instead of the documented HTTP mimic.",
+      "repair": "The local proxy address is explicit http://127.0.0.1:8080."
+    }
+  ],
+  "results": [
+    {
+      "id": "source-install",
+      "status": "passed",
+      "command": "npm ci --include=dev",
+      "detail": "830 packages installed from the current lock under an inherited production environment."
+    },
+    {
+      "id": "dependency-security",
+      "status": "passed",
+      "command": "npm audit --audit-level=high",
+      "detail": "Zero vulnerabilities after lockfile remediation."
+    },
+    {
+      "id": "typecheck",
+      "status": "passed",
+      "command": "npm run typecheck",
+      "detail": "Nuxt TypeScript check completed on the clean host."
+    },
+    {
+      "id": "production-build",
+      "status": "passed",
+      "command": "npm run build",
+      "detail": "Nitro production output completed from the source distribution."
+    },
+    {
+      "id": "unit-verify",
+      "status": "passed",
+      "command": "systemd-analyze verify deploy/systemd/rotom-table.service",
+      "detail": "The exact checked-in unit parsed without errors."
+    },
+    {
+      "id": "service-account",
+      "status": "passed",
+      "command": "sudo-equivalent service-account read/write probes",
+      "detail": "rotom-table could read the built entry point and write only the standard campaign root."
+    },
+    {
+      "id": "systemd-start-restart",
+      "status": "passed",
+      "command": "systemctl enable/start/restart rotom-table.service",
+      "detail": "The hardened non-root service remained active across restart."
+    },
+    {
+      "id": "loopback-origin",
+      "status": "passed",
+      "command": "ss -ltnp and curl http://127.0.0.1:3000/api/health",
+      "detail": "Nitro listened only on 127.0.0.1:3000 and reported rc.1/schema 56 without secrets."
+    },
+    {
+      "id": "production-proxy-syntax",
+      "status": "passed",
+      "command": "caddy validate",
+      "detail": "The documented production reverse_proxy shape validated."
+    },
+    {
+      "id": "gated-local-proxy",
+      "status": "passed",
+      "command": "caddy validate/start plus authenticated and unauthenticated curl",
+      "detail": "Authenticated health returned 200; an unauthenticated request returned 401."
+    },
+    {
+      "id": "template-shell-syntax",
+      "status": "passed",
+      "command": "bash -n deploy/local-prodlike/bin/*.sh deploy/local-prodlike/lib/common.sh",
+      "detail": "All checked deployment shell templates parsed."
+    }
+  ],
+  "boundaries": {
+    "completeRepositorySuite": "Certified separately at P13-077; not a production-host runtime prerequisite.",
+    "liveplay": "Deployment health is followed by the separate desktop/mobile multi-browser liveplay smoke checklist.",
+    "outerGate": "The clean-host Caddy Basic Auth mimic proves gate behavior; each real host must still verify its chosen off-network access policy.",
+    "publication": "No hostnames, credentials, campaign authority, logs, or private screenshots are retained in this artifact."
+  },
+  "sourceEvidence": [
+    {
+      "path": ".env.vps.example",
+      "sha256": "d0a44a308bbb6c488e5f016bbf01d3c0eba37fff7b3fe50a61dbea14690a92a6"
+    },
+    {
+      "path": "README.md",
+      "sha256": "ec147b6a3a6a821d2b8f4142f6c6b585cf8eaa022a651e24a3290df54111e3e0"
+    },
+    {
+      "path": "data/release-readiness/supported-platform-matrix.v1.json",
+      "sha256": "c95943b4bf35347e54bda339ec944bdcb40148260a857c8e65dd617cb9a6626c"
+    },
+    {
+      "path": "deploy/local-prodlike/README.md",
+      "sha256": "5b72fc3f29137a9cf94a39590c3b19377e75378aa45598b365a9084514d9a8e5"
+    },
+    {
+      "path": "deploy/local-prodlike/bin/setup.sh",
+      "sha256": "bf7304fe7b81c9db1fce33367fde01fe2d3114a696f732dd2184de663c2c05b6"
+    },
+    {
+      "path": "deploy/local-prodlike/bin/validate.sh",
+      "sha256": "38f17a4fdaa88141cefe2757ea126d814b0ce9c41fa8c702d5f515d08c1dcd2b"
+    },
+    {
+      "path": "deploy/local-prodlike/caddy/Caddyfile.local.example",
+      "sha256": "8778dbd8490df4bacaacaf057a02daf321ecde1ab951da961716d38d1da61aa8"
+    },
+    {
+      "path": "deploy/systemd/rotom-table.service",
+      "sha256": "bb7e0cfb79faaa510bd70ae643d9493a0e3561a8d4e685370a8ad7e974651fac"
+    },
+    {
+      "path": "docs/private-vps-deployment-smoke-checklist.md",
+      "sha256": "e300e71020d53096d1cc3f41b72cb533d667921198581bce38d63d7633ce02f0"
+    },
+    {
+      "path": "docs/private-vps-hosting.md",
+      "sha256": "f85cdc1db51590a8ee62bf8b441481470997e1a990623063aa21b70ffd4cef12"
+    },
+    {
+      "path": "docs/private-vps-readiness-summary.md",
+      "sha256": "645edc599b89ca68ab6111d4344b507f42a12a8924cf9651bc760218eb4bcca9"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
+    },
+    {
+      "path": "package.json",
+      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+    },
+    {
+      "path": "scripts/release-readiness/check-deployment-instructions.mjs",
+      "sha256": "022e72f8694ead16007cd60aae6239c89ab67f2bb7a669a721582c6137b67ba7"
+    }
+  ]
+}

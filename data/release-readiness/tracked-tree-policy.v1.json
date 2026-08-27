@@ -64,7 +64,7 @@
     {
       "id": "documentary-root-files",
       "category": "documentary",
-      "exactPaths": ["AGENTS.md", "CONTRIBUTING.md", "DESIGN.md", "LICENSE", "NOTICE.md", "README.md", "SECURITY.md", "trainer_sizes/README.md"]
+      "exactPaths": ["AGENTS.md", "CHANGELOG.md", "CONTRIBUTING.md", "DESIGN.md", "LICENSE", "NOTICE.md", "README.md", "SECURITY.md", "trainer_sizes/README.md"]
     },
     {
       "id": "authored-data",
@@ -98,6 +98,7 @@
     ".nvmrc",
     ".pi",
     "AGENTS.md",
+    "CHANGELOG.md",
     "CONTRIBUTING.md",
     "DESIGN.md",
     "LICENSE",
@@ -185,21 +186,24 @@
       "pathPrefix": "public/",
       "kind": "third-party-rights-review",
       "requiredTicket": "P13-062",
-      "status": "AWAITING_OWNER"
+      "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "id": "P13-LICENSE-REFERENCE-DATA",
       "pathPrefix": "data/reference/",
       "kind": "third-party-rights-review",
       "requiredTicket": "P13-062",
-      "status": "AWAITING_OWNER"
+      "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "id": "P13-LICENSE-DEPENDENCIES",
       "exactPath": "package-lock.json",
       "kind": "dependency-license-review",
       "requiredTicket": "P13-062",
-      "status": "AWAITING_OWNER"
+      "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "status": "OWNER_APPROVED_APPLIED"
     }
   ],
   "resolvedPrunedTrees": [

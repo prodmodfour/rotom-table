@@ -288,7 +288,7 @@ code {
 }
 
 .type-effect-chip .type-badge {
-  display: block;
+  display: inline-flex;
   flex: 0 0 auto;
   height: 1.32rem;
 }

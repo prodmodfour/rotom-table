@@ -3,21 +3,22 @@
   "schemaVersion": 1,
   "reportId": "p13-dependency-license-report-v1",
   "releaseVersion": "1.0.0-rc.1",
-  "status": "INVENTORIED_PENDING_OWNER_DISPOSITION",
+  "status": "OWNER_DISPOSITION_RECORDED",
   "sources": {
     "npmLock": {
       "path": "package-lock.json",
-      "sha256": "5fc5315e6325fa715d19e5a78d9fb62d8784073dc6e6bf64b2f9ab2b8a3e955a",
+      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2",
       "lockfileVersion": 3
     },
     "pythonRequirements": {
       "path": "requirements.txt",
-      "sha256": "fbad8a8360f42b5b10bd66452b4105aa6bf9e6551c1a02b0d8b5a8c1fb3fc9cf",
-      "resolutionLockBound": false
+      "sha256": "19ee84e6949569d05851b042fe73c9d00ab362b2f37d5691657c6884d7a61c03",
+      "resolutionLockBound": true,
+      "lockKind": "complete-exact-version-graph"
     },
     "policy": {
       "path": "data/release-readiness/dependency-license-policy.v1.json",
-      "sha256": "39656c1eac605c700ad72a5314ec5d5489d0acc6101e2327f8eefde23298709c"
+      "sha256": "5bb713d8c824d8c4bc8f121bee8aa296ca58213c479ee42d7fe138ed461eafef"
     }
   },
   "summary": {
@@ -51,20 +52,15 @@
     "pythonDeclaredDirectDependencies": 2,
     "pythonKnownDependencyFamilies": 4,
     "pythonLicenseClassCounts": {
-      "permissive": 5,
-      "weak-copyleft": 1
+      "weak-copyleft": 1,
+      "permissive": 5
     },
-    "pythonResolutionLockBound": false,
+    "pythonResolutionLockBound": true,
     "potentiallyIncompatibleCopyleftEntries": 0,
     "unknownEntries": 0,
-    "ownerReviewFlags": 22
+    "ownerReviewFlags": 21
   },
   "flags": [
-    {
-      "id": "PYTHON-UNPINNED-GRAPH",
-      "severity": "owner-review",
-      "detail": "requirements.txt uses minimum version ranges and has no transitive lock; exact resolved Python versions and future transitive families are not frozen."
-    },
     {
       "id": "NPM:@axe-core/playwright@4.12.1",
       "severity": "owner-review",
@@ -210,7 +206,7 @@
       "severity": "owner-review",
       "license": "MPL-2.0",
       "licenseClass": "weak-copyleft",
-      "scope": "known-unpinned-transitive-family"
+      "scope": "lock-bound-transitive"
     }
   ],
   "npmPackages": [
@@ -3510,7 +3506,7 @@
     },
     {
       "name": "brace-expansion",
-      "version": "5.0.8",
+      "version": "5.0.9",
       "lockPath": "node_modules/brace-expansion",
       "scope": "runtime-or-build",
       "license": "MIT",
@@ -5580,7 +5576,7 @@
     },
     {
       "name": "js-yaml",
-      "version": "4.3.0",
+      "version": "4.3.2",
       "lockPath": "node_modules/js-yaml",
       "scope": "development",
       "license": "MIT",
@@ -6129,7 +6125,7 @@
     },
     {
       "name": "nanoid",
-      "version": "3.3.16",
+      "version": "3.3.18",
       "lockPath": "node_modules/nanoid",
       "scope": "runtime-or-build",
       "license": "MIT",
@@ -8956,8 +8952,53 @@
   ],
   "pythonPackages": [
     {
+      "name": "certifi",
+      "version": "2026.7.22",
+      "requirement": "certifi==2026.7.22",
+      "direct": false,
+      "license": "MPL-2.0",
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/certifi/2026.7.22/",
+      "resolution": "exact-version-lock-bound",
+      "licenseClass": "weak-copyleft"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.5.1",
+      "requirement": "charset-normalizer==3.5.1",
+      "direct": false,
+      "license": "MIT",
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/charset-normalizer/3.5.1/",
+      "resolution": "exact-version-lock-bound",
+      "licenseClass": "permissive"
+    },
+    {
+      "name": "idna",
+      "version": "3.19",
+      "requirement": "idna==3.19",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/idna/3.19/",
+      "resolution": "exact-version-lock-bound",
+      "licenseClass": "permissive"
+    },
+    {
+      "name": "Pillow",
+      "version": "12.3.0",
+      "requirement": "Pillow==12.3.0",
+      "direct": true,
+      "license": "HPND",
+      "knownDependencyFamilies": [],
+      "sourceUrl": "https://pypi.org/project/pillow/12.3.0/",
+      "resolution": "exact-version-lock-bound",
+      "licenseClass": "permissive"
+    },
+    {
       "name": "requests",
-      "requirement": "requests>=2.31",
+      "version": "2.34.2",
+      "requirement": "requests==2.34.2",
       "direct": true,
       "license": "Apache-2.0",
       "knownDependencyFamilies": [
@@ -8966,58 +9007,26 @@
         "idna",
         "urllib3"
       ],
-      "resolution": "version-range-not-lock-bound",
-      "licenseClass": "permissive"
-    },
-    {
-      "name": "Pillow",
-      "requirement": "Pillow>=10.0",
-      "direct": true,
-      "license": "HPND",
-      "knownDependencyFamilies": [],
-      "resolution": "version-range-not-lock-bound",
-      "licenseClass": "permissive"
-    },
-    {
-      "name": "certifi",
-      "requirement": "transitive-unpinned",
-      "direct": false,
-      "license": "MPL-2.0",
-      "knownDependencyFamilies": [],
-      "resolution": "transitive-family-not-lock-bound",
-      "licenseClass": "weak-copyleft"
-    },
-    {
-      "name": "charset-normalizer",
-      "requirement": "transitive-unpinned",
-      "direct": false,
-      "license": "MIT",
-      "knownDependencyFamilies": [],
-      "resolution": "transitive-family-not-lock-bound",
-      "licenseClass": "permissive"
-    },
-    {
-      "name": "idna",
-      "requirement": "transitive-unpinned",
-      "direct": false,
-      "license": "BSD-3-Clause",
-      "knownDependencyFamilies": [],
-      "resolution": "transitive-family-not-lock-bound",
+      "sourceUrl": "https://pypi.org/project/requests/2.34.2/",
+      "resolution": "exact-version-lock-bound",
       "licenseClass": "permissive"
     },
     {
       "name": "urllib3",
-      "requirement": "transitive-unpinned",
+      "version": "2.7.0",
+      "requirement": "urllib3==2.7.0",
       "direct": false,
       "license": "MIT",
       "knownDependencyFamilies": [],
-      "resolution": "transitive-family-not-lock-bound",
+      "sourceUrl": "https://pypi.org/project/urllib3/2.7.0/",
+      "resolution": "exact-version-lock-bound",
       "licenseClass": "permissive"
     }
   ],
   "ownerGate": {
     "ticket": "P13-062",
     "automationMayApprove": false,
-    "disposition": "UNRESOLVED"
+    "disposition": "OWNER_APPROVED_WITH_REMEDIATION",
+    "dispositionArtifact": "data/release-readiness/licensing-notice-disposition.v1.json"
   }
 }

@@ -26,7 +26,7 @@ Version and upgrade policy: [docs/release/versioning.md](docs/release/versioning
 The 1.0 support boundary is deliberately narrow:
 
 - private Linux x86-64 VPS;
-- Node `>=24 <25`, npm, and `npm ci`;
+- system-wide Node `>=24 <25`, npm, and `npm ci --include=dev` for source builds;
 - built Nuxt/Nitro server managed by systemd and bound to loopback;
 - a separate outer access gate for the known table group;
 - Chromium desktop and mobile browser projects;
@@ -39,8 +39,8 @@ Start with the [private VPS hosting runbook](docs/private-vps-hosting.md), then 
 ### Production shape
 
 ```bash
-nvm use
-npm ci
+node --version
+npm ci --include=dev
 npm run build
 sudo systemctl start rotom-table.service
 curl -fsS http://127.0.0.1:3000/api/health
@@ -88,7 +88,7 @@ Development workflows are useful for contributors but are not the supported live
 
 ```bash
 nvm use
-npm ci
+npm ci --include=dev
 npm run dev
 ```
 
@@ -147,7 +147,7 @@ See [docs/README.md](docs/README.md), [architecture](docs/architecture.md), [liv
 
 ## Support boundary
 
-Rotom Table is maintained as a hobby/private-table project. Security reports should be sent privately as described in [SECURITY.md](SECURITY.md). No public-service uptime, commercial support, or compatibility promise exists outside the machine-readable [supported platform matrix](data/release-readiness/supported-platform-matrix.v1.json).
+Rotom Table is maintained as a best-effort hobby/private-table project. Security reports must be sent privately as described in [SECURITY.md](SECURITY.md). There is no response-time SLA, uptime guarantee, hosted service, paid support, data-recovery service, or compatibility promise outside the machine-readable [supported platform matrix](data/release-readiness/supported-platform-matrix.v1.json). See [support expectations](docs/support.md).
 
 ## License and third-party material
 

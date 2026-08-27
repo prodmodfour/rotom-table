@@ -91,12 +91,16 @@ async function buildReport() {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'))
-  const declaredPython = policy.pythonDeclaredDependencies.filter((entry) => entry.direct).map((entry) => entry.requirement)
-  assert(JSON.stringify(requirements) === JSON.stringify(declaredPython), 'requirements.txt and reviewed Python direct-dependency inventory disagree.')
+  const declaredPython = policy.pythonDeclaredDependencies.map((entry) => entry.requirement)
+  assert(JSON.stringify(requirements) === JSON.stringify(declaredPython), 'requirements.txt and reviewed exact Python dependency graph disagree.')
+  assert(
+    policy.pythonDeclaredDependencies.every((entry) => entry.requirement === `${entry.name}==${entry.version}`),
+    'Every reviewed Python helper dependency must use one exact version.',
+  )
 
   const pythonRows = policy.pythonDeclaredDependencies.map((entry) => ({
     ...entry,
-    resolution: entry.direct ? 'version-range-not-lock-bound' : 'transitive-family-not-lock-bound',
+    resolution: 'exact-version-lock-bound',
     licenseClass: classifyLicense(entry.license, policy),
   }))
 
@@ -119,10 +123,15 @@ async function buildReport() {
     schemaVersion: 1,
     reportId: 'p13-dependency-license-report-v1',
     releaseVersion: '1.0.0-rc.1',
-    status: 'INVENTORIED_PENDING_OWNER_DISPOSITION',
+    status: 'OWNER_DISPOSITION_RECORDED',
     sources: {
       npmLock: { path: 'package-lock.json', sha256: sha256(lockSource), lockfileVersion: lock.lockfileVersion },
-      pythonRequirements: { path: 'requirements.txt', sha256: sha256(requirementsSource), resolutionLockBound: false },
+      pythonRequirements: {
+        path: 'requirements.txt',
+        sha256: sha256(requirementsSource),
+        resolutionLockBound: true,
+        lockKind: 'complete-exact-version-graph',
+      },
       policy: { path: 'data/release-readiness/dependency-license-policy.v1.json', sha256: sha256(policySource) },
     },
     summary: {
@@ -134,17 +143,12 @@ async function buildReport() {
       pythonDeclaredDirectDependencies: pythonRows.filter((row) => row.direct).length,
       pythonKnownDependencyFamilies: pythonRows.filter((row) => !row.direct).length,
       pythonLicenseClassCounts: pythonClassCounts,
-      pythonResolutionLockBound: false,
+      pythonResolutionLockBound: true,
       potentiallyIncompatibleCopyleftEntries: incompatible.length,
       unknownEntries: unknown.length,
-      ownerReviewFlags: flaggedNpm.length + flaggedPython.length + 1,
+      ownerReviewFlags: flaggedNpm.length + flaggedPython.length,
     },
     flags: [
-      {
-        id: 'PYTHON-UNPINNED-GRAPH',
-        severity: 'owner-review',
-        detail: 'requirements.txt uses minimum version ranges and has no transitive lock; exact resolved Python versions and future transitive families are not frozen.',
-      },
       ...flaggedNpm.map((row) => ({
         id: `NPM:${row.name}@${row.version}`,
         severity: row.licenseClass === 'copyleft-review' || row.licenseClass === 'unknown' ? 'potential-blocker' : 'owner-review',
@@ -157,7 +161,7 @@ async function buildReport() {
         severity: row.licenseClass === 'copyleft-review' || row.licenseClass === 'unknown' ? 'potential-blocker' : 'owner-review',
         license: row.license,
         licenseClass: row.licenseClass,
-        scope: row.direct ? 'declared-direct' : 'known-unpinned-transitive-family',
+        scope: row.direct ? 'lock-bound-direct' : 'lock-bound-transitive',
       })),
     ],
     npmPackages: npmRows,
@@ -165,7 +169,8 @@ async function buildReport() {
     ownerGate: {
       ticket: 'P13-062',
       automationMayApprove: false,
-      disposition: 'UNRESOLVED',
+      disposition: 'OWNER_APPROVED_WITH_REMEDIATION',
+      dispositionArtifact: 'data/release-readiness/licensing-notice-disposition.v1.json',
     },
   }
 }
