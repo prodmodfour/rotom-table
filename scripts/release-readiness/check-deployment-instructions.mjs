@@ -140,6 +140,8 @@ async function main() {
       assert(source.toLowerCase().includes(phrase.toLowerCase()), `${repositoryPath} omits required deployment guidance: ${phrase}`)
     }
   }
+  assert(hosting.includes('sudo apt-get install --no-install-recommends git ca-certificates curl'), 'The clean-clone runbook omits exact Debian source prerequisites.')
+  assert(checklist.includes('sudo apt-get update && sudo apt-get install --no-install-recommends git ca-certificates curl'), 'The smoke checklist omits fresh-host Git/CA/curl installation.')
   assert(hosting.includes('An operator-only `nvm` installation is not sufficient'), 'The runbook does not explain systemd runtime visibility.')
   assert(hosting.includes('git status --short # must be empty for a release build'), 'The runbook permits an unbound dirty source build.')
   assert(hosting.includes('Do not overwrite `.output/` while a session or the old Node process is active.'), 'The runbook permits in-place rebuilds under a live process.')

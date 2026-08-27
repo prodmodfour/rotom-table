@@ -79,6 +79,11 @@
       "bounded": true
     },
     {
+      "id": "clean-host",
+      "command": "npm run check:release-readiness:clean-host",
+      "bounded": true
+    },
+    {
       "id": "aggregate",
       "command": "npm run check:release-readiness",
       "bounded": true

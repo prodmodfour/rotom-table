@@ -1,0 +1,207 @@
+{
+  "artifact": "release-clean-host-install-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-073-clean-host-install-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "ticket": "P13-073",
+  "status": "Repaired",
+  "gateRows": [
+    {
+      "id": "provenance-clean-host",
+      "state": "Repaired"
+    }
+  ],
+  "cleanHost": {
+    "isolation": "new disposable container with no app checkout, package tree, campaign state, environment, or release evidence",
+    "operatingSystem": "Debian GNU/Linux 12 (bookworm)",
+    "architecture": "x86_64",
+    "runtime": "Node v24.15.0",
+    "packageManager": "npm 11.12.1",
+    "serviceManager": "systemd 252 as PID 1",
+    "reverseProxy": "Caddy 2.6.2",
+    "sourceClone": {
+      "fresh": true,
+      "commit": "b031a105e64a26417164787e9733e572855998d7",
+      "method": "read-only local Git bundle clone",
+      "privateInputs": false
+    }
+  },
+  "deviationsRepaired": [
+    {
+      "id": "fresh-clone-git-prerequisite",
+      "observed": "The truly fresh supported image had Node/systemd/curl but no Git, while the runbook named Git without an exact clean-host installation command.",
+      "repair": "The hosting runbook and deployment checklist now give the exact Debian 12 git/ca-certificates/curl prerequisite command and verify git before build.",
+      "waived": false
+    }
+  ],
+  "results": [
+    {
+      "id": "fresh-clone",
+      "status": "passed",
+      "commit": "b031a105e64a26417164787e9733e572855998d7",
+      "method": "fresh detached checkout from a read-only local Git bundle containing the complete source history",
+      "trackedPaths": 16872,
+      "privateInputs": false
+    },
+    {
+      "id": "source-prerequisites",
+      "status": "passed",
+      "command": "apt-get install --no-install-recommends git ca-certificates curl",
+      "git": "2.39.5"
+    },
+    {
+      "id": "runtime",
+      "status": "passed",
+      "node": "v24.15.0",
+      "npm": "11.12.1",
+      "inheritedNodeEnv": "production"
+    },
+    {
+      "id": "lock-install",
+      "status": "passed",
+      "command": "npm ci --include=dev",
+      "installedPackages": 830,
+      "auditedPackages": 832
+    },
+    {
+      "id": "dependency-audit",
+      "status": "passed",
+      "command": "npm audit --audit-level=high",
+      "highOrGreaterFindings": 0
+    },
+    {
+      "id": "deployment-gate",
+      "status": "passed",
+      "command": "npm run check:release-readiness:deployment"
+    },
+    {
+      "id": "typecheck",
+      "status": "passed",
+      "command": "npm run typecheck"
+    },
+    {
+      "id": "production-build",
+      "status": "passed",
+      "command": "npm run build",
+      "outputFiles": 13629
+    },
+    {
+      "id": "service-account",
+      "status": "passed",
+      "user": "rotom-table",
+      "builtEntryReadable": true,
+      "campaignRootWritable": true,
+      "environmentMode": "0600"
+    },
+    {
+      "id": "systemd-verify-start-restart",
+      "status": "passed",
+      "unit": "deploy/systemd/rotom-table.service",
+      "activeAfterRestart": true
+    },
+    {
+      "id": "loopback-health-identity",
+      "status": "passed",
+      "origin": "127.0.0.1:3000",
+      "version": "1.0.0-rc.1",
+      "storageSchemaVersion": 56,
+      "commit": "b031a105e64a26417164787e9733e572855998d7",
+      "tag": null,
+      "noSecretResponse": true
+    },
+    {
+      "id": "hosted-write-fail-closed",
+      "status": "passed",
+      "statusCode": 403,
+      "flagPresent": false,
+      "noCampaignMutation": true
+    },
+    {
+      "id": "sse-streaming",
+      "status": "passed",
+      "authenticatedRole": "gm",
+      "contentType": "text/event-stream",
+      "remainedOpen": true
+    },
+    {
+      "id": "external-sqlite-sidecars",
+      "status": "passed",
+      "root": "/srv/rotom-table/campaign",
+      "files": [
+        "rotom-table.sqlite",
+        "rotom-table.sqlite-shm",
+        "rotom-table.sqlite-wal"
+      ],
+      "insideCheckout": false
+    },
+    {
+      "id": "built-notice",
+      "status": "passed",
+      "servedPath": "/THIRD_PARTY_NOTICES.txt",
+      "sha256": "a0bc8368f748f524bd99fef03ca7677eff83575bd46c75f43a43cc03d41e863e"
+    },
+    {
+      "id": "outer-gate",
+      "status": "passed",
+      "proxy": "Caddy 2.6.2 synthetic Basic Auth mimic",
+      "origin": "127.0.0.1:3000",
+      "proxyPort": 8080,
+      "unauthenticatedStatus": 401,
+      "authenticatedStatus": 200,
+      "credentialRecorded": false
+    },
+    {
+      "id": "source-cleanliness",
+      "status": "passed",
+      "command": "git status --short",
+      "output": ""
+    }
+  ],
+  "boundaries": {
+    "publication": "No hostname, credential, campaign value, log, screenshot, or browser trace is retained.",
+    "campaignData": "Only synthetic empty schema/sidecars were created under the external disposable campaign root.",
+    "completeLiveplay": "Full desktop/mobile liveplay is exercised by P13-074 and P13-078/P13-079, not claimed by this install smoke."
+  },
+  "sourceEvidence": [
+    {
+      "path": "package.json",
+      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
+    },
+    {
+      "path": ".env.vps.example",
+      "sha256": "d0a44a308bbb6c488e5f016bbf01d3c0eba37fff7b3fe50a61dbea14690a92a6"
+    },
+    {
+      "path": "deploy/systemd/rotom-table.service",
+      "sha256": "bb7e0cfb79faaa510bd70ae643d9493a0e3561a8d4e685370a8ad7e974651fac"
+    },
+    {
+      "path": "docs/private-vps-hosting.md",
+      "sha256": "d149a82f2ec48c7497989f069bf6c99ef098f58ef077735670b14cd45de6a89a"
+    },
+    {
+      "path": "docs/private-vps-deployment-smoke-checklist.md",
+      "sha256": "39cabfd151915d253e8015babdefba6b3a8bb96667f9839fdd52d56db0301b29"
+    },
+    {
+      "path": "docs/releases/1.0.0.md",
+      "sha256": "195c04d2a46030a1c2e1f6003866de7dc1ae57ba86eebb68138d25dffa9f152f"
+    },
+    {
+      "path": "data/release-readiness/supported-platform-matrix.v1.json",
+      "sha256": "c95943b4bf35347e54bda339ec944bdcb40148260a857c8e65dd617cb9a6626c"
+    },
+    {
+      "path": "data/release-readiness/deployment-instruction-certification.v1.json",
+      "sha256": "56cb3d71d5f7b05015088186c73413e4025525e1183df57aa88e46d716315943"
+    },
+    {
+      "path": "scripts/release-readiness/check-clean-host-install.mjs",
+      "sha256": "52fa422c4aca3c8365482da4b88e212f85717c98a5ebfb2fa6501b81c3e2e9a0"
+    }
+  ]
+}

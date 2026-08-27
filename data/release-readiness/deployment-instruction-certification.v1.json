@@ -160,11 +160,11 @@
     },
     {
       "path": "docs/private-vps-deployment-smoke-checklist.md",
-      "sha256": "e300e71020d53096d1cc3f41b72cb533d667921198581bce38d63d7633ce02f0"
+      "sha256": "39cabfd151915d253e8015babdefba6b3a8bb96667f9839fdd52d56db0301b29"
     },
     {
       "path": "docs/private-vps-hosting.md",
-      "sha256": "f85cdc1db51590a8ee62bf8b441481470997e1a990623063aa21b70ffd4cef12"
+      "sha256": "d149a82f2ec48c7497989f069bf6c99ef098f58ef077735670b14cd45de6a89a"
     },
     {
       "path": "docs/private-vps-readiness-summary.md",
@@ -176,11 +176,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
     },
     {
       "path": "scripts/release-readiness/check-deployment-instructions.mjs",
-      "sha256": "022e72f8694ead16007cd60aae6239c89ab67f2bb7a669a721582c6137b67ba7"
+      "sha256": "d287da5641e28724cffe5cd535cbf79c544e59c34d8f3c71eeb5b0dad4be9edf"
     }
   ]
 }

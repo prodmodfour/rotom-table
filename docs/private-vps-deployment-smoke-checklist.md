@@ -6,6 +6,7 @@ Use synthetic or clearly disposable campaign edits for smoke checks. Do not put 
 
 ## Preconditions
 
+- [ ] Git, CA certificates, and curl are installed before the fresh clone. On the certified Debian 12 shape: `sudo apt-get update && sudo apt-get install --no-install-recommends git ca-certificates curl`.
 - [ ] The deployed checkout is the intended immutable app revision under `/srv/rotom-table/app` or the operator's equivalent app path; if branch names are part of the deploy process, prefer `main` plus short-lived feature branches instead of unnecessary long-lived branch tiers.
 - [ ] Node 24 and npm are installed system-wide and are visible to the service account: `sudo -u rotom-table /usr/bin/env node --version` reports `v24.x`, and `sudo -u rotom-table /usr/bin/env npm --version` succeeds. An operator-only `nvm` installation does not satisfy the example systemd unit.
 - [ ] `ROTOM_CAMPAIGN_ROOT` points outside the app checkout, for example `/srv/rotom-table/campaign`; branch names are not data-isolation boundaries, and staging plus production must never share the same writable campaign root. If `ROTOM_DB_PATH` is set, it points to private operator-controlled campaign storage rather than the app checkout, and the database plus WAL sidecars are included in backups. Any nonstandard storage path is also listed in the reviewed systemd unit's `ReadWritePaths`, because the example unit otherwise keeps the host filesystem read-only.
@@ -23,6 +24,7 @@ On an existing host, create the release-boundary backup first, stop the old serv
 cd /srv/rotom-table/app
 git status --short # must be empty before a release build
 git rev-parse HEAD
+git --version
 node --version # must report v24.x
 npm --version
 npm ci --include=dev

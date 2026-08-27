@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-073`
+`CURRENT_TICKET: P13-074`
 
 `BLOCKED_BY: NONE`
 
@@ -164,9 +164,9 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 4 — Release-boundary backup and restore | P13-033–P13-042 | 10/10 |
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 10/10 |
 | 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 14/14 |
-| 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 6/10 |
+| 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 7/10 |
 | 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 0/10 |
-| **Total** | | **72/86** |
+| **Total** | | **73/86** |
 
 ## Tickets
 
@@ -446,11 +446,11 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - [x] **P13-065 — Record the distribution manifest and exclusion audit** — `DONE`
   - Machine-readable manifest binding tree classifications, dispositions, exclusion audit results, and notice locations.
   - Registered in the drift gate.
-  - Evidence: `distribution-manifest.v1.json` binds all 16,872 source-distribution paths to the final tracked-tree policy and category/rule counts, all six documentary decisions, all eight licensing families, the one named recommendation-5 risk, zero private/secret/exclusion findings, dependency/media summaries, the deployment certification, and nine notice locations. The manifest transparently excludes only its own bytes from the tracked aggregate to avoid self-reference; its generator compares its full deterministic content. `npm run check:release-readiness:distribution` now checks both tree classification and the manifest.
+  - Evidence: `distribution-manifest.v1.json` binds all 16,874 source-distribution paths to the final tracked-tree policy and category/rule counts, all six documentary decisions, all eight licensing families, the one named recommendation-5 risk, zero private/secret/exclusion findings, dependency/media summaries, the deployment certification, and nine notice locations. The manifest transparently excludes only its own bytes from the tracked aggregate to avoid self-reference; its generator compares its full deterministic content. `npm run check:release-readiness:distribution` now checks both tree classification and the manifest.
 - [x] **P13-066 — Distribution and notices acceptance** — `DONE`
   - Every distribution and licensing rubric row `Certified` or `Approved`; zero `UNRESOLVED` disposition families.
   - Phase-exit evidence recorded.
-  - Evidence: `distribution-notices-certification.v1.json` closes all ten distribution/licensing rubric rows (eight `Certified`/`Repaired`, two owner `Approved`) and binds 16 source authorities. The final 16,872-path manifest has nine notice locations, zero exclusion findings, zero unknown dependency licenses, zero unknown-provenance media, zero unresolved families, and exactly one non-cleared 1,460-file recommendation-5 owner-accepted risk. Phase 6 passes through `npm run check:release-readiness:distribution-acceptance`.
+  - Evidence: `distribution-notices-certification.v1.json` closes all ten distribution/licensing rubric rows (eight `Certified`/`Repaired`, two owner `Approved`) and binds 16 source authorities. The final 16,874-path manifest has nine notice locations, zero exclusion findings, zero unknown dependency licenses, zero unknown-provenance media, zero unresolved families, and exactly one non-cleared 1,460-file recommendation-5 owner-accepted risk. Phase 6 passes through `npm run check:release-readiness:distribution-acceptance`.
 
 ### Phase 7 — Release notes, artifacts, and rehearsal
 
@@ -478,9 +478,10 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
   - The `.output` bundle scans clean of secrets, campaign databases, private traces, and documentary-tree runtime dependence.
   - The scan is a registered command bound into the release command.
   - Evidence: the production `.output` snapshot contained 13,629 files (379,044,254 bytes), 24 lock-reviewed runtime package instances, the exact generated third-party notice, zero forbidden paths/secrets/SQLite headers/unreviewed JSON/symlinks/unknown dependencies/packaged documentary files, and zero documentary runtime dependence; 11 bundled files contain only permitted immutable documentary provenance labels. `npm run check:release-readiness:artifact-audit` also proves one clean synthetic bundle and six fail-closed injections (database, credential, documentary file, unknown package, private JSON, browser trace). The dynamic `npm run release:audit-artifact` is mandatory inside `release:prepare`; `built-artifact-audit-certification.v1.json` closes the rubric row.
-- [ ] **P13-073 — Rehearse the clean-host install** — `TODO`
+- [x] **P13-073 — Rehearse the clean-host install** — `DONE`
   - Fresh clone → documented install → production build → start → smoke on the supported shape, using only published documentation.
   - Friction is fixed in docs or tooling; the rehearsal is repeatable.
+  - Evidence: a new disposable Debian 12 x86-64 container with systemd 252 as PID 1 cloned the 16,872-path commit from a read-only source-only Git bundle, installed 830 exact-lock packages under inherited `NODE_ENV=production`, found zero high vulnerabilities, passed deployment/typecheck/build, produced 13,629 output files, and passed service-account/systemd restart/loopback health/schema-v56/fail-closed-write/SSE/external-WAL/built-notice/Caddy 401-vs-200/source-clean checks. The one observed friction—a truly fresh image lacked Git while docs gave no exact installation step—was repaired with explicit Debian Git/CA/curl prerequisites, not waived. `clean-host-install-certification.v1.json` binds 17 passing results and `npm run check:release-readiness:clean-host` passes.
 - [ ] **P13-074 — Rehearse the full release** — `TODO`
   - The complete release-rehearsal slice at the rc identity: gates, release command, local annotated rc tag, checksums, provenance, upgrade-restore drill, desktop and mobile liveplay smoke.
   - Publication of tags and notes remains owner-controlled.
@@ -568,4 +569,4 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - **2026-08-27 — P13-058 owner documentary-tree disposition applied.** The owner explicitly accepted the reviewed recommendation: retain-and-label `books/`, `ptu-data/`, `encounter_tables/`, and runtime-required `trainer_sizes/`; prune the unused `pokesheet.pdf` and `notepad/`. Labels state runtime and license boundaries, pre-prune hashes remain recorded, no runtime authority changed, and the P13-058 blocker is lifted.
 - **2026-08-27 — P13-059–P13-061 inventory checkpoint and licensing gate.** Registered checks prove zero tracked private/secret artifacts, classify 971 npm instances plus the reviewed Python families, and uniquely bind all 9,472 shipped media files plus 18 runtime font binaries. The inventories surface no mandatory dependency copyleft conflict, but they do surface unknown sprite redistribution rights, 29 unknown-provenance files, 1,460 edited Trainer profiles against an explicit source warning, and an unpinned Python graph. Rule 10 therefore blocks execution at P13-062 under `OWNER_DECISION_P13_062`; automation records facts and takes no legal disposition.
 - **2026-08-27 — P13-062 owner licensing/notices disposition implemented.** The owner instructed implementation of recommendations 1–4 and 6–8 and explicitly declined recommendation 5 while accepting its risk. The limited MIT/fan-project/PTU-outside-grant posture is retained; primary sprite families remain with source and artist attribution plus redistribution uncertainty; all 29 unknown-source images are removed and replaced by project-authored Vue/CSS/SVG/canvas work; npm/OFL notices are preserved in the built distribution; the six-package Python helper graph is exact-pinned; and all notices are expanded. The 1,460 edited Trainer profiles remain under a named, content-bound owner-accepted exception that neither automation nor notice language represents as legal clearance. All eight disposition families are approved and the owner gate is lifted.
-- **2026-08-27 — Phase 6 distribution and notices accepted.** The supported source-build/systemd/Caddy path was exercised on a clean Linux x86-64 host and four deviations were repaired. The final 16,872-path source manifest binds tree classification, all owner dispositions, zero private/secret exclusion findings, dependency/media inventories, deployment evidence, and nine notice locations. All ten distribution/licensing rubric rows are final with zero `UNRESOLVED` families; the recommendation-5 Trainer-profile exception remains explicit and is not represented as legal clearance.
+- **2026-08-27 — Phase 6 distribution and notices accepted.** The supported source-build/systemd/Caddy path was exercised on a clean Linux x86-64 host and four deviations were repaired. The final 16,874-path source manifest binds tree classification, all owner dispositions, zero private/secret exclusion findings, dependency/media inventories, deployment evidence, and nine notice locations. All ten distribution/licensing rubric rows are final with zero `UNRESOLVED` families; the recommendation-5 Trainer-profile exception remains explicit and is not represented as legal clearance.

@@ -44,7 +44,7 @@
     },
     {
       "path": "data/release-readiness/evidence-command-index.v1.json",
-      "sha256": "99f5ab900045b5b10232bdfc9c16ef0eeef6984a2dd88781ebe560152674666e"
+      "sha256": "2553a8362eb0744b880ad056f5697f7a047a538c591fca08242a230b74370c6a"
     },
     {
       "path": "data/release-readiness/schemas/certification.schema.v1.json",

@@ -50,7 +50,7 @@
   "sourceEvidence": [
     {
       "path": "package.json",
-      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
     },
     {
       "path": "scripts/release-readiness/audit-built-artifact.mjs",
@@ -78,7 +78,7 @@
     },
     {
       "path": "data/release-readiness/distribution-manifest.v1.json",
-      "sha256": "9c346a4f8671045be93235d0b45fb7fdf370a8e7823e2807416075bc22688965"
+      "sha256": "a1d4e33fd3ff60a3a5cbd3dd13929b24cdcc92562c3e8df45496e94842bcbdbf"
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",

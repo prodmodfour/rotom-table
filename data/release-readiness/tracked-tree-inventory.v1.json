@@ -9,29 +9,29 @@
     "sha256": "842b2993a5b449eec4f2091f900ad1357477a127219b5d6bd1cf821255e6b9a6"
   },
   "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
-  "trackedPathCount": 16872,
-  "trackedPathSetSha256": "4c6048db458da08dfab13eed29a3c43a549f312614a81f6f597a31cbec5efbcd",
-  "trackedContentSetSha256": "1c3c115322b362c8c41e541a5e35adfb36a7eeaaa9833d31984f731a20fad7b0",
+  "trackedPathCount": 16874,
+  "trackedPathSetSha256": "2b0d5779ef0d616261e3142e49301d30855e6ce397c4d8c42559ddb7e8ac154a",
+  "trackedContentSetSha256": "392ca96986b4d79f30b98c3c94fd2f86727589485eb3499af5362641b5311c81",
   "contentDigestExclusions": [
     "data/release-readiness/distribution-manifest.v1.json",
     "data/release-readiness/tracked-tree-inventory.v1.json"
   ],
   "categoryPathCounts": {
-    "authored": 5051,
+    "authored": 5052,
     "documentary": 1323,
-    "generated": 1068,
+    "generated": 1069,
     "private-data-sensitive": 5,
     "third-party": 9425
   },
   "rulePathCounts": {
     "authored-data": 359,
     "authored-root-files": 20,
-    "authored-source-trees": 4671,
+    "authored-source-trees": 4672,
     "authored-trainer-generator": 1,
     "documentary-root-files": 9,
     "documentary-trees": 1314,
     "generated-dependency-lock": 1,
-    "generated-release-evidence": 47,
+    "generated-release-evidence": 48,
     "generated-screenshots": 3,
     "generated-sheet-examples": 1015,
     "generated-trainer-datasets": 2,
@@ -162,10 +162,10 @@
     },
     {
       "path": "data",
-      "pathCount": 1435,
+      "pathCount": 1436,
       "categories": {
         "authored": 359,
-        "generated": 1062,
+        "generated": 1063,
         "third-party": 14
       }
     },
@@ -305,9 +305,9 @@
     },
     {
       "path": "scripts",
-      "pathCount": 143,
+      "pathCount": 144,
       "categories": {
-        "authored": 143
+        "authored": 144
       }
     },
     {

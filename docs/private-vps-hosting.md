@@ -28,11 +28,20 @@ Data separation matters more than branch names. The app checkout and `ROTOM_CAMP
 
 The primary private VPS process-management path is **systemd with a direct Node.js 24 runtime**. The service runs the built Nitro server from the app checkout, while SQLite authority and remaining campaign-owned JSON/reference override diffs stay in `/srv/rotom-table/campaign` through `ROTOM_CAMPAIGN_ROOT`.
 
-Install Node 24 and npm **system-wide** so both the deployment shell and the unprivileged `rotom-table` service account can find them through `/usr/local/bin`, `/usr/bin`, or `/bin`. An operator-only `nvm` installation is not sufficient for the example unit's service account. A source checkout also needs Git; Python 3 is needed only for the optional complete source-test pass, not for the built server at runtime. Verify the runtime before building:
+Install Node 24 and npm **system-wide** so both the deployment shell and the unprivileged `rotom-table` service account can find them through `/usr/local/bin`, `/usr/bin`, or `/bin`. An operator-only `nvm` installation is not sufficient for the example unit's service account. A source checkout also needs Git; Python 3 is needed only for the optional complete source-test pass, not for the built server at runtime. Install Git plus the basic HTTPS/health tools before cloning. For the certified Debian 12 shape (and Debian-derived hosts), the exact prerequisite step is:
 
 ```bash
+sudo apt-get update
+sudo apt-get install --no-install-recommends git ca-certificates curl
+```
+
+Equivalent packages are acceptable on another supported Linux x86-64 host. Install Node 24 system-wide through the operator's reviewed distribution method, then verify every source-install prerequisite before cloning or building:
+
+```bash
+git --version
 node --version # must be v24.x
 npm --version
+curl --version
 ```
 
 A manual smoke for the same command that systemd should supervise is:

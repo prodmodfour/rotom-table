@@ -24,7 +24,7 @@
   "sourceEvidence": [
     {
       "path": "package.json",
-      "sha256": "63b8296ee2b0a27af40c0533cb2b8dca90fc4d39d7df4890b63d0107b66369fc"
+      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
     },
     {
       "path": ".gitignore",
@@ -52,7 +52,7 @@
     },
     {
       "path": "docs/releases/1.0.0.md",
-      "sha256": "f51eedd2d83f3f9b92d03ddc57fb272892426d6f090c0950e848a145315b1b08"
+      "sha256": "195c04d2a46030a1c2e1f6003866de7dc1ae57ba86eebb68138d25dffa9f152f"
     },
     {
       "path": "CHANGELOG.md",
