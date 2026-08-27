@@ -16,6 +16,7 @@ The plans are implemented in the following dependency order. Each plan's own led
 | 10 | [Pokémon Contests](done/POKEMON_CONTESTS_PLAN.md) | `DONE` | Complete and archived: reviewed Contest authority, structured preparation, native Standard/Supercontest/Festival/Rotation runtime, role-safe liveplay, atomic ribbon/XP/prize settlement, recovery, documentation, and alpha acceptance across all 100 tickets. |
 | 11 | [Deferred Mechanics Closure](done/DEFERRED_MECHANICS_CLOSURE_PLAN.md) | `DONE` | Complete and archived: all 92 tickets and 29/29 closure rows accepted with zero core mechanics debt; integrated golden journeys, storage/recovery, accessibility, performance, privacy, documentation, drift, full repository, and traced desktop/mobile liveplay gates pass. |
 | 12 | [GM Campaign Toolkit](done/GM_CAMPAIGN_TOOLKIT_PLAN.md) | `DONE` | Complete and archived: all 96 tickets and 40/40 footprint rows accepted; deterministic private generation, ordinary-sheet packages, session preparation, immutable Builder handoffs, recovery, and desktop/mobile production liveplay gates pass. |
+| 13 | [1.0 Release Readiness](RELEASE_READINESS_PLAN.md) | `IN_PROGRESS` | Phase 1 accepted; executing P13-011 (10/86 tickets complete), `BLOCKED_BY: NONE`. |
 
 ## 1.0 release definition
 
@@ -30,6 +31,4 @@ Recorded 2026-08-20 as the authoritative finish line for the first full release.
 
 Prospective rows record agreed scope and ordering intent only. Linked scope drafts are registered for review but are not authoritative numbered ledgers, contain no active tickets, and impose no autonomous-continuation obligation. Work begins only when a scope draft is converted into a reviewed numbered ledger and that ledger is registered in the authoritative table above with a declared status. Drafting and registering the next prospective scope is part of the closing work of its predecessor unless an explicit earlier decision supersedes it.
 
-| Order | Prospective plan | Scope commitment | Depends on |
-| ---: | --- | --- | --- |
-| 13 | [1.0 Release Readiness](drafts/RELEASE_READINESS_PLAN.md) | Versioning policy, campaign-database upgrade and migration guarantees, backup/restore certification at the release boundary, release notes and tags, repository presentation, license and fan-content notice review, a full-catalog golden regression, and the `PRODUCT_PHASE` transition out of `ALPHA`. This registered scope draft is not a numbered ledger and does not activate execution. | Plans 10–12 complete. |
+No prospective rows remain. The 1.0 Release Readiness scope draft was converted into the numbered Plan 13 ledger on 2026-08-26 and now lives in the authoritative table above (its superseded draft remains at [drafts/RELEASE_READINESS_PLAN.md](drafts/RELEASE_READINESS_PLAN.md) for historical references). Post-1.0 expansion scopes (supplement content packs and similar 1.x work) remain scope intent only per the release definition until reviewed into numbered ledgers here.

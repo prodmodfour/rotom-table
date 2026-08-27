@@ -1,0 +1,128 @@
+{
+  "artifact": "release-distribution-inventory",
+  "schemaVersion": 1,
+  "status": "DRAFT_PENDING_OWNER_DISPOSITION",
+  "distributable": "tagged-source-repository-plus-documented-production-build",
+  "classes": [
+    {
+      "id": "runtime",
+      "includes": [
+        "src/",
+        "server/",
+        "shared/",
+        "public/",
+        "package.json",
+        "package-lock.json",
+        "nuxt.config.ts"
+      ]
+    },
+    {
+      "id": "canonical",
+      "includes": [
+        "data/reference/",
+        "shared/ruleset/natures.ts"
+      ]
+    },
+    {
+      "id": "product-data",
+      "includes": [
+        "data/"
+      ],
+      "excludes": [
+        "data/reference/"
+      ]
+    },
+    {
+      "id": "documentation",
+      "includes": [
+        "README.md",
+        "docs/",
+        "DESIGN.md"
+      ]
+    },
+    {
+      "id": "deployment",
+      "includes": [
+        "deploy/",
+        ".env.example",
+        ".env.vps.example"
+      ]
+    },
+    {
+      "id": "tooling-and-tests",
+      "includes": [
+        "scripts/",
+        "tests/",
+        ".github/"
+      ]
+    },
+    {
+      "id": "governance",
+      "includes": [
+        "implementation-plans/",
+        "AGENTS.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "LICENSE",
+        "NOTICE.md"
+      ]
+    },
+    {
+      "id": "documentary-provenance",
+      "includes": [
+        "books/",
+        "ptu-data/",
+        "encounter_tables/",
+        "trainer_sizes/",
+        "pokesheet.pdf",
+        "notepad/"
+      ]
+    }
+  ],
+  "alwaysExcluded": [
+    "*.sqlite",
+    "*.sqlite-*",
+    "*.db",
+    "*.db-*",
+    ".env",
+    ".env.*.local",
+    "playwright-report/",
+    "test-results/",
+    ".playwright-*/",
+    ".pi/",
+    "campaign/",
+    "backups/",
+    "logs/",
+    "run/",
+    ".output/",
+    ".nuxt-*/",
+    "node_modules/"
+  ],
+  "anomalyCandidates": [
+    {
+      "path": "books/",
+      "reason": "documentary PTU text; provenance-bound"
+    },
+    {
+      "path": "ptu-data/",
+      "reason": "parser/provenance tree; not runtime authority"
+    },
+    {
+      "path": "encounter_tables/",
+      "reason": "retired legacy tables"
+    },
+    {
+      "path": "trainer_sizes/",
+      "reason": "third-party sprite assets and tooling"
+    },
+    {
+      "path": "pokesheet.pdf",
+      "reason": "tracked PDF"
+    },
+    {
+      "path": "notepad/",
+      "reason": "working note"
+    }
+  ],
+  "disposition": "UNRESOLVED"
+}

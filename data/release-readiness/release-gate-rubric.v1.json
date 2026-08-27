@@ -1,0 +1,828 @@
+{
+  "artifact": "release-gate-rubric",
+  "schemaVersion": 1,
+  "plan": 13,
+  "completionStates": {
+    "Certified": "Executable, replayable evidence is bound to fixture or artifact hashes.",
+    "Approved": "An explicit owner disposition is recorded for an owner-reserved row.",
+    "Documented boundary": "A reviewed P13-009 limitation is rendered verbatim into release notes.",
+    "Repaired": "A matrix-exposed defect was fixed through its owning authority and re-certified.",
+    "Blocked": "Required evidence, authority, or owner decision is missing; forbidden at acceptance."
+  },
+  "rules": {
+    "zeroGap": true,
+    "proseOnlyClosureForbidden": true,
+    "guaranteeDowngradeForbidden": true,
+    "blockedForbiddenAtAcceptance": true,
+    "documentedBoundaryRequiresRegisteredLimitation": true
+  },
+  "families": [
+    "identity",
+    "upgrade",
+    "backup",
+    "catalog",
+    "distribution",
+    "licensing",
+    "notes",
+    "provenance",
+    "acceptance",
+    "transition"
+  ],
+  "rows": [
+    {
+      "id": "identity-policy",
+      "family": "identity",
+      "title": "Version policy and exactly-once mint",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-package",
+      "family": "identity",
+      "title": "Package metadata identity",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-server",
+      "family": "identity",
+      "title": "Role-safe server identity",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-ui",
+      "family": "identity",
+      "title": "Accessible user-visible identity",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-build",
+      "family": "identity",
+      "title": "Build-time identity and provenance",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-agreement",
+      "family": "identity",
+      "title": "All version surfaces agree",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-rc",
+      "family": "identity",
+      "title": "Release-candidate discipline",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-checksums",
+      "family": "identity",
+      "title": "Checksums and provenance records",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "identity-tag",
+      "family": "identity",
+      "title": "Annotated tag convention and agreement",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-historical-heads",
+      "family": "upgrade",
+      "title": "Every SQLite head v1-v55",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-byte-preservation",
+      "family": "upgrade",
+      "title": "Reviewed exact-byte authority samples",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-json-era",
+      "family": "upgrade",
+      "title": "JSON-era campaign import",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-rejections",
+      "family": "upgrade",
+      "title": "Unsupported input rejection before writes",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-interruption",
+      "family": "upgrade",
+      "title": "Interrupted migration atomicity and convergence",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-contention",
+      "family": "upgrade",
+      "title": "WAL, lock, and read-only behavior",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-performance",
+      "family": "upgrade",
+      "title": "Large-campaign upgrade budget",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-rollback",
+      "family": "upgrade",
+      "title": "Backup-only rollback boundary",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "upgrade-guide",
+      "family": "upgrade",
+      "title": "Operator upgrade guide",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-online",
+      "family": "backup",
+      "title": "Online backup under active WAL writes",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-stopped",
+      "family": "backup",
+      "title": "Stopped-service backup",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-fresh-host",
+      "family": "backup",
+      "title": "Fresh-host exact restore",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-restore-upgrade",
+      "family": "backup",
+      "title": "Restore then upgrade",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-mid-session",
+      "family": "backup",
+      "title": "Pending private state survives restore",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-integrity",
+      "family": "backup",
+      "title": "Aggregate integrity audit",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-privacy",
+      "family": "backup",
+      "title": "Archive trust-boundary content audit",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "backup-runbook",
+      "family": "backup",
+      "title": "Release-boundary backup runbook",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "catalog-census",
+      "family": "catalog",
+      "title": "Canonical source census",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "catalog-zero-gap",
+      "family": "catalog",
+      "title": "Complete-catalog zero-gap regression",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "catalog-no-documentary-read",
+      "family": "catalog",
+      "title": "Production documentary-read prohibition",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "catalog-registry-finality",
+      "family": "catalog",
+      "title": "Plans 1-12 mechanics finality",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "catalog-golden-journeys",
+      "family": "catalog",
+      "title": "Prior and 1.0 golden journeys",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "catalog-privacy",
+      "family": "catalog",
+      "title": "Structural privacy sweep",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "catalog-performance",
+      "family": "catalog",
+      "title": "Frozen performance-budget sweep",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "distribution-landing",
+      "family": "distribution",
+      "title": "Repository landing and documentation entry points",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "distribution-screenshots",
+      "family": "distribution",
+      "title": "Privacy-safe current screenshots",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "distribution-metadata",
+      "family": "distribution",
+      "title": "Package and repository metadata",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "distribution-tree-classification",
+      "family": "distribution",
+      "title": "Zero-unclassified tracked tree manifest",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "distribution-tree-disposition",
+      "family": "distribution",
+      "title": "Documentary-tree owner disposition",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": true,
+      "allowedFinalStates": [
+        "Approved"
+      ]
+    },
+    {
+      "id": "distribution-private-exclusion",
+      "family": "distribution",
+      "title": "Private and ignored artifact exclusion",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "distribution-deployment",
+      "family": "distribution",
+      "title": "Supported deployment instructions",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "licensing-dependencies",
+      "family": "licensing",
+      "title": "Dependency license inventory",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "licensing-assets",
+      "family": "licensing",
+      "title": "Font, sprite, and media provenance inventory",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "licensing-disposition",
+      "family": "licensing",
+      "title": "License and notice owner dispositions",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": true,
+      "allowedFinalStates": [
+        "Approved"
+      ]
+    },
+    {
+      "id": "notes-changelog",
+      "family": "notes",
+      "title": "Changelog spine",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "notes-operator",
+      "family": "notes",
+      "title": "Operator release notes",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "notes-gm-player",
+      "family": "notes",
+      "title": "GM and player release notes",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "notes-limitations",
+      "family": "notes",
+      "title": "Frozen known limitations",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "provenance-release-command",
+      "family": "provenance",
+      "title": "Fail-closed reproducible release command",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "provenance-artifact-audit",
+      "family": "provenance",
+      "title": "Built-artifact privacy and dependency audit",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "provenance-clean-host",
+      "family": "provenance",
+      "title": "Clean-host install rehearsal",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "provenance-full-rehearsal",
+      "family": "provenance",
+      "title": "Full rc release rehearsal",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "acceptance-quality",
+      "family": "acceptance",
+      "title": "Bounded full repository validation",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "acceptance-desktop",
+      "family": "acceptance",
+      "title": "Desktop production liveplay",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "acceptance-mobile",
+      "family": "acceptance",
+      "title": "Mobile production liveplay",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "acceptance-restore",
+      "family": "acceptance",
+      "title": "Release restore drill",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "acceptance-zero-unresolved",
+      "family": "acceptance",
+      "title": "Zero unresolved release or mechanics rows",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "acceptance-dossier",
+      "family": "acceptance",
+      "title": "Hash-bound acceptance dossier",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "acceptance-owner-go",
+      "family": "acceptance",
+      "title": "Owner go/no-go",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": true,
+      "allowedFinalStates": [
+        "Approved"
+      ]
+    },
+    {
+      "id": "transition-atomic",
+      "family": "transition",
+      "title": "Atomic version, phase, notes, provenance, acceptance, and tag transaction",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "transition-released-identity",
+      "family": "transition",
+      "title": "Tagged released identity verification",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "transition-archive",
+      "family": "transition",
+      "title": "Ledger archive and post-1.0 boundary",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Certified",
+        "Repaired"
+      ]
+    },
+    {
+      "id": "boundary-trusted-role-picker",
+      "family": "notes",
+      "title": "Trusted-table role picker is not public authentication",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Documented boundary"
+      ]
+    },
+    {
+      "id": "boundary-single-vps",
+      "family": "notes",
+      "title": "One private VPS per campaign group",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Documented boundary"
+      ]
+    },
+    {
+      "id": "boundary-chromium",
+      "family": "notes",
+      "title": "Chromium-family browser certification only",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Documented boundary"
+      ]
+    },
+    {
+      "id": "boundary-supplements",
+      "family": "notes",
+      "title": "Supplement packs are post-1.0",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Documented boundary"
+      ]
+    },
+    {
+      "id": "boundary-local-hosting",
+      "family": "notes",
+      "title": "Local hosting is deprecated",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Documented boundary"
+      ]
+    },
+    {
+      "id": "boundary-no-downgrade",
+      "family": "notes",
+      "title": "Downgrade requires exact backup restore",
+      "evidenceRequired": true,
+      "proseOnlyClosureForbidden": true,
+      "ownerDecision": false,
+      "allowedFinalStates": [
+        "Documented boundary"
+      ]
+    }
+  ]
+}

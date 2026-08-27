@@ -1,0 +1,31 @@
+{
+  "artifact": "release-known-limitations",
+  "schemaVersion": 1,
+  "freezePolicy": "Only reviewed rows may close as Documented boundary; all other gate failures are blockers.",
+  "rows": [
+    {
+      "id": "trusted-role-picker",
+      "statement": "The GM/Player role picker is a trusted-table convenience, not public authentication."
+    },
+    {
+      "id": "single-private-vps",
+      "statement": "Rotom Table 1.0 supports one private Linux x86-64 VPS per campaign group, behind an outer access gate."
+    },
+    {
+      "id": "chromium-only",
+      "statement": "Browser certification covers the Playwright Desktop Chrome and Pixel 7 Chromium projects only."
+    },
+    {
+      "id": "supplements-post-1.0",
+      "statement": "Supplement and expansion content packs are post-1.0 and require separately reviewed app-owned canonical data."
+    },
+    {
+      "id": "local-hosting-deprecated",
+      "statement": "Local hosting is deprecated; supported play uses a production Nitro build."
+    },
+    {
+      "id": "downgrade-by-restore",
+      "statement": "Database downgrade is unsupported; rollback means restoring the exact pre-upgrade backup."
+    }
+  ]
+}

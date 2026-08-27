@@ -1,0 +1,15 @@
+{
+  "artifact": "release-version-mints",
+  "schemaVersion": 1,
+  "sourceOfTruth": "package.json#/version",
+  "mints": [
+    {
+      "sequence": 1,
+      "from": "NONE",
+      "to": "1.0.0-rc.1",
+      "ticket": "P13-017",
+      "recordedAt": "2026-08-27",
+      "tag": "v1.0.0-rc.1"
+    }
+  ]
+}

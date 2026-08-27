@@ -4,6 +4,7 @@ import { useActionSplashSettings } from '~/composables/useActionSplashSettings'
 import { useInitiativeAutoFocusSettings } from '~/composables/useInitiativeAutoFocusSettings'
 import { useMoveAnimationSettings } from '~/composables/useMoveAnimationSettings'
 import { useSoundEffectSettings } from '~/composables/useSoundEffectSettings'
+import { parseReleaseIdentity } from '#shared/release/identity'
 import {
   ACTION_SPLASH_DISPLAY_DURATION_STEP_MS,
   ACTION_SPLASH_SPEED_LINES_DURATION_STEP_MS,
@@ -16,6 +17,22 @@ import {
 } from '~/utils/actionSplashSettings'
 
 const { isGm } = useAuth()
+const runtimeConfig = useRuntimeConfig()
+const releaseIdentity = computed(() => parseReleaseIdentity(runtimeConfig.public.releaseIdentity))
+const releaseVersion = computed(() => releaseIdentity.value?.version ?? 'Unavailable')
+const releaseSchema = computed(() => releaseIdentity.value?.storageSchemaVersion.toString() ?? 'Unavailable')
+const releaseBuildLabel = computed(() => {
+  const build = releaseIdentity.value?.build
+  if (!build) return 'Identity unavailable'
+  const labels = {
+    development: 'Development build',
+    'production-unreleased': 'Production build',
+    'release-candidate': 'Release candidate',
+    release: 'Release build',
+  } as const
+  const commit = build.commit ? ` · ${build.commit.slice(0, 12)}` : ' · provenance unavailable'
+  return `${labels[build.kind]}${commit}`
+})
 
 const campaignFolderInput = ref<HTMLInputElement | null>(null)
 const selectedCampaignFolderName = ref('')
@@ -114,6 +131,31 @@ const handleCampaignFolderSelection = (event: Event) => {
 
 <template>
   <section class="settings-panel panel-card" aria-label="Settings">
+    <section
+      class="settings-group settings-group--about"
+      aria-labelledby="about-settings-title"
+    >
+      <div class="settings-group__copy">
+        <h2 id="about-settings-title">About Rotom Table</h2>
+        <p>Release identity reported by this build. It contains no campaign or player data.</p>
+      </div>
+
+      <dl class="release-identity" aria-label="Rotom Table release identity">
+        <div>
+          <dt>Version</dt>
+          <dd>{{ releaseVersion }}</dd>
+        </div>
+        <div>
+          <dt>Storage schema</dt>
+          <dd>v{{ releaseSchema }}</dd>
+        </div>
+        <div class="release-identity__build">
+          <dt>Build</dt>
+          <dd>{{ releaseBuildLabel }}</dd>
+        </div>
+      </dl>
+    </section>
+
     <section
       v-if="isGm"
       class="settings-group"
@@ -346,8 +388,49 @@ const handleCampaignFolderSelection = (event: Event) => {
 }
 
 .settings-group__copy h2,
-.settings-group__copy p {
+.settings-group__copy p,
+.release-identity dt,
+.release-identity dd {
   margin: 0;
+}
+
+.release-identity {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(7rem, 1fr));
+  gap: 0.55rem 1rem;
+  min-width: min(22rem, 100%);
+  color: var(--ink);
+}
+
+.release-identity > div {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.release-identity__build {
+  grid-column: 1 / -1;
+}
+
+.release-identity dt {
+  color: var(--ink-muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.release-identity dd {
+  overflow-wrap: anywhere;
+  color: var(--ink-bright);
+  font-family: var(--font-mono);
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 420px) {
+  .release-identity { grid-template-columns: 1fr; }
+  .release-identity__build { grid-column: auto; }
 }
 
 .settings-group__copy h2 {

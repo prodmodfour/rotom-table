@@ -1,0 +1,149 @@
+{
+  "artifact": "release-readiness-baseline",
+  "schemaVersion": 1,
+  "planOrder": 13,
+  "recordedAt": "2026-08-26",
+  "verifiedAgainst": {
+    "headCommit": "84c4659e10bec5f39eea674e6439d24ac978e6ee",
+    "workingTree": "clean",
+    "trackedFileCount": 16791
+  },
+  "rows": [
+    {
+      "id": "plans-1-12-done",
+      "family": "governance",
+      "fact": "Plans 1 through 12 are DONE and archived; Plan 12 final acceptance records 96/96 tickets and 40/40 footprint rows.",
+      "evidence": [
+        "implementation-plans/plan-order.md",
+        "data/gm-campaign-toolkit/final-acceptance.v1.json"
+      ]
+    },
+    {
+      "id": "product-phase-alpha",
+      "family": "governance",
+      "fact": "PRODUCT_PHASE is recorded only inside implementation-plan ledgers and is ALPHA; no runtime, package, or documentation surface reports a product phase.",
+      "evidence": [
+        "implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md",
+        "implementation-plans/drafts/RELEASE_READINESS_PLAN.md"
+      ]
+    },
+    {
+      "id": "no-package-version",
+      "family": "version-identity",
+      "fact": "package.json declares no version field.",
+      "evidence": ["package.json"]
+    },
+    {
+      "id": "no-git-tags",
+      "family": "version-identity",
+      "fact": "The repository has zero git tags.",
+      "evidence": ["git tag"]
+    },
+    {
+      "id": "no-changelog",
+      "family": "version-identity",
+      "fact": "No CHANGELOG, release-notes, or release-tag artifact is tracked anywhere in the repository.",
+      "evidence": ["git ls-files"]
+    },
+    {
+      "id": "versionless-health",
+      "family": "version-identity",
+      "fact": "GET /api/health returns only { ok: true, service: 'rotom-table' }; no server, UI, or build surface reports a version, storage schema version, or build identity.",
+      "evidence": ["server/api/health.get.ts"]
+    },
+    {
+      "id": "storage-schema-56",
+      "family": "upgrade",
+      "fact": "LATEST_STORAGE_SCHEMA_VERSION is 56 with a contiguous v1-v56 migration chain applied through applyStorageMigrations.",
+      "evidence": ["server/storage/migrations.ts"]
+    },
+    {
+      "id": "upgrade-certified-through-v50-baseline",
+      "family": "upgrade",
+      "fact": "Plan 12 certified fresh-install and exact-byte v50-to-v56 upgrades plus v51-v55 historical heads and v57 refusal; the full v1-v55 historical upgrade matrix at the release boundary is explicitly unowned and was deferred to Plan 13.",
+      "evidence": [
+        "implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md",
+        "data/gm-campaign-toolkit/recovery-performance-certification.v1.json"
+      ]
+    },
+    {
+      "id": "json-era-import",
+      "family": "upgrade",
+      "fact": "A documented JSON-era campaign import exists (npm run migrate:sqlite wrapping scripts/migrate-campaign-to-sqlite.mjs) and creates a pre-migration backup.",
+      "evidence": ["package.json", "scripts/migrate-campaign-to-sqlite.mjs", "docs/private-vps-backups.md"]
+    },
+    {
+      "id": "node-engines",
+      "family": "platform",
+      "fact": "Node support is pinned to 24.x (package.json engines '>=24 <25'; .nvmrc '24').",
+      "evidence": ["package.json", ".nvmrc"]
+    },
+    {
+      "id": "browser-projects",
+      "family": "platform",
+      "fact": "Certified browser projects are Playwright 'chromium' (Desktop Chrome) and 'mobile-chromium' (Pixel 7), executed against the production Nitro build with hosted writes enabled.",
+      "evidence": ["playwright.config.ts"]
+    },
+    {
+      "id": "deployment-shape",
+      "family": "platform",
+      "fact": "The supported deployment shape is a private Linux VPS running the production Nitro build under systemd behind an outer access gate, with campaign storage under ROTOM_CAMPAIGN_ROOT and hosted writes gated by ROTOM_ENABLE_HOSTED_WRITES; a local production-like rehearsal workspace exists.",
+      "evidence": [
+        "docs/private-vps-hosting.md",
+        "deploy/systemd/rotom-table.service",
+        "deploy/local-prodlike/README.md"
+      ]
+    },
+    {
+      "id": "backup-runbook",
+      "family": "backup",
+      "fact": "SQLite/WAL-safe backup and restore is documented (online .backup API or stopped-service copy) and was production-certified inside Plans 11 and 12; no release-boundary certification exists yet.",
+      "evidence": [
+        "docs/private-vps-backups.md",
+        "data/gm-campaign-toolkit/recovery-performance-certification.v1.json"
+      ]
+    },
+    {
+      "id": "canonical-authority",
+      "family": "catalog",
+      "fact": "Runtime PTU authority is exactly the fourteen data/reference/*.json files plus shared/ruleset/natures.ts#PTU_NATURE_CHART; documentary trees are provenance only.",
+      "evidence": ["AGENTS.md", "data/reference", "shared/ruleset/natures.ts"]
+    },
+    {
+      "id": "validation-aggregate",
+      "family": "catalog",
+      "fact": "scripts/quality-gate.sh aggregates the per-domain completeness, drift, privacy, accessibility, performance, type, unit, browser, and production-build gates; GitHub Actions CI runs on push and pull request.",
+      "evidence": ["scripts/quality-gate.sh", ".github/workflows/ci.yml"]
+    },
+    {
+      "id": "notices-present",
+      "family": "licensing",
+      "fact": "A scope-limited MIT LICENSE, NOTICE.md fan-content notice, docs/fan-project-notice.md, SECURITY.md, and CONTRIBUTING.md are tracked; no reviewed release-boundary licensing or notice disposition exists.",
+      "evidence": ["LICENSE", "NOTICE.md", "docs/fan-project-notice.md", "SECURITY.md", "CONTRIBUTING.md"]
+    },
+    {
+      "id": "documentary-trees",
+      "family": "distribution",
+      "fact": "Tracked documentary, provenance, and tooling trees include books/ (1050 files), ptu-data/ (23 files), encounter_tables/ (4 retired legacy tables), trainer_sizes/ (1459 files including third-party sprite assets), pokesheet.pdf, and notepad/ (1 file).",
+      "evidence": ["git ls-files"]
+    },
+    {
+      "id": "readme-stale",
+      "family": "distribution",
+      "fact": "README.md brands the app as Nuxt 3, cites campaign JSON persistence, and leads with local `npm run dev` hosting, while the product is Nuxt 4, SQLite-authoritative, and liveplay-only with local hosting deprecated.",
+      "evidence": ["README.md", "AGENTS.md"]
+    },
+    {
+      "id": "ignore-rules",
+      "family": "distribution",
+      "fact": "Campaign databases (*.sqlite*, *.db*), env files, Playwright reports and results, .pi artifacts, and local backup/campaign/log/run directories are git-ignored; the working tree is clean at the recorded commit.",
+      "evidence": [".gitignore", "git status"]
+    },
+    {
+      "id": "provenance-remote",
+      "family": "provenance",
+      "fact": "The repository origin is https://github.com/prodmodfour/rotom-table.git; no release branch policy, tag convention, checksum record, or build provenance record exists.",
+      "evidence": ["git remote", ".github/workflows/ci.yml"]
+    }
+  ]
+}

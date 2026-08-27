@@ -1,0 +1,23 @@
+{
+  "artifact": "release-evidence-command-index",
+  "schemaVersion": 1,
+  "schemas": [
+    "data/release-readiness/schemas/certification.schema.v1.json",
+    "data/release-readiness/schemas/rehearsal.schema.v1.json",
+    "data/release-readiness/schemas/dossier.schema.v1.json",
+    "data/release-readiness/schemas/final-acceptance.schema.v1.json"
+  ],
+  "commands": [
+    {
+      "id": "phase-1",
+      "command": "npm run check:release-readiness:phase1",
+      "bounded": true
+    },
+    {
+      "id": "aggregate",
+      "command": "npm run check:release-readiness",
+      "bounded": true
+    }
+  ],
+  "wideningPolicy": "Focused release checks compose existing gates; full suites remain closure-only."
+}

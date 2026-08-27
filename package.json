@@ -1,5 +1,6 @@
 {
   "name": "rotom-table",
+  "version": "1.0.0-rc.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -20,6 +21,12 @@
     "typecheck": "NODE_ENV=development nuxt typecheck",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "generate:release-readiness:phase1": "node scripts/release-readiness/generate-phase-1.mjs --write",
+    "check:release-readiness:phase1": "node scripts/release-readiness/generate-phase-1.mjs --check",
+    "release:mint-version": "node scripts/release-readiness/mint-version.mjs",
+    "release:evidence": "node scripts/release-readiness/generate-build-evidence.mjs",
+    "check:release-readiness:identity": "node scripts/release-readiness/check-identity.mjs && vitest run tests/data/releaseIdentityAgreement.test.ts tests/server/healthEndpoint.test.ts --maxWorkers=1 --no-file-parallelism",
+    "check:release-readiness": "npm run check:release-readiness:phase1 && npm run check:release-readiness:identity",
     "check:encounter-presentation": "node scripts/check-encounter-presentation-contract.mjs",
     "check:encounter-design": "vite-node --config vitest.config.ts scripts/check_encounter_design_system.ts",
     "check:encounter-design-complete": "vite-node --config vitest.config.ts scripts/check_encounter_design_system.ts --check-plan",

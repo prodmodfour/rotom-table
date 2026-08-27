@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rotom Table 1.0 acceptance dossier",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "dossierId",
+    "status",
+    "certifications",
+    "dispositions"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}

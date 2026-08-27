@@ -1,0 +1,74 @@
+{
+  "artifact": "release-readiness-phase-1-acceptance",
+  "schemaVersion": 1,
+  "ticket": "P13-010",
+  "status": "Certified",
+  "baseline": {
+    "path": "data/release-readiness/release-baseline.v1.json",
+    "sha256": "096e039949d67c926ec82ac860f22569280937da0aa0e4a4576589267b430d11",
+    "rows": 20
+  },
+  "rubric": {
+    "families": 10,
+    "rows": 67,
+    "unregisteredFamilies": 0
+  },
+  "artifacts": [
+    {
+      "path": "data/release-readiness/release-gate-rubric.v1.json",
+      "sha256": "12235d83d75a7d76b24ee66a7e5371a90d036ca4882857bd962b39be1766fa22"
+    },
+    {
+      "path": "data/release-readiness/version-surface-inventory.v1.json",
+      "sha256": "c6919645d733cbcb36c8d3d1d501ff398abb21fc88ee7d0a6021351d16e8bbd3"
+    },
+    {
+      "path": "data/release-readiness/supported-platform-matrix.v1.json",
+      "sha256": "60865f9f8ba6f221b01937c35af52798c7c7061a78f92f3d5958fde9826b305e"
+    },
+    {
+      "path": "data/release-readiness/supported-upgrade-inputs.v1.json",
+      "sha256": "ac8ed10d6623d27d6aa23d3001a11dadeb3ea661646f0545ff505c4167f55447"
+    },
+    {
+      "path": "data/release-readiness/distribution-inventory.v1.json",
+      "sha256": "cdf8e84a8bb3d4fe0507e61fb15e56f2f1efe431c01f645dfae9da3cebceaf3e"
+    },
+    {
+      "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
+      "sha256": "d8460e2cc2691a834f19b7ed1d80025ec441f5453a0878919ca7e0de31b69e27"
+    },
+    {
+      "path": "data/release-readiness/known-limitations.v1.json",
+      "sha256": "423bd85d927711b3e0d23cbcbce3e2a6ee844c23f46e7abe4066b3efd7dbaffe"
+    },
+    {
+      "path": "data/release-readiness/evidence-command-index.v1.json",
+      "sha256": "5a501398e9bfae01297695b0c53cb8eb56a29438cc73cdd02ec25b3e841da340"
+    },
+    {
+      "path": "data/release-readiness/schemas/certification.schema.v1.json",
+      "sha256": "2d455a5959339af76e31eac8e6d756f0152d1cd7c6353e9309b63e57af2f6c93"
+    },
+    {
+      "path": "data/release-readiness/schemas/rehearsal.schema.v1.json",
+      "sha256": "cda3c1f52baa120de9b90ef25903da386404b5c1f3b16474d553721bc0c385db"
+    },
+    {
+      "path": "data/release-readiness/schemas/dossier.schema.v1.json",
+      "sha256": "6cac4692e5ba29af68078a6a179a17347ded28939caa41d0b636278ae52c0418"
+    },
+    {
+      "path": "data/release-readiness/schemas/final-acceptance.schema.v1.json",
+      "sha256": "12cbf55bd8a389ee72fe5dbdc839fe6dcd3c3f453609d3d0fd76ee4f85dcee0b"
+    }
+  ],
+  "command": "npm run check:release-readiness:phase1",
+  "assertions": {
+    "baselineFrozen": true,
+    "allArtifactsHashBound": true,
+    "allGateFamiliesRegistered": true,
+    "ownerDispositionsRemainUnresolvedUntilPhase6": true,
+    "proseOnlyClosureForbidden": true
+  }
+}

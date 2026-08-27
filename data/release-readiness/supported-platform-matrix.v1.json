@@ -1,0 +1,63 @@
+{
+  "artifact": "release-supported-platform-matrix",
+  "schemaVersion": 1,
+  "supportPolicy": "Only rows in this fixture are supported for Rotom Table 1.0.",
+  "operatingSystem": [
+    {
+      "family": "Linux",
+      "architecture": "x86-64",
+      "topology": "private-vps"
+    }
+  ],
+  "runtime": {
+    "node": ">=24 <25",
+    "nodeFile": ".nvmrc",
+    "packageManager": "npm",
+    "install": "npm ci"
+  },
+  "application": {
+    "framework": "Nuxt 4",
+    "build": "npm run build",
+    "start": "npm run start",
+    "localDevHostingSupported": false
+  },
+  "deployment": {
+    "serviceManager": "systemd",
+    "originBinding": "loopback",
+    "outerAccessGateRequired": true,
+    "campaignRootEnv": "ROTOM_CAMPAIGN_ROOT",
+    "hostedWritesEnv": {
+      "name": "ROTOM_ENABLE_HOSTED_WRITES",
+      "supportedValue": "1"
+    },
+    "sessionHostEnv": {
+      "name": "ROTOM_ENABLE_SESSION_HOST",
+      "supportedValue": "1"
+    }
+  },
+  "browsers": [
+    {
+      "playwrightProject": "chromium",
+      "device": "Desktop Chrome"
+    },
+    {
+      "playwrightProject": "mobile-chromium",
+      "device": "Pixel 7"
+    }
+  ],
+  "database": {
+    "engine": "SQLite",
+    "journalMode": "WAL",
+    "backupMethods": [
+      "online-sqlite-backup-api",
+      "stopped-service-copy"
+    ]
+  },
+  "unsupported": [
+    "nuxt-dev-hosting",
+    "public-saas",
+    "multi-tenant-service",
+    "non-Chromium certification",
+    "native-mobile-app"
+  ]
+}

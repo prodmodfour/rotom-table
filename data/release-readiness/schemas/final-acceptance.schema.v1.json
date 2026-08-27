@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Rotom Table 1.0 final acceptance",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schemaVersion",
+    "acceptanceId",
+    "status",
+    "version",
+    "productPhase",
+    "tag"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "status": {
+      "type": "string"
+    }
+  }
+}

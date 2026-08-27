@@ -1,0 +1,386 @@
+{
+  "artifact": "release-supported-upgrade-input-index",
+  "schemaVersion": 1,
+  "releaseSchemaVersion": 56,
+  "families": [
+    {
+      "id": "fresh-root",
+      "kind": "fresh-or-empty-campaign-root",
+      "fixtures": [
+        "empty-campaign-root"
+      ]
+    },
+    {
+      "id": "sqlite-historical",
+      "kind": "sqlite",
+      "fixtures": [
+        {
+          "fixtureId": "sqlite-head-v1",
+          "schemaVersion": 1,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v2",
+          "schemaVersion": 2,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v3",
+          "schemaVersion": 3,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v4",
+          "schemaVersion": 4,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v5",
+          "schemaVersion": 5,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v6",
+          "schemaVersion": 6,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v7",
+          "schemaVersion": 7,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v8",
+          "schemaVersion": 8,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v9",
+          "schemaVersion": 9,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v10",
+          "schemaVersion": 10,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v11",
+          "schemaVersion": 11,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v12",
+          "schemaVersion": 12,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v13",
+          "schemaVersion": 13,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v14",
+          "schemaVersion": 14,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v15",
+          "schemaVersion": 15,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v16",
+          "schemaVersion": 16,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v17",
+          "schemaVersion": 17,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v18",
+          "schemaVersion": 18,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v19",
+          "schemaVersion": 19,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v20",
+          "schemaVersion": 20,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v21",
+          "schemaVersion": 21,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v22",
+          "schemaVersion": 22,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v23",
+          "schemaVersion": 23,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v24",
+          "schemaVersion": 24,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v25",
+          "schemaVersion": 25,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v26",
+          "schemaVersion": 26,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v27",
+          "schemaVersion": 27,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v28",
+          "schemaVersion": 28,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v29",
+          "schemaVersion": 29,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v30",
+          "schemaVersion": 30,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v31",
+          "schemaVersion": 31,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v32",
+          "schemaVersion": 32,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v33",
+          "schemaVersion": 33,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v34",
+          "schemaVersion": 34,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v35",
+          "schemaVersion": 35,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v36",
+          "schemaVersion": 36,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v37",
+          "schemaVersion": 37,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v38",
+          "schemaVersion": 38,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v39",
+          "schemaVersion": 39,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v40",
+          "schemaVersion": 40,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v41",
+          "schemaVersion": 41,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v42",
+          "schemaVersion": 42,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v43",
+          "schemaVersion": 43,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v44",
+          "schemaVersion": 44,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v45",
+          "schemaVersion": 45,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v46",
+          "schemaVersion": 46,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v47",
+          "schemaVersion": 47,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v48",
+          "schemaVersion": 48,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v49",
+          "schemaVersion": 49,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v50",
+          "schemaVersion": 50,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v51",
+          "schemaVersion": 51,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v52",
+          "schemaVersion": 52,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v53",
+          "schemaVersion": 53,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v54",
+          "schemaVersion": 54,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        },
+        {
+          "fixtureId": "sqlite-head-v55",
+          "schemaVersion": 55,
+          "generator": "scripts/release-readiness/generate-historical-heads.ts",
+          "certificationRow": "upgrade-historical-heads"
+        }
+      ]
+    },
+    {
+      "id": "json-era",
+      "kind": "documented-json-root",
+      "command": "npm run migrate:sqlite",
+      "fixtures": [
+        "json-era-minimal",
+        "json-era-representative",
+        "json-era-malformed"
+      ]
+    }
+  ],
+  "exactByteBoundaryHeads": [
+    1,
+    5,
+    12,
+    21,
+    28,
+    41,
+    44,
+    45,
+    46,
+    50,
+    55
+  ],
+  "rejectionCorpus": [
+    "corrupt-sqlite",
+    "partial-schema",
+    "unknown-schema-zero-nonempty",
+    "future-schema-v57",
+    "non-database-file",
+    "read-only-input",
+    "locked-input",
+    "wal-sidecars-present"
+  ],
+  "unknownInputPolicy": "reject-before-write",
+  "downgradeSupported": false,
+  "rollback": "restore-byte-exact-pre-upgrade-backup"
+}

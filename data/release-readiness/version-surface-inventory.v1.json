@@ -1,0 +1,80 @@
+{
+  "artifact": "release-version-surface-inventory",
+  "schemaVersion": 1,
+  "sourceOfTruth": {
+    "path": "package.json",
+    "pointer": "/version",
+    "format": "semver"
+  },
+  "storageSchemaSource": {
+    "path": "shared/release/storageSchema.ts",
+    "export": "STORAGE_SCHEMA_VERSION"
+  },
+  "agreementKey": [
+    "version",
+    "storageSchemaVersion"
+  ],
+  "requiredSurfaces": [
+    {
+      "id": "package",
+      "kind": "metadata",
+      "path": "package.json",
+      "required": true
+    },
+    {
+      "id": "shared-module",
+      "kind": "runtime-authority",
+      "path": "shared/release/identity.ts",
+      "required": true
+    },
+    {
+      "id": "health",
+      "kind": "server",
+      "path": "/api/health",
+      "required": true,
+      "privacy": "public-no-secret"
+    },
+    {
+      "id": "about",
+      "kind": "ui",
+      "path": "/settings",
+      "required": true,
+      "audience": [
+        "gm",
+        "player"
+      ]
+    },
+    {
+      "id": "build",
+      "kind": "embedded-provenance",
+      "path": "runtimeConfig.public.releaseIdentity",
+      "required": true
+    },
+    {
+      "id": "changelog",
+      "kind": "documentation",
+      "path": "CHANGELOG.md",
+      "required": true
+    },
+    {
+      "id": "notes",
+      "kind": "documentation",
+      "path": "docs/releases/1.0.0.md",
+      "required": true
+    },
+    {
+      "id": "provenance",
+      "kind": "artifact",
+      "path": "release-evidence/provenance.json",
+      "required": true
+    },
+    {
+      "id": "tag",
+      "kind": "git",
+      "path": "refs/tags/v<version>",
+      "required": true,
+      "annotated": true
+    }
+  ],
+  "absenceIsFailure": true
+}

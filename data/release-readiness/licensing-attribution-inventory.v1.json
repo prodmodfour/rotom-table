@@ -1,0 +1,65 @@
+{
+  "artifact": "release-licensing-attribution-inventory",
+  "schemaVersion": 1,
+  "status": "UNRESOLVED",
+  "automationMayApprove": false,
+  "families": [
+    {
+      "id": "license-scope",
+      "sources": [
+        "LICENSE"
+      ],
+      "disposition": "UNRESOLVED"
+    },
+    {
+      "id": "fan-content-posture",
+      "sources": [
+        "NOTICE.md",
+        "docs/fan-project-notice.md"
+      ],
+      "disposition": "UNRESOLVED"
+    },
+    {
+      "id": "ptu-derived-data",
+      "sources": [
+        "data/reference/",
+        "books/",
+        "ptu-data/",
+        "pokesheet.pdf"
+      ],
+      "disposition": "UNRESOLVED"
+    },
+    {
+      "id": "sprites-media-fonts",
+      "sources": [
+        "public/",
+        "trainer_sizes/",
+        "@fontsource packages"
+      ],
+      "disposition": "UNRESOLVED"
+    },
+    {
+      "id": "npm-dependencies",
+      "sources": [
+        "package-lock.json"
+      ],
+      "disposition": "UNRESOLVED"
+    },
+    {
+      "id": "python-dependencies",
+      "sources": [
+        "requirements.txt"
+      ],
+      "disposition": "UNRESOLVED"
+    },
+    {
+      "id": "existing-notices",
+      "sources": [
+        "NOTICE.md",
+        "docs/fan-project-notice.md"
+      ],
+      "disposition": "UNRESOLVED"
+    }
+  ],
+  "releaseGate": "Every family requires an explicit owner disposition at P13-062."
+}

@@ -116,6 +116,9 @@ if have npm; then
   pp_section "GM Campaign Toolkit authority and finality"
   run_cmd npm run check:gm-campaign-toolkit-complete
 
+  pp_section "1.0 Release Readiness"
+  run_cmd npm run check:release-readiness
+
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation
 

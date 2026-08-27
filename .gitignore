@@ -10,6 +10,8 @@ node_modules
 .playwright-campaign/
 playwright-report/
 test-results/
+release-evidence/
+.release-work/
 .pi/logs/
 .pi/artifacts/
 .pi/refactor-loop.lock/

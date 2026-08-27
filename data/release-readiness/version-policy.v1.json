@@ -1,0 +1,25 @@
+{
+  "artifact": "release-version-policy",
+  "schemaVersion": 1,
+  "policy": "semantic-versioning",
+  "sourceOfTruth": "package.json#/version",
+  "rules": {
+    "format": "MAJOR.MINOR.PATCH with optional SemVer prerelease",
+    "releaseCandidatePattern": "1.0.0-rc.N",
+    "releaseVersion": "1.0.0",
+    "annotatedTagPattern": "v<version>",
+    "branchPolicy": "trunk-based-main",
+    "postReleaseFixLine": "v1.0.x",
+    "longLivedReleaseBranches": false,
+    "finalMintExactlyOnce": true,
+    "tagMutationForbidden": true,
+    "outOfBandVersionEditsForbidden": true
+  },
+  "releaseBuildRequirements": [
+    "clean tracked worktree",
+    "green bounded release gates",
+    "annotated tag and package version agreement",
+    "commit and embedded build identity agreement"
+  ],
+  "mintAuthority": "node scripts/release-readiness/mint-version.mjs"
+}

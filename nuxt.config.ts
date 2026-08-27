@@ -1,6 +1,60 @@
+import { execFileSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import {
+  createReleaseIdentity,
+  releaseTagForVersion,
+  ROTOM_TABLE_VERSION,
+  type ReleaseBuildIdentity,
+} from './shared/release/identity'
 
 const isDev = process.env.NODE_ENV !== 'production'
+const releaseBuildRequested = process.env.ROTOM_RELEASE_BUILD === '1'
+const migrationSource = readFileSync(resolve(process.cwd(), 'server/storage/migrations.ts'), 'utf8')
+const schemaVersionMatch = migrationSource.match(/export const LATEST_STORAGE_SCHEMA_VERSION = (\d+)/)
+if (!schemaVersionMatch) throw new Error('Could not derive the release storage schema version')
+const storageSchemaVersion = Number(schemaVersionMatch[1])
+const npmVersion = process.env.npm_config_user_agent?.match(/(?:^|\s)npm\/([^\s]+)/)?.[1] ?? null
+const gitCommit = (): string | null => {
+  if (isDev) return null
+  const supplied = process.env.ROTOM_BUILD_COMMIT?.trim()
+  if (supplied) return supplied
+  try {
+    return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+  } catch {
+    return null
+  }
+}
+const buildCommit = gitCommit()
+const buildTag = process.env.ROTOM_BUILD_TAG?.trim() || null
+const prereleaseCandidate = /-rc\.\d+$/.test(ROTOM_TABLE_VERSION)
+const buildKind: ReleaseBuildIdentity['kind'] = isDev
+  ? 'development'
+  : prereleaseCandidate
+    ? 'release-candidate'
+    : releaseBuildRequested
+      ? 'release'
+      : 'production-unreleased'
+const buildProvenanceComplete = Boolean(
+  buildCommit
+  && npmVersion
+  && (!releaseBuildRequested || buildTag === releaseTagForVersion()),
+)
+if (releaseBuildRequested && !buildProvenanceComplete) {
+  throw new Error('ROTOM_RELEASE_BUILD=1 requires ROTOM_BUILD_COMMIT, ROTOM_BUILD_TAG, Node, and npm provenance that agree with package.json')
+}
+const releaseIdentity = createReleaseIdentity({
+  storageSchemaVersion,
+  build: {
+    kind: buildKind,
+    commit: buildCommit,
+    tag: buildTag,
+    command: isDev ? 'nuxt dev' : 'npm run build',
+    nodeVersion: process.version,
+    npmVersion,
+    provenanceComplete: buildProvenanceComplete,
+  },
+})
 const persistedDataWatchIgnored = [/(?:^|[\\/])data[\\/](?:sheets|trainers|maps|player-profiles|reference-overrides)(?:[\\/]|$)/]
 
 export default defineNuxtConfig({
@@ -46,6 +100,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
+      // Nuxt applies runtime-config defaults mutably; clone the shared immutable identity.
+      releaseIdentity: structuredClone(releaseIdentity),
       // Browser contract fixtures are absent from normal production. The
       // production-build Playwright harness opts in explicitly.
       presentationContractPreview: false,
