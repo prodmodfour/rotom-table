@@ -7562,6 +7562,18 @@
       ],
       "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:package-json:p13-successor-v6",
+      "ticket": "P13-046",
+      "surface": "package.json",
+      "beforeSha256": "4cec9c9a221f8be6a72009021385fab701089af98e9a76791481b4d34bd1633e",
+      "afterSha256": "20b6ae1ebfa89bc6079bdd11945b5fc8c5e8320281b4cfad48c586b2a5337f86",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [

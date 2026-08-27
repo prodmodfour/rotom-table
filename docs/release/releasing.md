@@ -51,7 +51,7 @@ A successful run creates exactly these root files:
 - `release-evidence/gate-summary.json` — passed bounded commands and hashes for notes, changelog, lock, distribution manifest, and limitations;
 - `release-evidence/release-bundle-manifest.json` — hashes and sizes for the four evidence inputs above, excluding its own bytes to avoid self-reference.
 
-The bundle contains no wall-clock completion field, campaign value, credential, private hostname, or hosted-write value. Commit time is the deterministic time authority. Files are owner-readable/group-readable only, and the whole directory remains outside the source distribution.
+The bundle contains no wall-clock completion field, campaign value, credential, private hostname, or hosted-write value. Commit time is the deterministic time authority. Files use exact mode `0640` (owner read/write, group read, no access for others); the evidence directory uses `0750` and remains outside the source distribution.
 
 Verify an existing bundle without rebuilding:
 

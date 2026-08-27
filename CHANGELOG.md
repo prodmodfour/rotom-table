@@ -17,6 +17,17 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 
 No changes have been recorded after the current candidate.
 
+## [1.0.0-rc.5] - 2026-08-27
+
+### Fixed
+
+- Aligned the final evidence verifier with the release writers' documented exact `0640` file mode: owner read/write, group read, and no access for others.
+- Added a deterministic source gate for that exact evidence-permission contract and documented the matching `0750` evidence-directory mode.
+
+### Boundaries
+
+- This successor includes the complete rc.4 source scope plus the evidence-permission verifier repair only. The failed rc.4 tag remains immutable and unpublished; its local partial bundle is not release evidence for rc.5.
+
 ## [1.0.0-rc.4] - 2026-08-27
 
 ### Fixed
@@ -27,6 +38,10 @@ No changes have been recorded after the current candidate.
 ### Boundaries
 
 - This successor includes the complete rc.3 source scope plus evidence-drift repairs only. The failed rc.3 tag remains immutable and unpublished; it produced no build or release evidence bundle.
+
+### Rehearsal outcome
+
+- The local annotated `v1.0.0-rc.4` tag was created immutably and passed the complete release-readiness aggregate, production build, checksum/provenance generation, and the zero-finding 13,629-file artifact audit. The final verifier then stopped because it rejected group-read on files deliberately written as `0640`; direct verification after correcting that inconsistent predicate proved all remaining hashes, identities, source bindings, and privacy checks. The partial local bundle was not certified as a successful command result, and the fix required rc.5 rather than moving this tag.
 
 ## [1.0.0-rc.3] - 2026-08-27
 

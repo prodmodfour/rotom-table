@@ -74,9 +74,9 @@ function main() {
     const path = resolve(ROOT, row.path)
     const bytes = readFileSync(path)
     if (bytes.length !== row.size || sha256(bytes) !== row.sha256) fail(`Release evidence hash drift: ${row.path}`)
-    if ((statSync(path).mode & 0o077) !== 0) fail(`Release evidence permissions are too broad: ${row.path}`)
+    if ((statSync(path).mode & 0o777) !== 0o640) fail(`Release evidence permissions are too broad: ${row.path}`)
   }
-  if ((statSync(resolve(EVIDENCE_ROOT, 'release-bundle-manifest.json')).mode & 0o077) !== 0) fail('Release bundle manifest permissions are too broad.')
+  if ((statSync(resolve(EVIDENCE_ROOT, 'release-bundle-manifest.json')).mode & 0o777) !== 0o640) fail('Release bundle manifest permissions are too broad.')
 
   const head = git(['rev-parse', 'HEAD'])
   if (manifest.commit !== head || provenance.source?.commit !== head || gateSummary.identity?.commit !== head || audit.identity?.commit !== head) {

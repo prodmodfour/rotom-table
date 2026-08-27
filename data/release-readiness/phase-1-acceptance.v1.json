@@ -32,11 +32,11 @@
     },
     {
       "path": "data/release-readiness/distribution-inventory.v1.json",
-      "sha256": "8afb66974c6c7497bc737fd71401b600d2819843e7fb920698f439993355d2fc"
+      "sha256": "f1cf8df30e384aa776d4d34c278a652077b8b9c98ed61485ae5a0367c9a08886"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "5870e1d7b2ea62f5f7663e46facbc5813c4bd555922b8022db1aa6d52f76a5c6"
+      "sha256": "1c1e205beffd2fad187bde215a87d378e85bfca862498831c7e55da096718e94"
     },
     {
       "path": "data/release-readiness/known-limitations.v1.json",

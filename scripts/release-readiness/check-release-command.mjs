@@ -72,6 +72,7 @@ async function main() {
   for (const requirement of ['Release evidence check accepts no arguments.', 'annotated tag at HEAD', 'Release evidence hash drift', 'Release output checksum drift', 'source binding drift', 'Built-artifact audit contains a finding']) {
     assert(evidenceCheck.includes(requirement), `Release evidence verifier omits fail-closed rule: ${requirement}`)
   }
+  assert(evidenceCheck.includes('(statSync(path).mode & 0o777) !== 0o640'), 'Release evidence verifier does not enforce the writer-owned 0640 file mode.')
 
   for (const generated of ['.nuxt-build', '.output', 'release-evidence/']) assert(gitignore.split('\n').includes(generated), `Generated release path is not ignored: ${generated}`)
   assert(platform.runtime.node === '>=24 <25' && platform.operatingSystem.some(row => row.family === 'Linux' && row.architecture === 'x86-64'), 'Release command platform assumptions drifted.')

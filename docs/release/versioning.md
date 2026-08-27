@@ -8,8 +8,8 @@ Never edit either package file directly. Use the reviewed mint authority with th
 
 ```bash
 npm run release:mint-version -- \
-  --from 1.0.0-rc.3 \
-  --to 1.0.0-rc.4 \
+  --from 1.0.0-rc.4 \
+  --to 1.0.0-rc.5 \
   --ticket P13-074 \
   --recorded-at YYYY-MM-DD
 ```

@@ -2,7 +2,7 @@
   "artifact": "release-licensing-notice-disposition",
   "schemaVersion": 1,
   "dispositionId": "p13-062-owner-license-notice-disposition-v1",
-  "releaseVersion": "1.0.0-rc.4",
+  "releaseVersion": "1.0.0-rc.5",
   "ticket": "P13-062",
   "status": "OWNER_APPROVED_AND_IMPLEMENTED",
   "automationMayApprove": false,
@@ -215,11 +215,11 @@
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
-      "sha256": "5bb4a0ac94d566ac204d239c73c8ba9930a50640d3d3a4cc2aa74c5572e339ef"
+      "sha256": "5c356c9f7092929a644d9c153fe179513df0cd2a43b15b7e5a7c76517713aff8"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "5870e1d7b2ea62f5f7663e46facbc5813c4bd555922b8022db1aa6d52f76a5c6"
+      "sha256": "1c1e205beffd2fad187bde215a87d378e85bfca862498831c7e55da096718e94"
     },
     {
       "path": "data/release-readiness/dependency-license-policy.v1.json",
@@ -227,7 +227,7 @@
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
-      "sha256": "6b8ae63c9a49432bdea08453f347831f86e0c2a537ef62005dd45c81ede607ba"
+      "sha256": "1e1748191f19c0b00b252bff72752eab8127f1cded1adcc3ff88fbe107feacab"
     },
     {
       "path": "data/release-readiness/media-asset-policy.v1.json",
@@ -235,7 +235,7 @@
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "d16bd7fc254dbee84fcd63e9e9e65a46bf7d8032db56904e4d60dd4c9073138f"
+      "sha256": "45dcdd42dc9d82e26d2f5332bdab9bc67d720ec8f7e72a41e75577f98a7a09a2"
     },
     {
       "path": "src/components/TypeBadge.vue",
@@ -271,11 +271,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "4cec9c9a221f8be6a72009021385fab701089af98e9a76791481b4d34bd1633e"
+      "sha256": "20b6ae1ebfa89bc6079bdd11945b5fc8c5e8320281b4cfad48c586b2a5337f86"
     },
     {
       "path": "package-lock.json",
-      "sha256": "c960756b2a2829647bd6f802590f201cbc87210dd6330d4c33d9483e1d72b3f9"
+      "sha256": "28936d35477f91598d27698145c78359b3af8615f43961b5df8124bfc8fdba99"
     }
   ]
 }

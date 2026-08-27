@@ -34,6 +34,14 @@
       "ticket": "P13-074",
       "recordedAt": "2026-08-27",
       "tag": "v1.0.0-rc.4"
+    },
+    {
+      "sequence": 5,
+      "from": "1.0.0-rc.4",
+      "to": "1.0.0-rc.5",
+      "ticket": "P13-074",
+      "recordedAt": "2026-08-27",
+      "tag": "v1.0.0-rc.5"
     }
   ]
 }
