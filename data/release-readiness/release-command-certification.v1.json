@@ -2,7 +2,7 @@
   "artifact": "release-command-certification",
   "schemaVersion": 1,
   "certificationId": "p13-071-release-command-v1",
-  "releaseVersion": "1.0.0-rc.3",
+  "releaseVersion": "1.0.0-rc.4",
   "ticket": "P13-071",
   "status": "Certified",
   "gateRows": [
@@ -24,7 +24,7 @@
   "sourceEvidence": [
     {
       "path": "package.json",
-      "sha256": "6f4aea7d0e11dd8f066af6929f46eb5331c67c6b6e5277b24f8a0389a31ec61e"
+      "sha256": "4cec9c9a221f8be6a72009021385fab701089af98e9a76791481b4d34bd1633e"
     },
     {
       "path": ".gitignore",
@@ -52,11 +52,11 @@
     },
     {
       "path": "docs/releases/1.0.0.md",
-      "sha256": "ef063677fd5b9a3c60a821c2642a29b418094ebb4db5adb83f08ffdbc6153f0e"
+      "sha256": "09af389c0c62ba35132a17817a634d3013518b3359c1fff781e48c85cad4429d"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "61e91a822537dd7b2abfc67aaac5d99c38bef1e72e0b1ce939aec382b516297c"
+      "sha256": "70a9740bfd95b4c92be9e648920ff7e3a22bd74ed04379c3a8e3b53ae13908d1"
     },
     {
       "path": "data/release-readiness/version-policy.v1.json",

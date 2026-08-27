@@ -1,7 +1,7 @@
 {
   "artifact": "release-distribution-inventory",
   "schemaVersion": 1,
-  "releaseVersion": "1.0.0-rc.3",
+  "releaseVersion": "1.0.0-rc.4",
   "status": "CERTIFIED",
   "distributable": "tagged-source-repository-plus-documented-production-build",
   "trackedTreeAuthority": {

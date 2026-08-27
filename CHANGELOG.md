@@ -17,6 +17,17 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 
 No changes have been recorded after the current candidate.
 
+## [1.0.0-rc.4] - 2026-08-27
+
+### Fixed
+
+- Regenerated the production documentary-read proof after the earlier project-authored visual replacements changed the certified source graph.
+- Extended the accepted hash-successor chain for five reviewed release-readiness documentation and package surfaces, preserving immutable prior hashes while certifying their current content.
+
+### Boundaries
+
+- This successor includes the complete rc.3 source scope plus evidence-drift repairs only. The failed rc.3 tag remains immutable and unpublished; it produced no build or release evidence bundle.
+
 ## [1.0.0-rc.3] - 2026-08-27
 
 ### Fixed
@@ -26,6 +37,10 @@ No changes have been recorded after the current candidate.
 ### Boundaries
 
 - This successor includes the complete rc.2 source scope plus the release-command fix. The failed rc.2 tag remains immutable and unpublished; it produced no release evidence bundle.
+
+### Rehearsal outcome
+
+- The local annotated `v1.0.0-rc.3` tag was created immutably and passed identity, upgrade, and backup gates. Release preparation then stopped fail-closed when the aggregate detected a stale documentary-read source-graph hash. Manual continuation also exposed missing accepted successors for hash-bound release surfaces. The run never reached its build, checksum, provenance, artifact-audit, or evidence-generation steps; both drift classes were repaired in rc.4 rather than moving the tag.
 
 ## [1.0.0-rc.2] - 2026-08-27
 
