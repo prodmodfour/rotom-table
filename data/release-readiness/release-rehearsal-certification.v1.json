@@ -1,0 +1,301 @@
+{
+  "artifact": "release-rehearsal-certification",
+  "schemaVersion": 1,
+  "rehearsalId": "p13-074-v1.0.0-rc.5",
+  "ticket": "P13-075",
+  "status": "Certified",
+  "identity": {
+    "version": "1.0.0-rc.5",
+    "storageSchemaVersion": 56,
+    "commit": "2e68864c17ee241cf624808703adfe4016deaea8",
+    "tree": "79e57683ee11c5e223c24bf8824771d12f72156f",
+    "tag": "v1.0.0-rc.5",
+    "annotatedTagObject": "61c0821d29b902cfca05f5a35e1824e7d4dae030",
+    "sourceDateEpoch": "1787856923"
+  },
+  "supportedShape": {
+    "platform": "linux",
+    "architecture": "x64",
+    "node": "v24.16.0",
+    "npm": "11.13.0",
+    "browser": "Chromium",
+    "cleanTaggedSource": true,
+    "privateVpsContract": true
+  },
+  "evidence": {
+    "releaseCommand": {
+      "command": "npm run release:prepare",
+      "status": "passed",
+      "cleanTreeBeforeAndAfter": true,
+      "outputFileCount": 13629,
+      "outputTotalBytes": 379045054,
+      "runtimePackageInstances": 24,
+      "checksumManifestSha256": "215084606e49021cdbceca195d01128b485634b394a5b21303ff2b92029d00ce",
+      "bundleManifestSha256": "0b63be70b02e0ee19b11abd6ca45f4951cdead6b91c01f72a0ecc7d04e77e52e",
+      "fileMode": "0640",
+      "directoryMode": "0750",
+      "commands": [
+        {
+          "command": "node scripts/release-readiness/check-identity.mjs --require-tag",
+          "status": "passed",
+          "bounded": true
+        },
+        {
+          "command": "npm run check:release-readiness",
+          "status": "passed",
+          "bounded": true
+        },
+        {
+          "command": "npm run build",
+          "status": "passed",
+          "bounded": true
+        },
+        {
+          "command": "node scripts/release-readiness/generate-build-evidence.mjs --release --output .output --evidence-dir release-evidence",
+          "status": "passed",
+          "bounded": true
+        },
+        {
+          "command": "npm run release:audit-artifact",
+          "status": "passed",
+          "bounded": true
+        }
+      ],
+      "files": [
+        {
+          "path": "release-evidence/artifact-audit.json",
+          "size": 5889,
+          "sha256": "832b9bcb6ca806b9be35be30dce0448bb9b7b245c0ff8eaf1eef72bc21a3589c"
+        },
+        {
+          "path": "release-evidence/checksums.sha256",
+          "size": 1627053,
+          "sha256": "215084606e49021cdbceca195d01128b485634b394a5b21303ff2b92029d00ce"
+        },
+        {
+          "path": "release-evidence/gate-summary.json",
+          "size": 2150,
+          "sha256": "6da55322ac59527d014e16b66969b27a3d001cc5982d0a9b1671f1fd6c6c7084"
+        },
+        {
+          "path": "release-evidence/provenance.json",
+          "size": 863,
+          "sha256": "0a3a6f49990316566aeb6aaac6f21eb642272bc8d8b2577cb7671d71db72110e"
+        },
+        {
+          "path": "release-evidence/release-bundle-manifest.json",
+          "size": 1061,
+          "sha256": "0b63be70b02e0ee19b11abd6ca45f4951cdead6b91c01f72a0ecc7d04e77e52e"
+        }
+      ],
+      "artifactAuditFindings": {
+        "forbiddenPaths": 0,
+        "secretOrPrivateContent": 0,
+        "sqliteHeaders": 0,
+        "unexpectedJson": 0,
+        "symbolicOrSpecialFiles": 0,
+        "unknownRuntimeDependencies": 0,
+        "packagedDocumentaryTrees": 0
+      },
+      "taggedSourceBindings": [
+        {
+          "path": "package.json",
+          "sha256": "20b6ae1ebfa89bc6079bdd11945b5fc8c5e8320281b4cfad48c586b2a5337f86"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "28936d35477f91598d27698145c78359b3af8615f43961b5df8124bfc8fdba99"
+        },
+        {
+          "path": "CHANGELOG.md",
+          "sha256": "aa79611e8ffad40636d14bd0863176ef1ef228f66ae44f625a0536b8b4bfae27"
+        },
+        {
+          "path": "docs/releases/1.0.0.md",
+          "sha256": "90b3687c11007c6b372e60be48ab5f161f41d40206bb937b4f538cf7cf52fee6"
+        },
+        {
+          "path": "data/release-readiness/distribution-manifest.v1.json",
+          "sha256": "19a91236baa10f7f190ff83f00f203f2c8a27e931a3fb1fbaf855db22198d3d0"
+        },
+        {
+          "path": "data/release-readiness/known-limitations.v1.json",
+          "sha256": "cf731b8144de936de353afc4cab676123f3acab366066c5a2c714bbd9e2abc4b"
+        }
+      ]
+    },
+    "upgradeRestoreDrill": {
+      "status": "passed",
+      "syntheticAuthority": true,
+      "fixture": "sqlite-head-v55",
+      "fromVersion": 55,
+      "toVersion": 56,
+      "appliedVersions": [
+        56
+      ],
+      "beforeSha256": "501a3fb01948bbc9fa706889bf892110632d779d71acd2cd03ab638ea239fba9",
+      "backupSha256": "501a3fb01948bbc9fa706889bf892110632d779d71acd2cd03ab638ea239fba9",
+      "restoredSha256": "501a3fb01948bbc9fa706889bf892110632d779d71acd2cd03ab638ea239fba9",
+      "afterSha256": "33becc19864669c24073af708b9f05f2eeeb3e9740c38bc0937b3725296991e7",
+      "reupgradedSha256": "33becc19864669c24073af708b9f05f2eeeb3e9740c38bc0937b3725296991e7",
+      "backupReused": true,
+      "byteExactRestore": true,
+      "reupgradeConverged": true,
+      "integrity": "passed",
+      "foreignKeyViolations": 0,
+      "auditedTables": 82,
+      "auditedRows": 10,
+      "auditedJsonColumns": 126,
+      "commands": [
+        {
+          "command": "create synthetic app-produced sqlite-head-v55",
+          "status": "passed"
+        },
+        {
+          "command": "npm run upgrade:campaign -- --database <private-copy> --backup <private-backup> --json",
+          "status": "passed"
+        },
+        {
+          "command": "npm run audit:campaign -- --database <private-copy> --json",
+          "status": "passed"
+        },
+        {
+          "command": "restore exact pre-upgrade backup and verify SHA-256/integrity",
+          "status": "passed"
+        },
+        {
+          "command": "rerun upgrade with matching existing backup",
+          "status": "passed"
+        },
+        {
+          "command": "rerun release integrity audit",
+          "status": "passed"
+        }
+      ]
+    },
+    "productionLiveplaySmoke": {
+      "status": "passed",
+      "server": {
+        "buildKind": "release-candidate",
+        "version": "1.0.0-rc.5",
+        "storageSchemaVersion": 56,
+        "commit": "2e68864c17ee241cf624808703adfe4016deaea8",
+        "tag": "v1.0.0-rc.5",
+        "provenanceComplete": true,
+        "hostValueRecorded": false
+      },
+      "desktop": {
+        "browser": "Chromium",
+        "viewport": {
+          "width": 1440,
+          "height": 960
+        },
+        "role": "GM",
+        "trustedRoleBoundaryVisible": true,
+        "settingsVersion": "1.0.0-rc.5",
+        "settingsStorageSchemaVersion": 56,
+        "settingsCommitPrefix": "2e68864c17ee",
+        "horizontalOverflowPx": 0,
+        "consoleErrors": 0,
+        "consoleWarnings": 0
+      },
+      "mobile": {
+        "browser": "Chromium",
+        "viewport": {
+          "width": 412,
+          "height": 915
+        },
+        "role": "GM",
+        "trustedRoleBoundaryVisible": true,
+        "settingsVersion": "1.0.0-rc.5",
+        "settingsStorageSchemaVersion": 56,
+        "settingsCommitPrefix": "2e68864c17ee",
+        "horizontalOverflowPx": 0,
+        "consoleErrors": 0,
+        "consoleWarnings": 0
+      }
+    }
+  },
+  "gateRows": [
+    {
+      "id": "notes-changelog",
+      "state": "Certified",
+      "authority": "CHANGELOG.md"
+    },
+    {
+      "id": "notes-operator",
+      "state": "Certified",
+      "authority": "docs/releases/1.0.0.md"
+    },
+    {
+      "id": "notes-gm-player",
+      "state": "Certified",
+      "authority": "docs/releases/1.0.0.md"
+    },
+    {
+      "id": "notes-limitations",
+      "state": "Certified",
+      "authority": "data/release-readiness/known-limitations.v1.json"
+    },
+    {
+      "id": "provenance-release-command",
+      "state": "Certified",
+      "authority": "data/release-readiness/release-command-certification.v1.json"
+    },
+    {
+      "id": "provenance-artifact-audit",
+      "state": "Certified",
+      "authority": "data/release-readiness/built-artifact-audit-certification.v1.json"
+    },
+    {
+      "id": "provenance-clean-host",
+      "state": "Certified",
+      "authority": "data/release-readiness/clean-host-install-certification.v1.json"
+    },
+    {
+      "id": "provenance-full-rehearsal",
+      "state": "Certified",
+      "authority": "data/release-readiness/release-rehearsal-certification.v1.json"
+    }
+  ],
+  "privacy": {
+    "syntheticCampaignOnly": true,
+    "campaignValuesRecorded": false,
+    "credentialsRecorded": false,
+    "privateHostsRecorded": false,
+    "browserStorageRecorded": false,
+    "screenshotsTracked": false,
+    "operatorLocalEvidenceIgnored": true
+  },
+  "publication": {
+    "tagPublished": false,
+    "notesPublished": false,
+    "ownerControlled": true
+  },
+  "sourceEvidence": [
+    {
+      "path": "scripts/release-readiness/check-release-rehearsal.mjs",
+      "sha256": "e0d86be39e6392b1f3a57e9081db16baf16cbc2e61fec900db09d0ae5209df94"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "f4b8a74229e64e494c7d216d84dd6c843c1c410b544f3474e2e2d4a69d7c7b83"
+    },
+    {
+      "path": "data/release-readiness/schemas/rehearsal.schema.v1.json",
+      "sha256": "cda3c1f52baa120de9b90ef25903da386404b5c1f3b16474d553721bc0c385db"
+    },
+    {
+      "path": "data/release-readiness/release-gate-rubric.v1.json",
+      "sha256": "12235d83d75a7d76b24ee66a7e5371a90d036ca4882857bd962b39be1766fa22"
+    },
+    {
+      "path": "data/release-readiness/version-policy.v1.json",
+      "sha256": "3e65a10e9d29b1bce604bc52a2b3873272632f13a6ae396345782054257e533f"
+    },
+    {
+      "path": "data/release-readiness/supported-platform-matrix.v1.json",
+      "sha256": "c95943b4bf35347e54bda339ec944bdcb40148260a857c8e65dd617cb9a6626c"
+    }
+  ]
+}

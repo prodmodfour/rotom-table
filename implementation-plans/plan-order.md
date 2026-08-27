@@ -16,7 +16,7 @@ The plans are implemented in the following dependency order. Each plan's own led
 | 10 | [Pokémon Contests](done/POKEMON_CONTESTS_PLAN.md) | `DONE` | Complete and archived: reviewed Contest authority, structured preparation, native Standard/Supercontest/Festival/Rotation runtime, role-safe liveplay, atomic ribbon/XP/prize settlement, recovery, documentation, and alpha acceptance across all 100 tickets. |
 | 11 | [Deferred Mechanics Closure](done/DEFERRED_MECHANICS_CLOSURE_PLAN.md) | `DONE` | Complete and archived: all 92 tickets and 29/29 closure rows accepted with zero core mechanics debt; integrated golden journeys, storage/recovery, accessibility, performance, privacy, documentation, drift, full repository, and traced desktop/mobile liveplay gates pass. |
 | 12 | [GM Campaign Toolkit](done/GM_CAMPAIGN_TOOLKIT_PLAN.md) | `DONE` | Complete and archived: all 96 tickets and 40/40 footprint rows accepted; deterministic private generation, ordinary-sheet packages, session preparation, immutable Builder handoffs, recovery, and desktop/mobile production liveplay gates pass. |
-| 13 | [1.0 Release Readiness](RELEASE_READINESS_PLAN.md) | `IN_PROGRESS` | Phases 1–6 and P13-067–P13-073 complete (73/86 tickets complete); frozen notes, release preparation/artifact gates, and the repaired 17-check clean-host rehearsal are complete. Execution continues at P13-074 with `BLOCKED_BY: NONE`. |
+| 13 | [1.0 Release Readiness](RELEASE_READINESS_PLAN.md) | `IN_PROGRESS` | Phases 1–7 complete (76/86 tickets complete); immutable `v1.0.0-rc.5` passed the full rehearsal, its machine certification, and the 8/8 Phase 7 slice gate. Phase 8 execution continues at P13-077 with `BLOCKED_BY: NONE`. |
 
 ## 1.0 release definition
 
