@@ -1,0 +1,69 @@
+{
+  "artifact": "release-repository-metadata-disposition",
+  "schemaVersion": 1,
+  "releaseVersion": "1.0.0-rc.1",
+  "status": "APPLIED",
+  "repository": "https://github.com/prodmodfour/rotom-table",
+  "queriedAt": "2026-08-27T13:55:39Z",
+  "applicationAuthority": "authenticated GitHub repository-owner context",
+  "before": {
+    "description": "Private-hostable Nuxt 3 tabletop companion for Pokémon Tabletop United campaigns, with isometric maps, editable Pokémon/trainer sheets, encounter tooling, a searchable Pokédex/reference library, and JSON-backed campaign data.",
+    "homepage": "",
+    "visibility": "PUBLIC",
+    "defaultBranch": "main",
+    "topics": [
+      "campaign-management",
+      "encounter-tables",
+      "fan-project",
+      "gm-tools",
+      "local-first",
+      "nuxt",
+      "nuxt3",
+      "pokedex",
+      "pokemon",
+      "pokemon-tabletop-united",
+      "ptu",
+      "tabletop",
+      "tabletop-rpg",
+      "threejs",
+      "typescript",
+      "vitest",
+      "vue"
+    ]
+  },
+  "after": {
+    "description": "Private-VPS Nuxt 4 trusted-table liveplay companion for Pokémon Tabletop United campaigns, with SQLite-authoritative encounters, sheets, Field Guide, and GM campaign tools.",
+    "homepage": "",
+    "visibility": "PUBLIC",
+    "defaultBranch": "main",
+    "topics": [
+      "campaign-management",
+      "encounter-tables",
+      "fan-project",
+      "gm-tools",
+      "liveplay",
+      "nuxt",
+      "nuxt4",
+      "pokedex",
+      "pokemon",
+      "pokemon-tabletop-united",
+      "private-vps",
+      "ptu",
+      "sqlite",
+      "tabletop",
+      "tabletop-rpg",
+      "threejs",
+      "typescript",
+      "vitest",
+      "vue"
+    ]
+  },
+  "changes": {
+    "description": "UPDATED",
+    "homepage": "UNCHANGED",
+    "topicsAdded": ["liveplay", "nuxt4", "private-vps", "sqlite"],
+    "topicsRemoved": ["local-first", "nuxt3"]
+  },
+  "verificationCommand": "gh repo view prodmodfour/rotom-table --json description,homepageUrl,repositoryTopics,visibility,defaultBranchRef,url",
+  "secretsRecorded": false
+}

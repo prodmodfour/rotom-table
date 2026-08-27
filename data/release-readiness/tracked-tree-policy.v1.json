@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 1,
+  "policyId": "p13-tracked-tree-classification-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "categories": {
+    "authored": "Rotom-authored source, configuration, schemas, or reviewed app-owned structured data.",
+    "generated": "Reproducibly generated lock data, fixtures, reports, evidence, or presentation captures.",
+    "third-party": "Material sourced from or substantially representing third-party works and excluded from the Rotom license grant.",
+    "documentary": "Operator, contributor, design, historical, provenance, or other non-runtime documentation.",
+    "private-data-sensitive": "Campaign-shaped material that must be treated as potentially private until an owner disposition says otherwise."
+  },
+  "rules": [
+    {
+      "id": "private-encounter-tables",
+      "category": "private-data-sensitive",
+      "prefixes": ["encounter_tables/"]
+    },
+    {
+      "id": "third-party-public-media",
+      "category": "third-party",
+      "prefixes": ["public/"]
+    },
+    {
+      "id": "third-party-reference-authorities",
+      "category": "third-party",
+      "prefixes": ["data/reference/"]
+    },
+    {
+      "id": "third-party-trainer-sprites",
+      "category": "third-party",
+      "prefixes": ["trainer_sizes/sprites/"]
+    },
+    {
+      "id": "generated-release-evidence",
+      "category": "generated",
+      "prefixes": ["data/release-readiness/"]
+    },
+    {
+      "id": "generated-sheet-examples",
+      "category": "generated",
+      "prefixes": ["data/sheets/examples/"]
+    },
+    {
+      "id": "generated-screenshots",
+      "category": "generated",
+      "prefixes": ["docs/screenshots/"]
+    },
+    {
+      "id": "generated-dependency-lock",
+      "category": "generated",
+      "exactPaths": ["package-lock.json"]
+    },
+    {
+      "id": "generated-trainer-datasets",
+      "category": "generated",
+      "exactPaths": ["trainer_sizes/sprite_manifest.json", "trainer_sizes/trainers.json"]
+    },
+    {
+      "id": "documentary-trees",
+      "category": "documentary",
+      "prefixes": ["books/", "docs/", "implementation-plans/", "notepad/", "ptu-data/"],
+      "excludePrefixes": ["docs/screenshots/"]
+    },
+    {
+      "id": "documentary-root-files",
+      "category": "documentary",
+      "exactPaths": ["AGENTS.md", "CONTRIBUTING.md", "DESIGN.md", "LICENSE", "NOTICE.md", "README.md", "SECURITY.md", "pokesheet.pdf", "trainer_sizes/README.md"]
+    },
+    {
+      "id": "authored-data",
+      "category": "authored",
+      "prefixes": ["data/"],
+      "excludePrefixes": ["data/reference/", "data/release-readiness/", "data/sheets/examples/"]
+    },
+    {
+      "id": "authored-source-trees",
+      "category": "authored",
+      "prefixes": [".github/", ".pi/", "deploy/", "schemas/", "scripts/", "server/", "shared/", "src/", "tests/"]
+    },
+    {
+      "id": "authored-trainer-generator",
+      "category": "authored",
+      "exactPaths": ["trainer_sizes/download_trainers.py"]
+    },
+    {
+      "id": "authored-root-files",
+      "category": "authored",
+      "exactPaths": [".env.example", ".env.vps.example", ".gitignore", ".node-version", ".nuxtrc", ".nvmrc", "eslint.config.mjs", "justfile", "nuxt.config.ts", "package.json", "playwright.config.ts", "playwright.gm-toolkit-reuse.config.ts", "playwright.onboarding-reuse.config.ts", "playwright.p8082-reuse.config.ts", "playwright.p8090-reuse.config.ts", "playwright.p8091-reuse.config.ts", "requirements.txt", "tsconfig.json", "vitest.config.ts", "vitest.nuxt.config.ts"]
+    }
+  ],
+  "expectedTopLevelEntries": [
+    ".env.example",
+    ".env.vps.example",
+    ".github",
+    ".gitignore",
+    ".node-version",
+    ".nuxtrc",
+    ".nvmrc",
+    ".pi",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "DESIGN.md",
+    "LICENSE",
+    "NOTICE.md",
+    "README.md",
+    "SECURITY.md",
+    "books",
+    "data",
+    "deploy",
+    "docs",
+    "encounter_tables",
+    "eslint.config.mjs",
+    "implementation-plans",
+    "justfile",
+    "notepad",
+    "nuxt.config.ts",
+    "package-lock.json",
+    "package.json",
+    "playwright.config.ts",
+    "playwright.gm-toolkit-reuse.config.ts",
+    "playwright.onboarding-reuse.config.ts",
+    "playwright.p8082-reuse.config.ts",
+    "playwright.p8090-reuse.config.ts",
+    "playwright.p8091-reuse.config.ts",
+    "pokesheet.pdf",
+    "ptu-data",
+    "public",
+    "requirements.txt",
+    "schemas",
+    "scripts",
+    "server",
+    "shared",
+    "src",
+    "tests",
+    "trainer_sizes",
+    "tsconfig.json",
+    "vitest.config.ts",
+    "vitest.nuxt.config.ts"
+  ],
+  "anomalies": [
+    {
+      "id": "P13-DIST-BOOKS",
+      "pathPrefix": "books/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": ["retain-and-label", "prune"],
+      "pruneConsequence": "Requires a reviewed successor chain for documentary path and SHA-256 bindings used by generators, canonical migrations, and archived acceptance evidence.",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-DIST-PTU-DATA",
+      "pathPrefix": "ptu-data/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": ["retain-and-label", "prune"],
+      "pruneConsequence": "Requires a reviewed successor chain for parser-source hashes and removal or repair of documentary conformance tests and generators; production runtime reads remain forbidden.",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-DIST-ENCOUNTER-TABLES",
+      "pathPrefix": "encounter_tables/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": ["retain-and-label", "prune"],
+      "pruneConsequence": "Requires a reviewed successor for the four hash-bound legacy-table migration fixtures and their archived GM Toolkit footprint evidence.",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-DIST-TRAINER-SIZES",
+      "pathPrefix": "trainer_sizes/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": ["retain-and-label", "prune"],
+      "pruneConsequence": "Requires replacement of the runtime trainer catalog JSON and Nitro trainer-sprite public-assets mount before the tree can be removed; third-party media posture is also reserved for P13-062.",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-DIST-POKESHEET",
+      "exactPath": "pokesheet.pdf",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": ["retain-and-label", "prune"],
+      "pruneConsequence": "No runtime or source-hash consumer was found; path labels in documentary boundary records must be updated if pruned.",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-DIST-NOTEPAD",
+      "pathPrefix": "notepad/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": ["retain-and-label", "prune"],
+      "pruneConsequence": "No runtime, provenance-hash, or source consumer was found outside the working note; pruning removes historical planning context only.",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-LICENSE-PUBLIC-MEDIA",
+      "pathPrefix": "public/",
+      "kind": "third-party-rights-review",
+      "requiredTicket": "P13-062",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-LICENSE-REFERENCE-DATA",
+      "pathPrefix": "data/reference/",
+      "kind": "third-party-rights-review",
+      "requiredTicket": "P13-062",
+      "status": "AWAITING_OWNER"
+    },
+    {
+      "id": "P13-LICENSE-DEPENDENCIES",
+      "exactPath": "package-lock.json",
+      "kind": "dependency-license-review",
+      "requiredTicket": "P13-062",
+      "status": "AWAITING_OWNER"
+    }
+  ]
+}

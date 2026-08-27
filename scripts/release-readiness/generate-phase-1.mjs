@@ -231,32 +231,89 @@ const upgradeInputs = {
 const distributionInventory = {
   artifact: 'release-distribution-inventory',
   schemaVersion: 1,
-  status: 'DRAFT_PENDING_OWNER_DISPOSITION',
+  releaseVersion: '1.0.0-rc.1',
+  status: 'CLASSIFIED_PENDING_OWNER_DISPOSITION',
   distributable: 'tagged-source-repository-plus-documented-production-build',
+  trackedTreeAuthority: {
+    policy: 'data/release-readiness/tracked-tree-policy.v1.json',
+    inventory: 'data/release-readiness/tracked-tree-inventory.v1.json',
+    classificationStatus: 'COMPLETE_WITH_DECLARED_OWNER_ANOMALIES',
+  },
   classes: [
-    { id: 'runtime', includes: ['src/', 'server/', 'shared/', 'public/', 'package.json', 'package-lock.json', 'nuxt.config.ts'] },
-    { id: 'canonical', includes: ['data/reference/', 'shared/ruleset/natures.ts'] },
-    { id: 'product-data', includes: ['data/'], excludes: ['data/reference/'] },
-    { id: 'documentation', includes: ['README.md', 'docs/', 'DESIGN.md'] },
+    {
+      id: 'runtime-source',
+      includes: ['src/', 'server/', 'shared/', 'schemas/', 'nuxt.config.ts', 'package.json', 'package-lock.json'],
+    },
+    { id: 'runtime-public-media', includes: ['public/'], rightsClass: 'third-party' },
+    {
+      id: 'canonical-runtime-data',
+      includes: ['data/reference/', 'shared/ruleset/natures.ts'],
+      rightsClass: 'third-party',
+    },
+    {
+      id: 'reviewed-product-data',
+      includes: ['data/'],
+      excludes: ['data/reference/', 'data/release-readiness/'],
+    },
+    {
+      id: 'release-evidence-and-policy',
+      includes: ['data/release-readiness/', 'scripts/release-readiness/'],
+    },
+    { id: 'documentation-and-presentation', includes: ['README.md', 'docs/', 'DESIGN.md'] },
     { id: 'deployment', includes: ['deploy/', '.env.example', '.env.vps.example'] },
-    { id: 'tooling-and-tests', includes: ['scripts/', 'tests/', '.github/'] },
-    { id: 'governance', includes: ['implementation-plans/', 'AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE', 'NOTICE.md'] },
-    { id: 'documentary-provenance', includes: ['books/', 'ptu-data/', 'encounter_tables/', 'trainer_sizes/', 'pokesheet.pdf', 'notepad/'] },
+    {
+      id: 'tooling-tests-and-configuration',
+      includes: ['scripts/', 'tests/', '.github/', '.pi/', '*.config.*', 'requirements.txt', 'justfile'],
+    },
+    {
+      id: 'governance',
+      includes: ['implementation-plans/', 'AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE', 'NOTICE.md'],
+    },
+    {
+      id: 'owner-disposition-candidates',
+      includes: ['books/', 'ptu-data/', 'encounter_tables/', 'trainer_sizes/', 'pokesheet.pdf', 'notepad/'],
+    },
   ],
-  alwaysExcluded: [
+  generatedOrPrivatePathsNeverCommittedToTheSourceDistribution: [
     '*.sqlite', '*.sqlite-*', '*.db', '*.db-*', '.env', '.env.*.local',
-    'playwright-report/', 'test-results/', '.playwright-*/', '.pi/',
-    'campaign/', 'backups/', 'logs/', 'run/', '.output/', '.nuxt-*/', 'node_modules/',
+    'playwright-report/', 'test-results/', '.playwright-*/', 'campaign/', 'backups/',
+    'logs/', 'run/', '.output/', '.nuxt-*/', 'node_modules/', 'release-evidence/',
   ],
+  productionBuild: {
+    command: 'npm ci && npm run build',
+    generatedOutput: '.output/',
+    sourceTreeMembership: false,
+    supportedDeployment: 'private Linux x86-64 VPS',
+    operatorRunbook: 'docs/private-vps-hosting.md',
+  },
   anomalyCandidates: [
-    { path: 'books/', reason: 'documentary PTU text; provenance-bound' },
-    { path: 'ptu-data/', reason: 'parser/provenance tree; not runtime authority' },
-    { path: 'encounter_tables/', reason: 'retired legacy tables' },
-    { path: 'trainer_sizes/', reason: 'third-party sprite assets and tooling' },
-    { path: 'pokesheet.pdf', reason: 'tracked PDF' },
-    { path: 'notepad/', reason: 'working note' },
+    {
+      path: 'books/', classification: 'documentary', reason: 'documentary PTU text; provenance-bound',
+      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+    },
+    {
+      path: 'ptu-data/', classification: 'documentary', reason: 'parser/provenance tree; not runtime authority',
+      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+    },
+    {
+      path: 'encounter_tables/', classification: 'private-data-sensitive', reason: 'retired campaign-shaped legacy tables',
+      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+    },
+    {
+      path: 'trainer_sizes/', classification: 'mixed-authored-generated-third-party',
+      reason: 'third-party sprite assets plus generator and derived data',
+      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+    },
+    {
+      path: 'pokesheet.pdf', classification: 'documentary', reason: 'tracked PDF with unresolved distribution posture',
+      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+    },
+    {
+      path: 'notepad/', classification: 'documentary', reason: 'historical working note',
+      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+    },
   ],
-  disposition: 'UNRESOLVED',
+  disposition: 'UNRESOLVED_OWNER_DECISION_REQUIRED_AT_P13-058',
 }
 
 const licensingInventory = {
@@ -301,6 +358,8 @@ const evidenceCommands = {
   ],
   commands: [
     { id: 'phase-1', command: 'npm run check:release-readiness:phase1', bounded: true },
+    { id: 'presentation', command: 'npm run check:release-readiness:presentation', bounded: true },
+    { id: 'distribution', command: 'npm run check:release-readiness:distribution', bounded: true },
     { id: 'aggregate', command: 'npm run check:release-readiness', bounded: true },
   ],
   wideningPolicy: 'Focused release checks compose existing gates; full suites remain closure-only.',

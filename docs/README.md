@@ -1,60 +1,96 @@
-# Rotom Table docs
+# Rotom Table documentation
 
-This directory collects presentation and reviewer documentation for Rotom Table. The goal is to make the project easy to evaluate without changing application behaviour.
+Rotom Table 1.0 is a Nuxt 4, SQLite-authoritative, liveplay-only trusted-table application. Choose the path that matches your role; development hosting and archived seams are not production instructions.
 
-## Start here
+## Operators — deploy, upgrade, recover
 
-- [Review guide](review-guide.md) — what to inspect first, key routes, source areas, scripts, and production caveats.
-- [Deferred mechanics closure](deferred-mechanics-closure.md) — current ranged weapons, weapon Moves, item actions, generic Skill Checks, Trainer Participant Contests, Battle Contests, role boundaries, recovery, and focused gates.
-- [Complete Play Loop contributor guide](complete-play-loop-contributor-guide.md), [operator guide](complete-play-loop-operator-guide.md), [GM guide](complete-play-loop-gm-guide.md), and [player guide](complete-play-loop-player-guide.md) — audience-specific current liveplay authority and recovery.
-- [GM Campaign Toolkit docs](gm-campaign-toolkit/README.md), [GM guide](gm-campaign-toolkit/gm-guide.md), and [contributor guide](gm-campaign-toolkit/contributor-guide.md) — campaign tables, deterministic wild and NPC packages, session preparation, Builder launch, migration/recovery, extension boundaries, and drift-gate maintenance.
-- [Pokémon Contests](contests/README.md) — ordinary, Trainer Participant, and Battle Contest player/GM, runtime, operations, and data-maintenance guides.
-- [Architecture](architecture.md) — high-level Nuxt/Nitro/filesystem-backed architecture.
-- [Data model](data-model.md) — maps, sheets, trainers, player profiles, encounter tables, campaign reference overrides, app-owned PTU reference content, generated sheets, and local data hygiene.
-- [Group inventory workflow](group-inventory.md) — shared party inventory authority, GM revision-checked saves, linked-trainer transfers, realtime sync, maintenance export, and atomic move-automation item writes.
-- [Campaign repositories](campaign-repositories.md) — using `ROTOM_CAMPAIGN_ROOT` to keep private campaign JSON and campaign reference override diffs in a separate Git repository.
-- [Player profiles and linked character control](player-profiles.md) — normal player login/profile selection, GM profile management, linked sheet editing, player-visible map control, and reference browsing.
-- [Live play authority](live-play-authority.md) — normal `/maps/<slug>` profile-play command direction, setup/edit versus live-play boundaries, revision/idempotency glossary, and the rule forbidding browser-owned whole-map autosave for live gameplay.
-- [Move automation contributor guide](move-automation.md) — MoveSpec authoring, evidence, runtime selection, and strict completion checks.
-- [Ability automation contributor guide](ability-automation.md) — 483-Ability authority, AbilitySpec modes, event subscriptions, frequency/state ownership, debugging, evidence, and correction workflow.
-- [Ability automation operator recovery and manual QA](ability-automation-manual-qa.md) — live-play UX, multi-client privacy, retry/conflict, restart, backup/export, recovery, and release-check runbook.
-- [Ability automation release acceptance](ability-automation-release-acceptance.md) — recorded 483-Ability automated, production-like multi-client, privacy, recovery, and runtime-retirement acceptance plus production observation dependencies.
-- [Encounter presentation contract](encounter-presentation-contract.md) — source-agnostic offer, passive, choice, accepted-fact, privacy, and adapter contributor workflow.
-- [Encounter presentation API/schema reference](encounter-presentation-api.md) — snapshot v3, generic declarations, pending/realtime/replay semantics, parsers, and budgets.
-- [Encounter presentation operator recovery and manual QA](encounter-presentation-manual-qa.md) — GM/player privacy, pending recovery, reconnect, correction, accessibility, and production-like checks.
-- [ADR 012: Server-authoritative encounter presentation](adrs/012-server-authoritative-encounter-presentation-contract.md) — authority, role projections, durable accepted facts, compatibility, and source-as-provenance decision.
-- [Platform and encounter presentation release acceptance](automation-presentation-contract/release-acceptance.md) — Nuxt 4/tooling versions, governance, browser policy, validation, and compatibility closure.
-- [Move automation release acceptance](move-automation-release-acceptance.md) — recorded 776-move automated, production-like browser, privacy, recovery, and runtime-retirement acceptance.
-- [Move automation operator recovery and manual QA](move-automation-manual-qa.md) — private live-play canary, uncertainty, restart, backup, and privacy runbook.
-- [Local development](local-development.md) — setup commands, checks, optional `just` recipes, and local filesystem behaviour.
-- [Private VPS hosting scope](private-vps-hosting.md) — initial private trusted-table VPS boundary, non-goals, and links to filesystem/security docs.
-- [Private VPS deployment smoke checklist](private-vps-deployment-smoke-checklist.md) — after-deploy private VPS checks for install, validation, built-server start, health, outer-gated profile play, write persistence after restart, Git hygiene, and legacy `/sessions` boundaries.
-- [Private VPS live-play smoke checklist](private-vps-live-play-smoke.md) — multi-browser command/revision, SSE reconnect, conflict, refresh, and restart checks for private hosted profile play.
-- [Private VPS readiness summary](private-vps-readiness-summary.md) — selected Node 24 runtime, systemd deployment path, hosted-write policy, final validation evidence, and known public-service follow-ups.
-- [Private VPS backup runbook](private-vps-backups.md) — before/after-session campaign archives, temporary restore smoke checks, private deployment config notes, retention guidance, and Git hygiene.
-- [API route mutation audit](api-route-mutation-audit.md) — non-GET API route classifications, hosted-write coverage, and remaining limitations.
-- [Screenshots](screenshots.md) — capture checklist for future screenshots; no missing images are linked.
-- [Map rendering performance roadmap](map-rendering-performance-roadmap.md) — no-quality-loss performance constraints, benchmark categories, and staged isometric map optimization plan.
-- [Archived legacy live-session documents](archive/live-session/README.md) — obsolete/maintenance-only `/sessions` lobby, socket, roadmap, storage, and runbook notes. Normal multiplayer architecture is documented in [Live play authority](live-play-authority.md).
-- [ADR 009: Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md) — decision record for normal `/maps/<slug>` live play using persistent profiles, commands, revisions, idempotency, patches, and database-backed authority instead of browser-owned whole-map autosave.
-- [ADR 010: Authoritative move-automation runtime](adrs/010-move-automation-runtime.md) — decision record for semantic completion, server authority, versioned MoveSpecs and bounded handlers, state ownership, durable reactions, ruleset scope, and mechanics-independent VFX.
-- [ADR 011: Authoritative ability-automation runtime](adrs/011-authoritative-ability-automation-runtime.md) — decision record for AbilitySpec modes, typed event routing, effective abilities, frequency resources, durable triggers, privacy, and migration.
-- [Isometric render scheduler architecture](render-scheduler-architecture.md) — dirty rendering flow, active animation sources, and how to add future invalidation reasons.
-- [Performance benchmark scenarios](performance-benchmark-scenarios.md) — empty, typical campaign, and stress map scenarios plus before/after PR metrics to record.
-- [Performance benchmark fixtures](performance-benchmark-fixtures.md) — local fixture generator and manual checklist for reproducing benchmark maps without private campaign data.
-- [Performance benchmark runbook](performance-benchmark-runbook.md) — step-by-step before/after measurement workflow and debug overlay interpretation guide.
-- [Map rendering integrated benchmark pass](performance-benchmark-results.md) — recorded empty, typical, and stress fixture measurements from the current performance implementation.
-- [Map rendering no-quality-loss guardrails](performance-no-quality-loss.md) — map rendering performance guardrails confirming no intentional visual-quality or functionality reduction.
-- [Map rendering performance readiness](performance-readiness.md) — performance readiness checklist, validation coverage, and no-quality-loss evidence.
-- [Performance guardrails](performance-guardrails.md) — reviewer checklist and automated checks that prevent performance work from reducing visual quality or map functionality.
-- [Fan project notice](fan-project-notice.md) — unofficial fan-project boundaries.
+Read these in order for the supported Linux x86-64 private VPS shape:
 
-## Existing technical notes
+1. [Private VPS hosting boundary](private-vps-hosting.md)
+2. [Deployment smoke checklist](private-vps-deployment-smoke-checklist.md)
+3. [1.0 campaign upgrade guide](release/upgrade.md)
+4. [Backup, restore, retention, and rollback](private-vps-backups.md)
+5. [Production liveplay smoke](private-vps-live-play-smoke.md)
+6. [Security and outer access gate](../SECURITY.md)
 
-- [Map v2](maps-v2.md) — current map document shape and render layers.
-- [Move animations implementation brief](move-animations.md) — user-facing release note, disable/reduced-motion controls, scope, UX, visual-only boundaries, and expected source areas for the basic move VFX layer.
-- [Token cosmetic improvements](cosmetic-improvements.md) — release note, renderer model, ticket plan, and manual QA checklist for idle sprite grounding, persistent sprite isometric shading, and tactical cage affordances.
-- [Move animation manual QA checklist](move-animation-manual-qa.md) — repeatable browser review scenarios for hits, misses, crits, self/healing/status/buff/area/pass effects, reduced motion, disabled animations, lifecycle, persistence, and blocker/polish classification.
-- [Realtime map action events manual QA](realtime-map-action-events-manual-qa.md) — same-map multi-tab/device checklist for transient splashes, move VFX, move feedback, Poké Ball UI, second-map isolation, duplicate prevention, per-client settings, visual-only persistence, and the latest code-assisted browser smoke result.
-- [Move VFX first-playtest follow-up issues](move-vfx-follow-up-issues.md) — first realistic map playtest notes, blocker/polish triage, and small follow-up issue list for readability, accessibility, performance validation, and future bespoke wishes.
-- [Pokémon size outliers](pokemon-size-outliers.md) — data notes for sprite/map scale edge cases.
+Release identity and compatibility:
+
+- [Versioning, tags, and provenance](release/versioning.md)
+- [Private VPS readiness summary](private-vps-readiness-summary.md)
+- [API mutation audit](api-route-mutation-audit.md)
+- [Campaign repository/private-root layout](campaign-repositories.md)
+
+Use `npm run upgrade:campaign`, `backup:campaign`, `restore:campaign`, and `audit:campaign` only as documented. Local Nuxt development is not a supported liveplay host.
+
+## GMs — prepare and run the table
+
+- [Complete Play Loop GM guide](complete-play-loop-gm-guide.md) — sheets, inventory, encounters, settlement, continuation, and recovery.
+- [GM Campaign Toolkit](gm-campaign-toolkit/README.md) and [GM guide](gm-campaign-toolkit/gm-guide.md) — campaign tables, deterministic wild/NPC packages, session preparation, Builder launch, and recovery.
+- [Pokémon Contests](contests/README.md) — ordinary, Trainer Participant, and Battle Contest workflows.
+- [Deferred mechanics closure](deferred-mechanics-closure.md) — ranged weapons, item actions, Skill Checks, and Battle Contest integration.
+- [Group inventory](group-inventory.md) — shared custody, transfers, revisions, and realtime behavior.
+- [Player profiles](player-profiles.md) — profile creation, character links, and token control.
+- [Ability recovery/manual QA](ability-automation-manual-qa.md) and [Move recovery/manual QA](move-automation-manual-qa.md).
+
+## Players — trusted-table expectations
+
+- [Complete Play Loop player guide](complete-play-loop-player-guide.md)
+- [Player profiles and linked-character control](player-profiles.md)
+- [Liveplay authority](live-play-authority.md) — commands, revisions, retries, and setup versus live boundaries.
+- [Contest documentation](contests/README.md)
+
+The GM/Player picker is role projection for a known table, not public authentication. Player views must never rely on GM diagnostics or private evidence.
+
+## Contributors — architecture and gates
+
+Start with:
+
+- [Contributing](../CONTRIBUTING.md)
+- [Architecture](architecture.md)
+- [Data model](data-model.md)
+- [Liveplay authority](live-play-authority.md)
+- [Encounter presentation contract](encounter-presentation-contract.md) and [schema/API reference](encounter-presentation-api.md)
+- [Complete Play Loop contributor guide](complete-play-loop-contributor-guide.md)
+- [GM Campaign Toolkit contributor guide](gm-campaign-toolkit/contributor-guide.md)
+
+Mechanics authorities:
+
+- [Move automation](move-automation.md) and [release acceptance](move-automation-release-acceptance.md)
+- [Ability automation](ability-automation.md) and [release acceptance](ability-automation-release-acceptance.md)
+- [Encounter presentation release acceptance](automation-presentation-contract/release-acceptance.md)
+- [Breeding contributor guide](breeding/contributor-guide.md) and [GM/player guide](breeding/gm-and-player-guide.md)
+- [Contests](contests/README.md)
+
+Architecture decisions:
+
+- [ADR 009 — Server-authoritative profile play](adrs/009-server-authoritative-profile-play.md)
+- [ADR 010 — Move automation runtime](adrs/010-move-automation-runtime.md)
+- [ADR 011 — Ability automation runtime](adrs/011-authoritative-ability-automation-runtime.md)
+- [ADR 012 — Encounter presentation](adrs/012-server-authoritative-encounter-presentation-contract.md)
+
+Release checks are machine-owned under `data/release-readiness/` and `scripts/release-readiness/`. Canonical mechanics data comes only from the fourteen `data/reference/*.json` authorities and `shared/ruleset/natures.ts`; documentary trees and parser inputs are not runtime fallback sources.
+
+## Design, accessibility, and performance
+
+- [Screenshot workflow](screenshots.md)
+- [Map v2](maps-v2.md)
+- [Render scheduler architecture](render-scheduler-architecture.md)
+- [Performance roadmap](map-rendering-performance-roadmap.md)
+- [Benchmark scenarios](performance-benchmark-scenarios.md), [fixtures](performance-benchmark-fixtures.md), [runbook](performance-benchmark-runbook.md), and [results](performance-benchmark-results.md)
+- [No-quality-loss guardrails](performance-no-quality-loss.md), [readiness](performance-readiness.md), and [review guardrails](performance-guardrails.md)
+- [Move animations](move-animations.md), [manual QA](move-animation-manual-qa.md), and [realtime action-event QA](realtime-map-action-events-manual-qa.md)
+- [Token cosmetics](cosmetic-improvements.md)
+- [Pokémon size outliers](pokemon-size-outliers.md)
+
+## Notices and repository boundaries
+
+- [Fan-project notice](fan-project-notice.md)
+- [Repository notice](../NOTICE.md)
+- [Security](../SECURITY.md)
+- [Contributing/data hygiene](../CONTRIBUTING.md)
+
+Never commit campaign databases, profiles, environment files, backup archives, release evidence, or screenshots containing private campaign material.
+
+## Historical material
+
+Documents under [archive/live-session/](archive/live-session/README.md) describe the retired/direct-only `/sessions` seam and are historical maintenance references. They do not define current profile-based liveplay architecture. Any document explicitly marked roadmap, legacy, archived, or historical is context—not a supported operator procedure.

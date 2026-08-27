@@ -2,9 +2,9 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-053`
+`CURRENT_TICKET: P13-058`
 
-`BLOCKED_BY: NONE`
+`BLOCKED_BY: OWNER_DECISION_P13_058`
 
 `DEPENDS_ON: implementation-plans/done/POKEMON_CONTESTS_PLAN.md, implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md, implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md`
 
@@ -111,7 +111,7 @@ The ten activation questions from the scope draft, resolved against repository e
 3. **Migration beyond v56.** The release targets schema v56. New migrations are permitted only as reviewed defect repairs surfaced by release matrices; any successor extends the same contiguous chain and re-runs the full upgrade matrix and backup/restore certification at the new head before acceptance. Downgrade is unsupported by design: the rollback boundary is the pre-upgrade backup restored exactly (P13-029), documented in the upgrade guide and release notes.
 4. **Supported 1.0 matrix.** Private Linux x86-64 VPS running the production Nitro build (`npm run build` / `npm run start`) under systemd behind an outer access gate, with campaign storage under `ROTOM_CAMPAIGN_ROOT`, hosted writes via `ROTOM_ENABLE_HOSTED_WRITES=1`, and the local production-like workspace for rehearsal; Node 24.x with npm per `engines`; browsers certified as the Playwright Desktop Chrome and Pixel 7 projects against the production build; database backup via the SQLite online `.backup` API or stopped-service copy per `docs/private-vps-backups.md`. Local `nuxt dev` hosting stays deprecated and outside the support promise.
 5. **Complete-catalog cohorts.** Catalog completeness is data-level and exhaustive: one aggregated release regression binds every existing per-domain completeness, drift, migration, and fixture audit across the fourteen canonical files plus natures, and a canonical census artifact records per-file row counts and SHA-256 hashes. Runtime proof is journey-level and bounded: the reviewed golden campaigns from Plans 6–12 replayed at the release commit, plus one new 1.0 release golden journey spanning onboarding → campaign play → encounter → settlement → breeding → contest → GM preparation → launch → restart → restore. Per-canonical-row end-to-end liveplay is explicitly out of scope as unbounded; per-row legality remains owned by the domain audits.
-6. **Distribution boundary.** The distributable is the tagged source repository plus the documented production build produced from it; no npm package, installer, or hosted artifact. Always included: app code, app-owned `data/`, docs, deploy templates, schemas, public assets. Always excluded: campaign databases, env files and secrets, Playwright reports/results/traces, `.pi` artifacts, and local backup/campaign/log/run directories (already git-ignored; re-audited in P13-059). Documentary and provenance trees (`books/`, `ptu-data/`, `encounter_tables/`, `trainer_sizes/`, `pokesheet.pdf`, `notepad/`) are currently tracked and are bound by source-hash provenance in reviewed migrations; their release disposition (retain-labelled versus prune) is an explicit owner decision in P13-058 — no silent removal, because pruning would break provenance-hash bindings without a reviewed successor chain. The built `.output` bundle must scan clean of secrets and campaign material (P13-072).
+6. **Distribution boundary.** The distributable is the tagged source repository plus the documented production build produced from it; no npm package, installer, or hosted artifact. Always included: app code, app-owned `data/`, docs, deploy templates, schemas, public assets, and the reviewed `.pi/ui-mockup-style.md` contributor configuration. Always excluded: campaign databases, env files and secrets, Playwright reports/results/traces, generated `.pi/logs/`, `.pi/artifacts/`, and `.pi/refactor-loop.lock/` state, and local backup/campaign/log/run directories (already git-ignored; re-audited in P13-059). Documentary and provenance trees (`books/`, `ptu-data/`, `encounter_tables/`, `trainer_sizes/`, `pokesheet.pdf`, `notepad/`) are currently tracked and are bound by source-hash provenance in reviewed migrations; their release disposition (retain-labelled versus prune) is an explicit owner decision in P13-058 — no silent removal, because pruning would break provenance-hash bindings without a reviewed successor chain. The built `.output` bundle must scan clean of secrets and campaign material (P13-072).
 7. **Licensing dispositions.** Present today: scope-limited MIT `LICENSE`, `NOTICE.md`, `docs/fan-project-notice.md`, `SECURITY.md`, `CONTRIBUTING.md`. This plan inventories npm and Python dependencies (P13-060), fonts, sprites, and media including the `trainer_sizes/` and `public/` third-party assets (P13-061), and PTU-derived data and documentary text, then obtains one explicit owner disposition per family — fan-content posture, PTU text posture, sprite/media posture, dependency attributions, license scope (P13-062). Automation inventories and flags; the owner approves; unresolved items fail the release gate under rule 7.
 8. **Build provenance.** Mandatory: a clean-tree annotated tag on a commit with green CI; recorded Node and npm versions; `npm ci` lockfile integrity; a machine-readable provenance record (commit SHA, tag, builder versions, build command, environment posture) generated by the release command; SHA-256 checksums of the release build output; and the bounded quality-gate result at the release commit. Optional and deferred: signing and attestation — no signing authority exists in the repository and minting one is not a 1.0 requirement.
 9. **Known limitations versus blockers.** Acceptable documented boundaries (P13-009 register, rendered into notes in P13-070): the trusted-table GM/Player picker is not public authentication; the supported deployment is a single private VPS per campaign group; Chromium-family browser certification only; supplements and expansion packs are post-1.0; local hosting is deprecated; downgrades are unsupported beyond restored backups. Release blockers: any rule-7 row. The register is the boundary contract — anything failing a gate that is not on the register is a blocker until explicitly reviewed.
@@ -163,10 +163,10 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 3 — Campaign upgrade guarantee | P13-021–P13-032 | 12/12 |
 | 4 — Release-boundary backup and restore | P13-033–P13-042 | 10/10 |
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 10/10 |
-| 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 0/14 |
+| 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 5/14 |
 | 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 0/10 |
 | 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 0/10 |
-| **Total** | | **52/86** |
+| **Total** | | **57/86** |
 
 ## Tickets
 
@@ -395,24 +395,30 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 
 ### Phase 6 — Distribution, repository presentation, licensing, and notices
 
-- [ ] **P13-053 — Review and refresh the repository landing** — `TODO`
+- [x] **P13-053 — Review and refresh the repository landing** — `DONE`
   - `README.md` states the truthful product: Nuxt 4, SQLite-authoritative, liveplay-only, supported platform matrix, version identity, trusted-table posture; the quick start leads with the supported production shape and labels dev workflows as development-only.
   - Badges and claims match reality; no stale framework, persistence, or hosting statements survive.
-- [ ] **P13-054 — Review the documentation index and entry points** — `TODO`
+  - Evidence: `repository-presentation-certification.v1.json` binds the refreshed landing and `npm run check:release-readiness:presentation` rejects stale framework, persistence, hosting, identity, and support claims.
+- [x] **P13-054 — Review the documentation index and entry points** — `DONE`
   - `docs/README.md` and entry points present coherent operator, GM, player, and contributor paths at 1.0; retired-seam documents are marked historical.
   - Every referenced command and route exists at the release commit.
-- [ ] **P13-055 — Refresh screenshots and presentation assets** — `TODO`
+  - Evidence: the presentation gate resolves every local link in the three release entry documents and asserts the supported route sources; zero missing links or routes.
+- [x] **P13-055 — Refresh screenshots and presentation assets** — `DONE`
   - Current-UI screenshots produced through the documented capture workflow; stale imagery replaced or retired.
   - No screenshot leaks private campaign material.
-- [ ] **P13-056 — Review package and repository metadata** — `TODO`
+  - Evidence: three 1440×960 production-build Chromium captures in `docs/screenshots/` are SHA-256-bound by `docs/screenshots.md`; fresh synthetic campaign input, zero private content, and zero capture-page console errors are recorded.
+- [x] **P13-056 — Review package and repository metadata** — `DONE`
   - `package.json` name, description, license, engines, private flag, and repository field agree with the release identity and distribution posture.
   - Repository description and topics (owner-applied) are recorded as a disposition if changed.
-- [ ] **P13-057 — Classify every tracked tree** — `TODO`
+  - Evidence: package and lock metadata pass the presentation gate; `repository-metadata-disposition.v1.json` records the authenticated remote update from Nuxt 3/JSON/local-first claims to Nuxt 4/SQLite/private-VPS liveplay claims and removes the stale topics.
+- [x] **P13-057 — Classify every tracked tree** — `DONE`
   - Apply the P13-006 inventory to the full tracked file set; every tree lands in exactly one class with zero unclassified files.
   - Anomalies (working notes, PDFs, third-party asset trees) are queued for P13-058 with exact contents and provenance-hash consequences.
-- [ ] **P13-058 — Owner disposition: documentary and provenance trees** — `TODO`
+  - Evidence: `tracked-tree-policy.v1.json` and `tracked-tree-inventory.v1.json` classify 16,864 paths across 47 top-level entries into five classes with zero missing or ambiguous paths; all nine anomalies carry exact path/content-set hashes and the six P13-058 candidates carry explicit prune consequences.
+- [ ] **P13-058 — Owner disposition: documentary and provenance trees** — `BLOCKED`
   - The owner explicitly decides retain-labelled versus prune for `books/`, `ptu-data/`, `encounter_tables/`, `trainer_sizes/`, `pokesheet.pdf`, and `notepad/`, honoring provenance-hash bindings; execute the recorded decision through reviewed changes only.
   - No silent removal or retention; the decision and its rationale enter the decision log.
+  - Blocker: automation has completed the exact inventories but may not choose any of the six dispositions; `OWNER_DECISION_P13_058` is required before execution can continue.
 - [ ] **P13-059 — Audit ignore rules and private artifacts** — `TODO`
   - Prove ignore-rule completeness for campaign data, env files, evidence artifacts, and local workspaces; prove zero tracked private or secret files; document clean-clone hygiene.
   - The audit is a registered command, not a manual pass.
@@ -544,3 +550,4 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - **2026-08-26 — Owner start gate recorded.** The owner instruction that produced this ledger authorized writing and registering Plan 13, not implementing it. `BLOCKED_BY: OWNER_START_GATE` stands until the owner records an explicit start; the autonomous-continuation rule must not treat this plan as compelling work while the gate stands.
 - **2026-08-27 — Owner start gate lifted.** The owner's explicit instruction to complete Plan 13 authorizes implementation. `BLOCKED_BY` is now `NONE`, execution begins at P13-001, and the ledger, plan order, and agent instructions are synchronized.
 - **2026-08-27 — Release candidate identity minted.** The reviewed mint authority performed the exactly-once `NONE → 1.0.0-rc.1` transition. Package/lock/shared/server/UI/build surfaces agree; local annotated tag `v1.0.0-rc.1` records the Phase 2 rehearsal candidate at `863b1a0ee7b86a393a23936012b47aa704496fbc`. Publication remains owner-controlled and tag mutation is forbidden.
+- **2026-08-27 — Phase 6 presentation/classification checkpoint and owner disposition gate.** P13-053–P13-057 completed: repository and documentation entry points are truthful, three privacy-reviewed screenshots are hash-bound, package plus authenticated GitHub metadata now state Nuxt 4/SQLite/private-VPS liveplay, and all 16,864 distribution paths are uniquely classified. The six documentary/provenance candidates are exact path/content-set bound with prune consequences; per rule 10 automation takes no disposition. Execution is blocked at P13-058 by `OWNER_DECISION_P13_058` until the owner chooses `retain-and-label` or `prune` for each candidate.

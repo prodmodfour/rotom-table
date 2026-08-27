@@ -1,7 +1,17 @@
 {
   "name": "rotom-table",
   "version": "1.0.0-rc.1",
+  "description": "Private-VPS trusted-table liveplay companion for Pokémon Tabletop United campaigns.",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prodmodfour/rotom-table.git"
+  },
+  "homepage": "https://github.com/prodmodfour/rotom-table#readme",
+  "bugs": {
+    "url": "https://github.com/prodmodfour/rotom-table/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=24 <25"
@@ -27,6 +37,9 @@
     "lint:fix": "eslint . --fix",
     "generate:release-readiness:phase1": "node scripts/release-readiness/generate-phase-1.mjs --write",
     "check:release-readiness:phase1": "node scripts/release-readiness/generate-phase-1.mjs --check",
+    "generate:release-readiness:distribution": "node scripts/release-readiness/classify-tracked-trees.mjs --write",
+    "check:release-readiness:distribution": "node scripts/release-readiness/classify-tracked-trees.mjs",
+    "check:release-readiness:presentation": "node scripts/release-readiness/check-presentation.mjs && node scripts/release-readiness/check-certification-evidence.mjs --artifact data/release-readiness/repository-presentation-certification.v1.json",
     "release:mint-version": "node scripts/release-readiness/mint-version.mjs",
     "release:evidence": "node scripts/release-readiness/generate-build-evidence.mjs",
     "generate:release-readiness:historical-heads": "vite-node --config vitest.config.ts scripts/release-readiness/generate-historical-heads.ts",
@@ -43,7 +56,7 @@
     "check:release-readiness:performance": "npm run check:deferred-closure-performance && vitest run tests/server/gmCampaignToolkitPerformanceBudgets.test.ts tests/shared/breedingPerformanceBudgets.test.ts tests/shared/onboardingPerformance.test.ts tests/server/abilityAutomationCatalogPerformance.test.ts tests/server/abilityAutomationPerformanceBudgets.test.ts tests/server/moveAutomationPerformanceBudgets.test.ts --maxWorkers=1 --no-file-parallelism",
     "check:release-readiness:catalog": "npm run check:release-readiness:census && npm run check:release-readiness:documentary-reads && npm run check:release-readiness:registry-finality && npm run check:release-readiness:golden-journeys && npm run check:release-readiness:privacy && npm run check:release-readiness:performance && node scripts/release-readiness/check-certification-evidence.mjs --artifact data/release-readiness/catalog-regression-certification.v1.json",
     "check:release-readiness:identity": "node scripts/release-readiness/check-identity.mjs && vitest run tests/data/releaseIdentityAgreement.test.ts tests/server/healthEndpoint.test.ts --maxWorkers=1 --no-file-parallelism",
-    "check:release-readiness": "npm run check:release-readiness:phase1 && npm run check:release-readiness:identity && npm run check:release-readiness:upgrades && npm run check:release-readiness:backup && npm run check:release-readiness:catalog",
+    "check:release-readiness": "npm run check:release-readiness:phase1 && npm run check:release-readiness:identity && npm run check:release-readiness:upgrades && npm run check:release-readiness:backup && npm run check:release-readiness:catalog && npm run check:release-readiness:presentation && npm run check:release-readiness:distribution",
     "check:encounter-presentation": "node scripts/check-encounter-presentation-contract.mjs",
     "check:encounter-design": "vite-node --config vitest.config.ts scripts/check_encounter_design_system.ts",
     "check:encounter-design-complete": "vite-node --config vitest.config.ts scripts/check_encounter_design_system.ts --check-plan",

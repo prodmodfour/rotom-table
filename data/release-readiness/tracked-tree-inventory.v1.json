@@ -1,0 +1,506 @@
+{
+  "schemaVersion": 1,
+  "inventoryId": "p13-tracked-tree-inventory-v1",
+  "releaseVersion": "1.0.0-rc.1",
+  "status": "COMPLETE_WITH_DECLARED_OWNER_ANOMALIES",
+  "policy": {
+    "id": "p13-tracked-tree-classification-v1",
+    "path": "data/release-readiness/tracked-tree-policy.v1.json",
+    "sha256": "a2ac5f4a93c822f43dfdc2d7993ec765996b43c3d32e50126f80595a052be578"
+  },
+  "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
+  "trackedPathCount": 16864,
+  "trackedPathSetSha256": "5ae2887bfec1df82ec1d49cc6a32f3520f70d35fecfe67234b85cf4a369a22a0",
+  "trackedContentSetSha256": "ef9dafb538df18b54130f596344a5f139efba7d95d496ff3d22ff03387bf4e9d",
+  "contentDigestExclusions": [
+    "data/release-readiness/tracked-tree-inventory.v1.json"
+  ],
+  "categoryPathCounts": {
+    "authored": 5034,
+    "documentary": 1317,
+    "generated": 1056,
+    "private-data-sensitive": 4,
+    "third-party": 9453
+  },
+  "rulePathCounts": {
+    "authored-data": 359,
+    "authored-root-files": 20,
+    "authored-source-trees": 4654,
+    "authored-trainer-generator": 1,
+    "documentary-root-files": 9,
+    "documentary-trees": 1308,
+    "generated-dependency-lock": 1,
+    "generated-release-evidence": 35,
+    "generated-screenshots": 3,
+    "generated-sheet-examples": 1015,
+    "generated-trainer-datasets": 2,
+    "private-encounter-tables": 4,
+    "third-party-public-media": 7984,
+    "third-party-reference-authorities": 14,
+    "third-party-trainer-sprites": 1455
+  },
+  "topLevelTrees": [
+    {
+      "path": ".env.example",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": ".env.vps.example",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": ".github",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": ".gitignore",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": ".node-version",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": ".nuxtrc",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": ".nvmrc",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": ".pi",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "AGENTS.md",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "DESIGN.md",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "LICENSE",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "NOTICE.md",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "README.md",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "SECURITY.md",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "books",
+      "pathCount": 1050,
+      "categories": {
+        "documentary": 1050
+      }
+    },
+    {
+      "path": "data",
+      "pathCount": 1423,
+      "categories": {
+        "authored": 359,
+        "generated": 1050,
+        "third-party": 14
+      }
+    },
+    {
+      "path": "deploy",
+      "pathCount": 15,
+      "categories": {
+        "authored": 15
+      }
+    },
+    {
+      "path": "docs",
+      "pathCount": 220,
+      "categories": {
+        "documentary": 217,
+        "generated": 3
+      }
+    },
+    {
+      "path": "encounter_tables",
+      "pathCount": 4,
+      "categories": {
+        "private-data-sensitive": 4
+      }
+    },
+    {
+      "path": "eslint.config.mjs",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "implementation-plans",
+      "pathCount": 17,
+      "categories": {
+        "documentary": 17
+      }
+    },
+    {
+      "path": "justfile",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "notepad",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "nuxt.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "package-lock.json",
+      "pathCount": 1,
+      "categories": {
+        "generated": 1
+      }
+    },
+    {
+      "path": "package.json",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "playwright.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "playwright.gm-toolkit-reuse.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "playwright.onboarding-reuse.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "playwright.p8082-reuse.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "playwright.p8090-reuse.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "playwright.p8091-reuse.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "pokesheet.pdf",
+      "pathCount": 1,
+      "categories": {
+        "documentary": 1
+      }
+    },
+    {
+      "path": "ptu-data",
+      "pathCount": 23,
+      "categories": {
+        "documentary": 23
+      }
+    },
+    {
+      "path": "public",
+      "pathCount": 7984,
+      "categories": {
+        "third-party": 7984
+      }
+    },
+    {
+      "path": "requirements.txt",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "schemas",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "scripts",
+      "pathCount": 127,
+      "categories": {
+        "authored": 127
+      }
+    },
+    {
+      "path": "server",
+      "pathCount": 1266,
+      "categories": {
+        "authored": 1266
+      }
+    },
+    {
+      "path": "shared",
+      "pathCount": 398,
+      "categories": {
+        "authored": 398
+      }
+    },
+    {
+      "path": "src",
+      "pathCount": 1023,
+      "categories": {
+        "authored": 1023
+      }
+    },
+    {
+      "path": "tests",
+      "pathCount": 1822,
+      "categories": {
+        "authored": 1822
+      }
+    },
+    {
+      "path": "trainer_sizes",
+      "pathCount": 1459,
+      "categories": {
+        "authored": 1,
+        "documentary": 1,
+        "generated": 2,
+        "third-party": 1455
+      }
+    },
+    {
+      "path": "tsconfig.json",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "vitest.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    },
+    {
+      "path": "vitest.nuxt.config.ts",
+      "pathCount": 1,
+      "categories": {
+        "authored": 1
+      }
+    }
+  ],
+  "anomalyInventory": [
+    {
+      "id": "P13-DIST-BOOKS",
+      "pathPrefix": "books/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": [
+        "retain-and-label",
+        "prune"
+      ],
+      "pruneConsequence": "Requires a reviewed successor chain for documentary path and SHA-256 bindings used by generators, canonical migrations, and archived acceptance evidence.",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 1050,
+      "pathSetSha256": "fbcf1dc73820ea08ddad2d42edd6b01ba403eff038e5e4815aabf41a0b2d6c5c",
+      "contentSetSha256": "babb583065ca852aa6c38e0ebb9135a0677b5b8c17778e679709ea8147c3d96b"
+    },
+    {
+      "id": "P13-DIST-PTU-DATA",
+      "pathPrefix": "ptu-data/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": [
+        "retain-and-label",
+        "prune"
+      ],
+      "pruneConsequence": "Requires a reviewed successor chain for parser-source hashes and removal or repair of documentary conformance tests and generators; production runtime reads remain forbidden.",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 23,
+      "pathSetSha256": "5ed04af3728b9dfbd4d81c4cb23ca2eb1cd81d4afc2fa060a032a14c35cd72e8",
+      "contentSetSha256": "40a7de06581efa2fff6b986de31b186b1c5af84cb004a389378687a4a9e64e85"
+    },
+    {
+      "id": "P13-DIST-ENCOUNTER-TABLES",
+      "pathPrefix": "encounter_tables/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": [
+        "retain-and-label",
+        "prune"
+      ],
+      "pruneConsequence": "Requires a reviewed successor for the four hash-bound legacy-table migration fixtures and their archived GM Toolkit footprint evidence.",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 4,
+      "pathSetSha256": "43302a09009abc4a327f326216058d2fcd215b38a3dca2f8a68baf01521f86d5",
+      "contentSetSha256": "23b7a71f558ff94a3e0a6de08b1de056e10037297b0f3f571f55afe798403978"
+    },
+    {
+      "id": "P13-DIST-TRAINER-SIZES",
+      "pathPrefix": "trainer_sizes/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": [
+        "retain-and-label",
+        "prune"
+      ],
+      "pruneConsequence": "Requires replacement of the runtime trainer catalog JSON and Nitro trainer-sprite public-assets mount before the tree can be removed; third-party media posture is also reserved for P13-062.",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 1459,
+      "pathSetSha256": "88b0fc3b208d684c5551f69398ad6d126bd15529593320025feacb1801ea25db",
+      "contentSetSha256": "a22e75a70a3881f8683a49b49837f762f0eaf69e66c4971290b10ad83103eb0a"
+    },
+    {
+      "id": "P13-DIST-POKESHEET",
+      "exactPath": "pokesheet.pdf",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": [
+        "retain-and-label",
+        "prune"
+      ],
+      "pruneConsequence": "No runtime or source-hash consumer was found; path labels in documentary boundary records must be updated if pruned.",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 1,
+      "pathSetSha256": "35076ebe3e302c375180a369aea9bd1de71ee7e4cd59384c6e280da6ae6fc9b0",
+      "contentSetSha256": "9726e3a6aad98d7fabfd2f2064e5d9c6c2007c910080f01746d2b563bc11278e"
+    },
+    {
+      "id": "P13-DIST-NOTEPAD",
+      "pathPrefix": "notepad/",
+      "kind": "owner-distribution-disposition",
+      "requiredTicket": "P13-058",
+      "allowedDispositions": [
+        "retain-and-label",
+        "prune"
+      ],
+      "pruneConsequence": "No runtime, provenance-hash, or source consumer was found outside the working note; pruning removes historical planning context only.",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 1,
+      "pathSetSha256": "6d6150290fd173f8312f18a6599e7e8d959e7ae34d89a90d3b0b09c1b914a57f",
+      "contentSetSha256": "079b64a1c7e02e02b564ade4334f4798ec5c409bf311f4da503637bf856ba166"
+    },
+    {
+      "id": "P13-LICENSE-PUBLIC-MEDIA",
+      "pathPrefix": "public/",
+      "kind": "third-party-rights-review",
+      "requiredTicket": "P13-062",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 7984,
+      "pathSetSha256": "37ca9deab87033f61f379f5605c5c832ac0c360de1ccb3be937f90a6bd822d26",
+      "contentSetSha256": "428f95e426da7124f41e74cbf03e161c526d46e5658241cf65b8d77106747a4e"
+    },
+    {
+      "id": "P13-LICENSE-REFERENCE-DATA",
+      "pathPrefix": "data/reference/",
+      "kind": "third-party-rights-review",
+      "requiredTicket": "P13-062",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 14,
+      "pathSetSha256": "786ae0eeb0affd71750d704113965ee86db161385ac6dbdaebf7f62e9af14e29",
+      "contentSetSha256": "337a8f2f93789712d019d5e6284c2f3db1a4874d7ac8662b24b6f031125806e3"
+    },
+    {
+      "id": "P13-LICENSE-DEPENDENCIES",
+      "exactPath": "package-lock.json",
+      "kind": "dependency-license-review",
+      "requiredTicket": "P13-062",
+      "status": "AWAITING_OWNER",
+      "matchedPathCount": 1,
+      "pathSetSha256": "62d1b5e7751856dfa5d7d9fb28996e1e32b47223f0098ea6169c4984ad0d2645",
+      "contentSetSha256": "41aef3d4d5268271c18b8aefb0d8c360cf8f27657ad12b2a544142c985a16484"
+    }
+  ],
+  "ownerGates": {
+    "distributionDispositionTicket": "P13-058",
+    "licensingDispositionTicket": "P13-062",
+    "automationMayApprove": false
+  }
+}
