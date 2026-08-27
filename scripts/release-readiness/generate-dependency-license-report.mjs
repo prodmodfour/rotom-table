@@ -5,6 +5,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import packageMetadata from '../../package.json' with { type: 'json' }
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = path.resolve(scriptDirectory, '../..')
@@ -122,7 +123,7 @@ async function buildReport() {
     artifact: 'release-dependency-license-report',
     schemaVersion: 1,
     reportId: 'p13-dependency-license-report-v1',
-    releaseVersion: '1.0.0-rc.1',
+    releaseVersion: packageMetadata.version,
     status: 'OWNER_DISPOSITION_RECORDED',
     sources: {
       npmLock: { path: 'package-lock.json', sha256: sha256(lockSource), lockfileVersion: lock.lockfileVersion },

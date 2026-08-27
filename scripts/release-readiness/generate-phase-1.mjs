@@ -11,6 +11,7 @@ const BASELINE_PATH = resolve(DATA_ROOT, 'release-baseline.v1.json')
 const BASELINE_SHA256 = '096e039949d67c926ec82ac860f22569280937da0aa0e4a4576589267b430d11'
 const BASELINE_COMMIT = '84c4659e10bec5f39eea674e6439d24ac978e6ee'
 const BASELINE_TRACKED_FILES = 16_791
+const releaseVersion = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).version
 
 const json = value => `${JSON.stringify(value, null, 2)}\n`
 const sha256 = value => createHash('sha256').update(value).digest('hex')
@@ -231,7 +232,7 @@ const upgradeInputs = {
 const distributionInventory = {
   artifact: 'release-distribution-inventory',
   schemaVersion: 1,
-  releaseVersion: '1.0.0-rc.1',
+  releaseVersion,
   status: 'CERTIFIED',
   distributable: 'tagged-source-repository-plus-documented-production-build',
   trackedTreeAuthority: {
@@ -326,7 +327,7 @@ const distributionInventory = {
 const licensingInventory = {
   artifact: 'release-licensing-attribution-inventory',
   schemaVersion: 1,
-  releaseVersion: '1.0.0-rc.1',
+  releaseVersion,
   status: 'OWNER_DISPOSITION_RECORDED',
   automationMayApprove: false,
   reports: {

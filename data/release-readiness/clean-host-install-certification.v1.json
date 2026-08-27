@@ -164,14 +164,6 @@
   },
   "sourceEvidence": [
     {
-      "path": "package.json",
-      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
-    },
-    {
-      "path": "package-lock.json",
-      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
-    },
-    {
       "path": ".env.vps.example",
       "sha256": "d0a44a308bbb6c488e5f016bbf01d3c0eba37fff7b3fe50a61dbea14690a92a6"
     },
@@ -188,20 +180,16 @@
       "sha256": "39cabfd151915d253e8015babdefba6b3a8bb96667f9839fdd52d56db0301b29"
     },
     {
-      "path": "docs/releases/1.0.0.md",
-      "sha256": "195c04d2a46030a1c2e1f6003866de7dc1ae57ba86eebb68138d25dffa9f152f"
-    },
-    {
       "path": "data/release-readiness/supported-platform-matrix.v1.json",
       "sha256": "c95943b4bf35347e54bda339ec944bdcb40148260a857c8e65dd617cb9a6626c"
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",
-      "sha256": "56cb3d71d5f7b05015088186c73413e4025525e1183df57aa88e46d716315943"
+      "sha256": "1782b533c65a71fc52d7edbdc331bf947bfcac2da7fa5c0d82a7e0e2faabea0d"
     },
     {
       "path": "scripts/release-readiness/check-clean-host-install.mjs",
-      "sha256": "52fa422c4aca3c8365482da4b88e212f85717c98a5ebfb2fa6501b81c3e2e9a0"
+      "sha256": "d6cb0aa2d3ed3f3fe22928f8b1dfb8ce684215c2ea3a5322513df43ca1c5e0a2"
     }
   ]
 }

@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import packageMetadata from '../../package.json' with { type: 'json' }
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = path.resolve(scriptDirectory, '../..')
@@ -195,7 +196,7 @@ async function buildInventory(policy, policySource) {
   return {
     schemaVersion: 1,
     inventoryId: 'p13-tracked-tree-inventory-v1',
-    releaseVersion: policy.releaseVersion,
+    releaseVersion: packageMetadata.version,
     status,
     policy: {
       id: policy.policyId,

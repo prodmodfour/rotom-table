@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import packageMetadata from '../../package.json' with { type: 'json' }
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = path.resolve(scriptDirectory, '../..')
@@ -166,7 +167,7 @@ async function buildReport() {
     artifact: 'release-media-asset-inventory',
     schemaVersion: 1,
     inventoryId: 'p13-media-asset-inventory-v1',
-    releaseVersion: '1.0.0-rc.1',
+    releaseVersion: packageMetadata.version,
     status: 'OWNER_DISPOSITION_RECORDED',
     sources: {
       policy: { path: 'data/release-readiness/media-asset-policy.v1.json', sha256: sha256(policySource) },

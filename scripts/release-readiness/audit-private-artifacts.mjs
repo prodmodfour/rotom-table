@@ -6,6 +6,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import packageMetadata from '../../package.json' with { type: 'json' }
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url))
 const repositoryRoot = path.resolve(scriptDirectory, '../..')
@@ -170,7 +171,7 @@ async function buildReport() {
     artifact: 'release-private-artifact-audit',
     schemaVersion: 1,
     auditId: 'p13-private-artifact-and-ignore-audit-v1',
-    releaseVersion: '1.0.0-rc.1',
+    releaseVersion: packageMetadata.version,
     status: 'Certified',
     distributionCandidatePaths: candidates.length,
     gitignore: {

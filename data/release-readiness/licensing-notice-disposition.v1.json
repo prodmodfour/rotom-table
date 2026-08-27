@@ -2,7 +2,7 @@
   "artifact": "release-licensing-notice-disposition",
   "schemaVersion": 1,
   "dispositionId": "p13-062-owner-license-notice-disposition-v1",
-  "releaseVersion": "1.0.0-rc.1",
+  "releaseVersion": "1.0.0-rc.2",
   "ticket": "P13-062",
   "status": "OWNER_APPROVED_AND_IMPLEMENTED",
   "automationMayApprove": false,
@@ -215,11 +215,11 @@
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
-      "sha256": "a0bc8368f748f524bd99fef03ca7677eff83575bd46c75f43a43cc03d41e863e"
+      "sha256": "187d20dce82e01d6bb295d39dee7c785fad732f129f075a4579fefcb7a85dd25"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "e6643858065018d66708663d96f05cd7d94e856c8c56f53b9113d285c5bef7d7"
+      "sha256": "d180031de7557b7926019d896a513663f2e0999672a00c12f96dbfe17f1f2245"
     },
     {
       "path": "data/release-readiness/dependency-license-policy.v1.json",
@@ -227,7 +227,7 @@
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
-      "sha256": "ef31adea2bd9fb232f38b092c93c15d586b1d887720c1c9c88efa5bfb0630114"
+      "sha256": "db98d915b8e8208227c706e9cf1bb4713aa866c3aa6c734fcca3f77b3c5b1e47"
     },
     {
       "path": "data/release-readiness/media-asset-policy.v1.json",
@@ -235,7 +235,7 @@
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "595cde15cb6e2c58a332668b06b81c9b889d1bf16ba99e317210259cfcb8d418"
+      "sha256": "6578e3d329195eb9625a6902487123b5c22cf5cb8fdb6e4ac7ff6cd567e5741f"
     },
     {
       "path": "src/components/TypeBadge.vue",
@@ -271,11 +271,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
+      "sha256": "975b597cd5ab9d06bedd74495871ec3bb56809dd4addb2deec9c15944f4ab7ef"
     },
     {
       "path": "package-lock.json",
-      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
+      "sha256": "ed7973c2ce96914845ba3fa2ecdfe7611d0aec6ed34dfc2f2d95c7cabf36fc3a"
     }
   ]
 }

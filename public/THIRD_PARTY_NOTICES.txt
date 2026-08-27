@@ -4,8 +4,8 @@ ROTOM TABLE THIRD-PARTY SOFTWARE NOTICES
 This generated file preserves notices found at the roots of the exact npm packages installed by package-lock.json and records the complete exact-version Python helper graph.
 It applies only to the identified third-party dependencies. It does not change the scope of Rotom Table's LICENSE or grant rights to Pokémon/PTU material.
 
-package-lock.json SHA-256: d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2
-dependency report SHA-256: ef31adea2bd9fb232f38b092c93c15d586b1d887720c1c9c88efa5bfb0630114
+package-lock.json SHA-256: ed7973c2ce96914845ba3fa2ecdfe7611d0aec6ed34dfc2f2d95c7cabf36fc3a
+dependency report SHA-256: db98d915b8e8208227c706e9cf1bb4713aa866c3aa6c734fcca3f77b3c5b1e47
 npm package instances: 971
 unique npm name/version identities: 931
 npm identities with embedded root notice text: 755

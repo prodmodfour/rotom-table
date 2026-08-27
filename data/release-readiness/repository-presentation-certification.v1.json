@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "certificationId": "p13-repository-presentation-and-tree-classification-v1",
   "status": "Certified",
-  "releaseVersion": "1.0.0-rc.1",
+  "releaseVersion": "1.0.0-rc.2",
   "repositoryLanding": {
     "framework": "Nuxt 4",
     "persistence": "SQLite-authoritative",
@@ -81,7 +81,7 @@
   "sourceEvidence": [
     {
       "path": "README.md",
-      "sha256": "ec147b6a3a6a821d2b8f4142f6c6b585cf8eaa022a651e24a3290df54111e3e0"
+      "sha256": "cfd66b31f3a5a7cc490ef13810a18f98731e83a0b363a300c0526298f21992c4"
     },
     {
       "path": "docs/README.md",
@@ -105,23 +105,23 @@
     },
     {
       "path": "package.json",
-      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
+      "sha256": "975b597cd5ab9d06bedd74495871ec3bb56809dd4addb2deec9c15944f4ab7ef"
     },
     {
       "path": "package-lock.json",
-      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
+      "sha256": "ed7973c2ce96914845ba3fa2ecdfe7611d0aec6ed34dfc2f2d95c7cabf36fc3a"
     },
     {
       "path": "scripts/release-readiness/check-presentation.mjs",
-      "sha256": "424ff548cc2c62c6990db8f271f8509f8b84d6a7ec283a05dc979906d815b2a0"
+      "sha256": "756761c9d007c267a487d83ca2ba9e678df17c6aa7d5536d5ff4b062814f0d5e"
     },
     {
       "path": "scripts/release-readiness/classify-tracked-trees.mjs",
-      "sha256": "5955f603fb13b5e20c4d4da8eed4533fa5326249fba6cd204d220f6a662e6980"
+      "sha256": "270ac541462d95450bb1dd1de54b9de00f6fafb21569435e8f1632bcdcb04b0e"
     },
     {
       "path": "data/release-readiness/tracked-tree-policy.v1.json",
-      "sha256": "842b2993a5b449eec4f2091f900ad1357477a127219b5d6bd1cf821255e6b9a6"
+      "sha256": "54a972c431cbaf35f680bb4d72961f1e48353031f1241e96586fb540c9b3b6dd"
     },
     {
       "path": "data/release-readiness/repository-metadata-disposition.v1.json",

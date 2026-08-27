@@ -132,7 +132,7 @@
     },
     {
       "path": "README.md",
-      "sha256": "ec147b6a3a6a821d2b8f4142f6c6b585cf8eaa022a651e24a3290df54111e3e0"
+      "sha256": "cfd66b31f3a5a7cc490ef13810a18f98731e83a0b363a300c0526298f21992c4"
     },
     {
       "path": "data/release-readiness/supported-platform-matrix.v1.json",
@@ -172,11 +172,11 @@
     },
     {
       "path": "package-lock.json",
-      "sha256": "d2b2230a1faa06611ba4fa59993d2ac2eaff56c339a0c44cd29bb074e22dedd2"
+      "sha256": "ed7973c2ce96914845ba3fa2ecdfe7611d0aec6ed34dfc2f2d95c7cabf36fc3a"
     },
     {
       "path": "package.json",
-      "sha256": "5d4c6e95781524e37052fc7f2de3b348792c79070c6b871d6d55f15080884e28"
+      "sha256": "975b597cd5ab9d06bedd74495871ec3bb56809dd4addb2deec9c15944f4ab7ef"
     },
     {
       "path": "scripts/release-readiness/check-deployment-instructions.mjs",

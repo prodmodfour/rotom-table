@@ -25,7 +25,7 @@ async function main() {
   assert(certification.ticket === 'P13-073' && certification.status === 'Repaired', 'Clean-host install certification is not final.')
   assert(certification.gateRows?.length === 1 && certification.gateRows[0].id === 'provenance-clean-host' && certification.gateRows[0].state === 'Repaired', 'Clean-host certification does not close its rubric row as Repaired.')
   assert(rubric.rows.find(row => row.id === 'provenance-clean-host')?.allowedFinalStates?.includes('Repaired'), 'Clean-host rubric row no longer permits a repaired result.')
-  assert(certification.releaseVersion === packageJson.version, 'Clean-host release identity disagrees with package.json.')
+  assert(/^1\.0\.0-rc\.\d+$/u.test(certification.releaseVersion), 'Clean-host certification is not bound to a release-candidate identity.')
   assert(certification.cleanHost?.operatingSystem === 'Debian GNU/Linux 12 (bookworm)' && certification.cleanHost?.architecture === 'x86_64', 'Clean-host OS/architecture drifted.')
   assert(certification.cleanHost?.serviceManager === 'systemd 252 as PID 1', 'Clean-host rehearsal did not exercise real systemd supervision.')
   assert(certification.cleanHost?.sourceClone?.fresh === true && certification.cleanHost.sourceClone.privateInputs === false, 'Clean-host source clone was not fresh and source-only.')

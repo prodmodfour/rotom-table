@@ -15,6 +15,10 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 
 ## [Unreleased]
 
+No changes have been recorded after the current candidate.
+
+## [1.0.0-rc.2] - 2026-08-27
+
 ### Added
 
 - Certified app-produced SQLite upgrades from schema heads v1–v55 to the v56 release schema, plus atomic import for documented JSON-era campaign roots.
@@ -22,6 +26,7 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 - Added complete-catalog census, mechanics-finality, privacy, performance, and restart/fresh-host golden-journey evidence across the core trusted-table loop.
 - Added operator-visible release identity in Settings and role-safe `/api/health` and `/api/version` responses.
 - Added source-distribution classification, private-artifact exclusion, dependency/media provenance, generated third-party notices, and explicit owner disposition records.
+- Added the fail-closed release command, deterministic checksum/provenance bundle, built-artifact audit, and clean-host installation certification.
 
 ### Changed
 

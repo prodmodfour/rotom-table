@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "policyId": "p13-tracked-tree-classification-v1",
-  "releaseVersion": "1.0.0-rc.1",
+  "releaseLine": "1.0",
   "categories": {
     "authored": "Rotom-authored source, configuration, schemas, or reviewed app-owned structured data.",
     "generated": "Reproducibly generated lock data, fixtures, reports, evidence, or presentation captures.",

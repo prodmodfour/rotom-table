@@ -10,6 +10,14 @@
       "ticket": "P13-017",
       "recordedAt": "2026-08-27",
       "tag": "v1.0.0-rc.1"
+    },
+    {
+      "sequence": 2,
+      "from": "1.0.0-rc.1",
+      "to": "1.0.0-rc.2",
+      "ticket": "P13-074",
+      "recordedAt": "2026-08-27",
+      "tag": "v1.0.0-rc.2"
     }
   ]
 }

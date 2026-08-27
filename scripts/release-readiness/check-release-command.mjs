@@ -82,6 +82,7 @@ async function main() {
   }
 
   assert(certification.ticket === 'P13-071' && certification.status === 'Certified', 'Release-command certification is not final.')
+  assert(certification.releaseVersion === packageJson.version, 'Release-command certification identity disagrees with package.json.')
   assert(certification.gateRows?.length === 1 && certification.gateRows[0].id === 'provenance-release-command' && certification.gateRows[0].state === 'Certified', 'Release-command certification does not close its rubric row.')
   const rubricRow = rubric.rows.find(row => row.id === 'provenance-release-command')
   assert(rubricRow?.allowedFinalStates?.includes('Certified'), 'Release-command rubric row no longer permits Certified.')
