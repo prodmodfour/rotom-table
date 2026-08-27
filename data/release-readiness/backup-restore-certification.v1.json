@@ -1,0 +1,90 @@
+{
+  "artifact": "release-backup-restore-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-release-backup-restore-v1",
+  "status": "Certified",
+  "supportedShape": "Linux x86-64 private VPS, Node 24.x, SQLite WAL",
+  "methods": {
+    "online-sqlite-backup-api": {
+      "activeWalWriterPresent": true,
+      "consistentSnapshot": true,
+      "integrity": "passed",
+      "foreignKeyViolations": 0,
+      "freshHostRestore": "passed"
+    },
+    "stopped-service-copy": {
+      "exclusiveInspection": true,
+      "consistentCopy": true,
+      "integrity": "passed",
+      "foreignKeyViolations": 0,
+      "freshHostRestore": "passed"
+    }
+  },
+  "freshHostRestore": {
+    "archiveManifestHashesVerified": true,
+    "pendingMoveResolutionPreserved": true,
+    "privateResolutionBytesPreserved": true,
+    "gmToolkitSigningSecretPreserved": true,
+    "realtimeAndDomainStoragePreserved": true,
+    "restartMigrationsApplied": 0,
+    "restartIsInert": true,
+    "directSurgeryRequired": false
+  },
+  "restoreThenUpgrade": {
+    "sourceSchemaVersion": 28,
+    "restoredBeforeUpgrade": true,
+    "targetSchemaVersion": 56,
+    "integrityAudit": "passed"
+  },
+  "midSession": {
+    "pendingPromptSurvives": true,
+    "maintenanceExportRemainsLossyAndSeparate": true,
+    "unsafeMainFileCopyDuringWalWritesSupported": false
+  },
+  "integrityAudit": {
+    "exactSchema": true,
+    "storageFamilies": 9,
+    "allTablesReadable": true,
+    "allJsonAuthorityColumnsChecked": true,
+    "gmToolkitLineageAuditAggregated": true,
+    "invalidJsonDamageRejected": true,
+    "missingTableDamageRejected": true,
+    "privateAuthorityValuesEmitted": false
+  },
+  "archivePrivacy": {
+    "campaignAuthorityIncluded": true,
+    "residualCampaignFilesIncluded": true,
+    "settingsInventoryExplicitOptIn": true,
+    "unregisteredExternalFilesIncluded": false,
+    "manifestContainsPrivateValues": false,
+    "archivesAllowedInRepositoryEvidence": false,
+    "mode": "0600"
+  },
+  "gateRows": [
+    { "id": "backup-online", "state": "Certified" },
+    { "id": "backup-stopped", "state": "Certified" },
+    { "id": "backup-fresh-host", "state": "Certified" },
+    { "id": "backup-restore-upgrade", "state": "Certified" },
+    { "id": "backup-mid-session", "state": "Certified" },
+    { "id": "backup-integrity", "state": "Certified" },
+    { "id": "backup-privacy", "state": "Certified" },
+    { "id": "backup-runbook", "state": "Certified" }
+  ],
+  "commands": [
+    "npm run check:release-readiness:backup",
+    "npm run backup:campaign -- --help",
+    "npm run restore:campaign -- --help",
+    "npm run audit:campaign -- --help"
+  ],
+  "sourceEvidence": [
+    { "path": "data/release-readiness/backup-restore-fixtures.v1.json", "sha256": "e0c09e7278c4ad7d5bb045dfbb4181b2988ed4a7058c7ea8147ea05463ca1a6e" },
+    { "path": "server/storage/releaseBackup.ts", "sha256": "9028177a4910241a2a8ec3019bd53780c981f82df3b6bc3da0be6b3b49aba40b" },
+    { "path": "server/storage/releaseIntegrityAudit.ts", "sha256": "791b7d1a99df305e197958172718f388f9f8582d5502111c94b1edd63ba22794" },
+    { "path": "scripts/release-readiness/backup-campaign.ts", "sha256": "6d4bebcb4717b49114e095897f3647a1fce185d1d98ebf3bb6afd1b66ce1f28c" },
+    { "path": "scripts/release-readiness/restore-campaign.ts", "sha256": "496b4c8a2c917d902b880923744b27e8f91c662078f27a34c1fb12be824f02a4" },
+    { "path": "scripts/release-readiness/audit-campaign.ts", "sha256": "e7a44e8200aca25c44ed69752dfc901ce80bfaabfdf71ec21a84ee82a0271e86" },
+    { "path": "tests/server/releaseBackupRestoreCertification.test.ts", "sha256": "c5b080db5718f48b6cc74647ab1f977e2e2a519ff74ce197f9463a06fd69bc63" },
+    { "path": "tests/server/releaseIntegrityAudit.test.ts", "sha256": "764de4d33be7213a6d80406999f281c02855eb893144f891f5730677f8e47748" },
+    { "path": "docs/private-vps-backups.md", "sha256": "e89b1933a38c60a68ec2f3de901327657201225f4db9bc5b031749e1505132ab" }
+  ]
+}

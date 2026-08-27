@@ -69,7 +69,7 @@
     { "path": "data/release-readiness/supported-upgrade-inputs.v1.json", "sha256": "ac8ed10d6623d27d6aa23d3001a11dadeb3ea661646f0545ff505c4167f55447" },
     { "path": "data/release-readiness/upgrade-performance-budget.v1.json", "sha256": "42a602b81a6c47763265d23b08e384c3eef43b1b5969c44e7ad6541a67282f20" },
     { "path": "server/storage/migrations.ts", "sha256": "73eac7c1ec04bedb1c386c776b9a99e8c9af9defebc7b7fdd2878f2baccd927e" },
-    { "path": "server/storage/releaseUpgrade.ts", "sha256": "78944d964dadbe412d2f988b0b8a076669e0de2e0e2f9bdc9078d36d5803ec21" },
+    { "path": "server/storage/releaseUpgrade.ts", "sha256": "8dfa03b912e34082997bfce98c9b65003fd5d9ab8b3a5c6e64e0567b17e73fe8" },
     { "path": "scripts/release-readiness/migrate-json-campaign.ts", "sha256": "ab913a0abf1f5c42cf3acd52baf64ccdde09bff780d9b0a79060e9eb60c940d4" },
     { "path": "tests/server/releaseHistoricalUpgradeMatrix.test.ts", "sha256": "4972b7ffabd23c161bb81a4e91655d637b4327a45cdca0981c3320407b74892f" },
     { "path": "tests/server/releaseCampaignUpgradeSafety.test.ts", "sha256": "6b9023b655fe15805e921e5576f3e42a437e6f7dbe62af22366481730f47192d" },

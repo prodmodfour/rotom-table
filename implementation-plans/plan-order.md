@@ -16,7 +16,7 @@ The plans are implemented in the following dependency order. Each plan's own led
 | 10 | [Pokémon Contests](done/POKEMON_CONTESTS_PLAN.md) | `DONE` | Complete and archived: reviewed Contest authority, structured preparation, native Standard/Supercontest/Festival/Rotation runtime, role-safe liveplay, atomic ribbon/XP/prize settlement, recovery, documentation, and alpha acceptance across all 100 tickets. |
 | 11 | [Deferred Mechanics Closure](done/DEFERRED_MECHANICS_CLOSURE_PLAN.md) | `DONE` | Complete and archived: all 92 tickets and 29/29 closure rows accepted with zero core mechanics debt; integrated golden journeys, storage/recovery, accessibility, performance, privacy, documentation, drift, full repository, and traced desktop/mobile liveplay gates pass. |
 | 12 | [GM Campaign Toolkit](done/GM_CAMPAIGN_TOOLKIT_PLAN.md) | `DONE` | Complete and archived: all 96 tickets and 40/40 footprint rows accepted; deterministic private generation, ordinary-sheet packages, session preparation, immutable Builder handoffs, recovery, and desktop/mobile production liveplay gates pass. |
-| 13 | [1.0 Release Readiness](RELEASE_READINESS_PLAN.md) | `IN_PROGRESS` | Phases 1–3 accepted; executing P13-033 (32/86 tickets complete), `BLOCKED_BY: NONE`; rc.1 identity is locally tagged and the v1–v56 upgrade guarantee is certified. |
+| 13 | [1.0 Release Readiness](RELEASE_READINESS_PLAN.md) | `IN_PROGRESS` | Phases 1–4 accepted; executing P13-043 (42/86 tickets complete), `BLOCKED_BY: NONE`; rc.1 identity, v1–v56 upgrades, and release-boundary backup/restore are certified. |
 
 ## 1.0 release definition
 

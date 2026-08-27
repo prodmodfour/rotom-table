@@ -2,7 +2,7 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-033`
+`CURRENT_TICKET: P13-043`
 
 `BLOCKED_BY: NONE`
 
@@ -161,12 +161,12 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 1 — Activation adoption, rubric, inventories, gates | P13-001–P13-010 | 10/10 |
 | 2 — Versioning and release identity | P13-011–P13-020 | 10/10 |
 | 3 — Campaign upgrade guarantee | P13-021–P13-032 | 12/12 |
-| 4 — Release-boundary backup and restore | P13-033–P13-042 | 0/10 |
+| 4 — Release-boundary backup and restore | P13-033–P13-042 | 10/10 |
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 0/10 |
 | 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 0/14 |
 | 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 0/10 |
 | 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 0/10 |
-| **Total** | | **32/86** |
+| **Total** | | **42/86** |
 
 ## Tickets
 
@@ -309,36 +309,46 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 
 ### Phase 4 — Release-boundary backup and restore
 
-- [ ] **P13-033 — Certify online backup under live writes** — `TODO`
+- [x] **P13-033 — Certify online backup under live writes** — `DONE`
   - The SQLite online `.backup` method under active WAL writes on the supported shape; archive completeness includes the database, residual campaign files, and the settings inventory.
   - Backups taken mid-write restore to a consistent, integrity-clean state.
-- [ ] **P13-034 — Certify stopped-service backup** — `TODO`
+  - Evidence: `releaseBackupRestoreCertification.test.ts` drives a worker writing WAL authority while Node's SQLite backup API snapshots; fresh-host integrity and JSON/database revision consistency pass.
+- [x] **P13-034 — Certify stopped-service backup** — `DONE`
   - The documented stopped-service copy method produces an equivalent restorable archive.
   - Both methods yield archives the restore drill accepts interchangeably.
-- [ ] **P13-035 — Certify restore to a fresh host** — `TODO`
+  - Evidence: stopped copy takes an exclusive lock, copies authority and sidecars, and passes the same manifest-verified restore/restart drill as online archives.
+- [x] **P13-035 — Certify restore to a fresh host** — `DONE`
   - A restored archive on a clean supported host recovers campaign authority exactly, including signing secrets, realtime durability rows, and pending private state; restart is inert.
   - No direct JSON or database repair is required at any step.
-- [ ] **P13-036 — Certify restore-then-upgrade** — `TODO`
+  - Evidence: synthetic map, private pending response, Toolkit signing secret, residual note, and settings restore exactly; reopen leaves v56 and all tracked bytes/counts unchanged.
+- [x] **P13-036 — Certify restore-then-upgrade** — `DONE`
   - A pre-release backup restored onto the release build upgrades through the certified chain and passes the integrity audit.
   - The combined path is documented as the supported recovery-into-1.0 route.
-- [ ] **P13-037 — Certify mid-session backup safety** — `TODO`
+  - Evidence: a v28 archive restores, upgrades atomically through v56, and passes the aggregate release integrity audit.
+- [x] **P13-037 — Certify mid-session backup safety** — `DONE`
   - Pending prompts, response windows, and private resolution rows survive backup/restore per the documented WAL-safety rules; the maintenance-export boundary is re-proven at the release baseline.
   - Unsafe copy procedures are documented as explicitly unsupported.
-- [ ] **P13-038 — Implement the release-boundary integrity audit** — `TODO`
+  - Evidence: pending response authority round-trips under active WAL writes; `exportSqliteJson.test.ts` re-proves terminal abandonment for the separate lossy maintenance export.
+- [x] **P13-038 — Implement the release-boundary integrity audit** — `DONE`
   - One bounded command aggregating PRAGMA integrity/FK checks and the existing per-domain storage audits across all campaign families.
   - Injected damage fails the audit; the command is registered in the release gates.
-- [ ] **P13-039 — Audit archive contents and privacy handling** — `TODO`
+  - Evidence: `npm run audit:campaign` checks exact schema, nine storage families, every table/JSON column, signing authority, and the Toolkit audit; malformed JSON and missing-table injection fail.
+- [x] **P13-039 — Audit archive contents and privacy handling** — `DONE`
   - Archives contain exactly the documented private material and nothing outside the campaign trust boundary; handling guidance covers storage and transfer of private archives.
   - No secret is required outside the documented settings inventory to fully recover a host.
-- [ ] **P13-040 — Revise the backup runbook for 1.0** — `TODO`
+  - Evidence: release archives reject symlinks/special files and contain exactly database, campaign root, explicit setting labels, manifest, and no private values in reports; archives remain mode 0600.
+- [x] **P13-040 — Revise the backup runbook for 1.0** — `DONE`
   - Release-boundary procedure, retention guidance, restore smoke drill, and the restore-then-upgrade route, synchronized with the platform matrix and upgrade guide.
   - The runbook references only certified behavior.
-- [ ] **P13-041 — Record the backup/restore certification artifact** — `TODO`
+  - Evidence: `docs/private-vps-backups.md` leads with certified online/stopped commands, hash-verified fresh restore, aggregate audit, retention/privacy, and restore-then-upgrade.
+- [x] **P13-041 — Record the backup/restore certification artifact** — `DONE`
   - Machine-readable certification binding archive fixtures, drill outcomes, and audit results.
   - Registered in the drift gate.
-- [ ] **P13-042 — Backup and restore acceptance** — `TODO`
+  - Evidence: `backup-restore-certification.v1.json` binds nine source hashes, synthetic fixture inventory, both methods, drill outcomes, damage corpus, and eight rubric rows.
+- [x] **P13-042 — Backup and restore acceptance** — `DONE`
   - Every backup/restore rubric row `Certified` on the supported shape.
   - Phase-exit evidence recorded.
+  - Evidence: `npm run check:release-readiness:backup` passes the certification drift gate and 27 bounded tests across release, prior-domain, maintenance-export, and docs coverage.
 
 ### Phase 5 — Complete-catalog regression and mechanics finality
 

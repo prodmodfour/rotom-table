@@ -2,6 +2,55 @@
 
 Use this runbook to create private backups of a trusted-table VPS campaign before and after play sessions, then smoke-check a restore before trusting an archive. It covers the SQLite-backed live-play database, residual JSON campaign files stored under `ROTOM_CAMPAIGN_ROOT`, campaign reference override diffs, and the private deployment settings needed to recreate the host. It does not make Rotom Table a public hosted service, and it does not encrypt archives for you.
 
+## 1.0 certified commands
+
+Run these from the checkout for the deployed release while storing output outside both the checkout and campaign root. The archive command stages only the configured SQLite authority, the complete residual campaign root, and each explicitly named private setting. It writes a mode-0600 deterministic tar archive, a SHA-256 sidecar, and an internal per-file hash manifest. It rejects symlinks, special files, output inside the campaign root, and archive overwrite.
+
+For the preferred stopped-service method:
+
+```bash
+sudo systemctl stop rotom-table.service
+sudo -u rotom-table npm run backup:campaign -- \
+  --method stopped-service-copy \
+  --campaign-root /srv/rotom-table/campaign \
+  --database /srv/rotom-table/campaign/rotom-table.sqlite \
+  --archive /srv/rotom-table/backups/rotom-campaign-pre-session.tar.gz \
+  --setting rotom-table.env=/etc/rotom-table/rotom-table.env \
+  --setting rotom-table.service=/etc/systemd/system/rotom-table.service
+```
+
+Stopped mode takes an exclusive SQLite inspection lock. A still-running or concurrently opened service makes the command fail rather than copy uncertain bytes.
+
+When the service genuinely cannot stop, pause table activity and use the certified online SQLite backup API while live WAL writes may continue:
+
+```bash
+sudo -u rotom-table npm run backup:campaign -- \
+  --method online-sqlite-backup-api \
+  --campaign-root /srv/rotom-table/campaign \
+  --database /srv/rotom-table/campaign/rotom-table.sqlite \
+  --archive /srv/rotom-table/backups/rotom-campaign-online.tar.gz \
+  --setting rotom-table.env=/etc/rotom-table/rotom-table.env \
+  --setting rotom-table.service=/etc/systemd/system/rotom-table.service
+```
+
+Restore only into a fresh, empty private root. The restore command rejects unsafe paths and special entries, verifies the optional archive digest and every internal entry hash, then runs SQLite integrity and foreign-key checks before reporting the database path:
+
+```bash
+npm run restore:campaign -- \
+  --archive /srv/rotom-table/backups/rotom-campaign-pre-session.tar.gz \
+  --sha256 <64-hex-digest-from-the-sidecar> \
+  --target-root /srv/rotom-table/restore-smoke.clean
+
+npm run audit:campaign -- \
+  --database /srv/rotom-table/restore-smoke.clean/campaign/rotom-table.sqlite
+```
+
+The release integrity command is read-only and audits schema v56, the exact app-produced schema, SQLite pages, foreign keys, every table and storage family, all `*_json` authority columns, signing-secret shape, and GM Toolkit lineage without emitting private authority values. Damage is a failure; do not repair it by hand.
+
+A pre-1.0 archive is restored with the same restore command and then advanced with `npm run upgrade:campaign` as documented in [the 1.0 upgrade guide](release/upgrade.md). **Database downgrade is unsupported; rollback means restoring the exact pre-upgrade backup.**
+
+The commands are certified to preserve a pending move-response window, private resolution payloads, signing authority, residual campaign files, and named host settings across a fresh-host restore and inert restart. Maintenance JSON export remains a different, deliberately lossy procedure: it terminally abandons pending prompts and is not a substitute for a release backup.
+
 ## What to back up
 
 Back up the entire configured campaign root, not only the file you edited most recently:

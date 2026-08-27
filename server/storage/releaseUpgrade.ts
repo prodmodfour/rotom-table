@@ -111,7 +111,7 @@ const expectedSchema = (version: number): Map<string, string | null> => {
   }
 }
 
-const assertExpectedSchema = (connection: DatabaseSync, version: number): void => {
+export const assertAppProducedStorageSchema = (connection: DatabaseSync, version: number): void => {
   const actual = schemaRows(connection)
   const missing: string[] = []
   const changed: string[] = []
@@ -159,7 +159,7 @@ const inspectAndLock = (path: string): { version: number; mode: number } => {
       if (version < 1 || version > LATEST_STORAGE_SCHEMA_VERSION) {
         fail('input-unsupported-version', `SQLite schema version ${version} is outside the supported upgrade boundary.`)
       }
-      assertExpectedSchema(connection, version)
+      assertAppProducedStorageSchema(connection, version)
       assertIntegrity(connection)
       connection.exec('ROLLBACK')
       return { version, mode: lstatSync(path).mode & 0o777 }
@@ -209,7 +209,7 @@ export const upgradeCampaignDatabase = (options: ReleaseUpgradeOptions): Release
     try {
       staged.exec('PRAGMA foreign_keys = ON')
       migrationResult = applyStorageMigrations(staged, options.hooks)
-      assertExpectedSchema(staged, LATEST_STORAGE_SCHEMA_VERSION)
+      assertAppProducedStorageSchema(staged, LATEST_STORAGE_SCHEMA_VERSION)
       assertIntegrity(staged)
       staged.prepare('PRAGMA wal_checkpoint(TRUNCATE)').all()
     } finally {

@@ -1,0 +1,47 @@
+{
+  "artifact": "release-backup-restore-fixtures",
+  "schemaVersion": 1,
+  "privateCampaignSource": false,
+  "methods": [
+    "online-sqlite-backup-api",
+    "stopped-service-copy"
+  ],
+  "currentReleaseFixture": {
+    "storageSchemaVersion": 56,
+    "authorityRows": [
+      "maps:release-live-map",
+      "pending_move_resolutions:resolution-release-backup",
+      "gm_toolkit_secrets:preview-signing-v1"
+    ],
+    "residualCampaignFiles": [
+      "campaign/gm-private-notes.txt"
+    ],
+    "privateSettingsInventory": [
+      "rotom-table.env",
+      "rotom-table.service"
+    ],
+    "expectedArchivePaths": [
+      "campaign/gm-private-notes.txt",
+      "campaign/rotom-table.sqlite",
+      "settings/rotom-table.env",
+      "settings/rotom-table.service"
+    ]
+  },
+  "historicalRestoreThenUpgradeFixture": {
+    "storageSchemaVersion": 28,
+    "targetStorageSchemaVersion": 56
+  },
+  "damageCorpus": [
+    "archive-sha256-mismatch",
+    "non-empty-restore-target",
+    "invalid-json-authority",
+    "missing-schema-table"
+  ],
+  "privacyPolicy": {
+    "archiveIsPrivate": true,
+    "manifestContainsAuthorityValues": false,
+    "settingsAreExplicitOptIn": true,
+    "pathsOutsideCampaignAndSettingsInventoryAllowed": false,
+    "repositoryEvidenceMayContainPrivateArchive": false
+  }
+}
