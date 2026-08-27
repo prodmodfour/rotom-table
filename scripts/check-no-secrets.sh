@@ -12,8 +12,11 @@ match_file="$(mktemp)"
 trap 'rm -f "$match_file"' EXIT
 
 aws_key_regex='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}'
+provider_token_regex='gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{30,}|xox[baprs]-[A-Za-z0-9-]{20,}|AIza[0-9A-Za-z_-]{35}'
 private_key_regex='-----BEGIN (RSA |OPENSSH |EC |DSA |)PRIVATE KEY-----'
-secret_assignment_regex='(password|passwd|secret|api[_-]?key|private[_-]?key|access[_-]?token|auth[_-]?token|bearer[_-]?token)[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9_./+=-]{16,}'
+# Require a quoted literal so ordinary expressions such as
+# `sourceSecret = database.get()` are not treated as credentials.
+secret_assignment_regex='(password|passwd|secret|api[_-]?key|private[_-]?key|access[_-]?token|auth[_-]?token|bearer[_-]?token)[[:space:]]*[:=][[:space:]]*["'"'"'][A-Za-z0-9_./+=-]{16,}'
 
 # Search tracked and untracked non-ignored files, excluding .git and agent logs.
 while IFS= read -r file; do
@@ -33,6 +36,13 @@ while IFS= read -r file; do
 
   if grep -nE -- "$aws_key_regex" "$file" >"$match_file" 2>/dev/null; then
     pp_error "Possible AWS access key found."
+    pp_kv "File" "$file" >&2
+    cat "$match_file" >&2
+    fail=1
+  fi
+
+  if grep -nE -- "$provider_token_regex" "$file" >"$match_file" 2>/dev/null; then
+    pp_error "Possible provider access token found."
     pp_kv "File" "$file" >&2
     cat "$match_file" >&2
     fail=1

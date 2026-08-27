@@ -232,12 +232,12 @@ const distributionInventory = {
   artifact: 'release-distribution-inventory',
   schemaVersion: 1,
   releaseVersion: '1.0.0-rc.1',
-  status: 'CLASSIFIED_PENDING_OWNER_DISPOSITION',
+  status: 'OWNER_DISTRIBUTION_DISPOSITION_APPLIED_LICENSING_PENDING',
   distributable: 'tagged-source-repository-plus-documented-production-build',
   trackedTreeAuthority: {
     policy: 'data/release-readiness/tracked-tree-policy.v1.json',
     inventory: 'data/release-readiness/tracked-tree-inventory.v1.json',
-    classificationStatus: 'COMPLETE_WITH_DECLARED_OWNER_ANOMALIES',
+    classificationStatus: 'COMPLETE_WITH_DECLARED_LICENSING_ANOMALIES',
   },
   classes: [
     {
@@ -270,8 +270,15 @@ const distributionInventory = {
       includes: ['implementation-plans/', 'AGENTS.md', 'CONTRIBUTING.md', 'SECURITY.md', 'LICENSE', 'NOTICE.md'],
     },
     {
-      id: 'owner-disposition-candidates',
-      includes: ['books/', 'ptu-data/', 'encounter_tables/', 'trainer_sizes/', 'pokesheet.pdf', 'notepad/'],
+      id: 'owner-disposition-retained-labelled',
+      includes: ['books/', 'ptu-data/', 'encounter_tables/', 'trainer_sizes/'],
+      dispositionEvidence: 'data/release-readiness/documentary-tree-disposition.v1.json',
+    },
+    {
+      id: 'owner-disposition-pruned',
+      excludes: ['pokesheet.pdf', 'notepad/'],
+      sourceTreeMembership: false,
+      dispositionEvidence: 'data/release-readiness/documentary-tree-disposition.v1.json',
     },
   ],
   generatedOrPrivatePathsNeverCommittedToTheSourceDistribution: [
@@ -286,51 +293,114 @@ const distributionInventory = {
     supportedDeployment: 'private Linux x86-64 VPS',
     operatorRunbook: 'docs/private-vps-hosting.md',
   },
-  anomalyCandidates: [
+  ownerDispositionResults: [
     {
-      path: 'books/', classification: 'documentary', reason: 'documentary PTU text; provenance-bound',
-      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+      path: 'books/', classification: 'documentary', disposition: 'retain-and-label',
+      label: 'books/README.md', ownerTicket: 'P13-058', status: 'OWNER_APPROVED_APPLIED',
     },
     {
-      path: 'ptu-data/', classification: 'documentary', reason: 'parser/provenance tree; not runtime authority',
-      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+      path: 'ptu-data/', classification: 'documentary', disposition: 'retain-and-label',
+      label: 'ptu-data/README.md', ownerTicket: 'P13-058', status: 'OWNER_APPROVED_APPLIED',
     },
     {
-      path: 'encounter_tables/', classification: 'private-data-sensitive', reason: 'retired campaign-shaped legacy tables',
-      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+      path: 'encounter_tables/', classification: 'private-data-sensitive', disposition: 'retain-and-label',
+      label: 'encounter_tables/README.md', ownerTicket: 'P13-058', status: 'OWNER_APPROVED_APPLIED',
     },
     {
-      path: 'trainer_sizes/', classification: 'mixed-authored-generated-third-party',
-      reason: 'third-party sprite assets plus generator and derived data',
-      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+      path: 'trainer_sizes/', classification: 'mixed-authored-generated-third-party', disposition: 'retain-and-label',
+      label: 'trainer_sizes/README.md', ownerTicket: 'P13-058', status: 'OWNER_APPROVED_APPLIED',
     },
     {
-      path: 'pokesheet.pdf', classification: 'documentary', reason: 'tracked PDF with unresolved distribution posture',
-      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+      path: 'pokesheet.pdf', classification: 'documentary', disposition: 'prune',
+      ownerTicket: 'P13-058', status: 'OWNER_APPROVED_APPLIED',
     },
     {
-      path: 'notepad/', classification: 'documentary', reason: 'historical working note',
-      allowedDispositions: ['retain-and-label', 'prune'], ownerTicket: 'P13-058', status: 'AWAITING_OWNER',
+      path: 'notepad/', classification: 'documentary', disposition: 'prune',
+      ownerTicket: 'P13-058', status: 'OWNER_APPROVED_APPLIED',
     },
   ],
-  disposition: 'UNRESOLVED_OWNER_DECISION_REQUIRED_AT_P13-058',
+  ownerPrunedPathsForbidden: ['pokesheet.pdf', 'notepad/'],
+  disposition: 'OWNER_DECISION_APPLIED_AT_P13_058',
 }
 
 const licensingInventory = {
   artifact: 'release-licensing-attribution-inventory',
   schemaVersion: 1,
-  status: 'UNRESOLVED',
+  releaseVersion: '1.0.0-rc.1',
+  status: 'INVENTORIED_PENDING_OWNER_DISPOSITION',
   automationMayApprove: false,
+  reports: {
+    dependencies: 'data/release-readiness/dependency-license-report.v1.json',
+    mediaAssets: 'data/release-readiness/media-asset-inventory.v1.json',
+    documentaryTrees: 'data/release-readiness/documentary-tree-disposition.v1.json',
+  },
+  inventorySummary: {
+    npmPackageInstances: 971,
+    npmUnknownLicenses: 0,
+    npmPotentiallyIncompatibleCopyleft: 0,
+    pythonResolutionLockBound: false,
+    sourceDistributionMediaFiles: 9472,
+    unclassifiedMediaFiles: 0,
+    unknownProvenanceMediaFiles: 29,
+    unknownRedistributionMediaFiles: 7949,
+    explicitSourceRestrictionConflictFiles: 1460,
+    runtimeFontBinaries: 18,
+    audioFiles: 0,
+  },
   families: [
-    { id: 'license-scope', sources: ['LICENSE'], disposition: 'UNRESOLVED' },
-    { id: 'fan-content-posture', sources: ['NOTICE.md', 'docs/fan-project-notice.md'], disposition: 'UNRESOLVED' },
-    { id: 'ptu-derived-data', sources: ['data/reference/', 'books/', 'ptu-data/', 'pokesheet.pdf'], disposition: 'UNRESOLVED' },
-    { id: 'sprites-media-fonts', sources: ['public/', 'trainer_sizes/', '@fontsource packages'], disposition: 'UNRESOLVED' },
-    { id: 'npm-dependencies', sources: ['package-lock.json'], disposition: 'UNRESOLVED' },
-    { id: 'python-dependencies', sources: ['requirements.txt'], disposition: 'UNRESOLVED' },
-    { id: 'existing-notices', sources: ['NOTICE.md', 'docs/fan-project-notice.md'], disposition: 'UNRESOLVED' },
+    {
+      id: 'license-scope',
+      sources: ['LICENSE', 'package.json'],
+      finding: 'The Rotom MIT grant is already limited to original project work and excludes third-party Pokémon/PTU material.',
+      disposition: 'UNRESOLVED',
+    },
+    {
+      id: 'fan-content-posture',
+      sources: ['NOTICE.md', 'docs/fan-project-notice.md'],
+      finding: 'The project is non-commercial and unofficial, but that notice is not permission to redistribute third-party material.',
+      disposition: 'UNRESOLVED',
+    },
+    {
+      id: 'ptu-derived-data-and-text',
+      sources: ['data/reference/', 'books/', 'ptu-data/'],
+      prunedSources: ['pokesheet.pdf'],
+      finding: 'Canonical runtime data plus retained documentary/parser trees contain third-party PTU-derived material outside the Rotom grant.',
+      disposition: 'UNRESOLVED',
+    },
+    {
+      id: 'sprites-and-media',
+      sources: ['public/', 'trainer_sizes/', 'docs/screenshots/', 'tests/e2e/**/*-snapshots/'],
+      finding: 'Most Pokémon/item/trainer art has no explicit redistribution license; 29 files lack upstream provenance and 1,460 edited trainer-profile derivatives conflict with the source index do-not-edit warning.',
+      potentialBlocker: true,
+      disposition: 'UNRESOLVED',
+    },
+    {
+      id: 'fonts',
+      sources: ['@fontsource/atkinson-hyperlegible', '@fontsource/eb-garamond', '@fontsource/jetbrains-mono'],
+      finding: 'Three Fontsource families produce 18 runtime binaries under OFL-1.1 and require attribution/notice preservation.',
+      disposition: 'UNRESOLVED',
+    },
+    {
+      id: 'npm-dependencies',
+      sources: ['package-lock.json', 'data/release-readiness/dependency-license-report.v1.json'],
+      finding: '971 lock-bound instances: zero unknown after one reviewed MIT metadata override, zero mandatory copyleft conflicts, with MPL, attribution, and one permissive dual-license review set.',
+      disposition: 'UNRESOLVED',
+    },
+    {
+      id: 'python-dependencies',
+      sources: ['requirements.txt', 'data/release-readiness/dependency-license-report.v1.json'],
+      finding: 'Direct licenses are known, but minimum-version requirements do not freeze exact versions or the future transitive graph; certifi is a known MPL family.',
+      potentialBlocker: true,
+      disposition: 'UNRESOLVED',
+    },
+    {
+      id: 'existing-notices',
+      sources: ['NOTICE.md', 'docs/fan-project-notice.md'],
+      finding: 'Current notices state ownership boundaries but do not yet enumerate Fontsource, PokéSprite, PokémonDB, Pokémon Showdown, or trainer-artist provenance.',
+      disposition: 'UNRESOLVED',
+    },
   ],
-  releaseGate: 'Every family requires an explicit owner disposition at P13-062.',
+  releaseGate: 'Every family requires an explicit owner disposition at P13-062; potential-blocker findings cannot be silently accepted by automation.',
 }
 
 const knownLimitations = {
@@ -359,6 +429,9 @@ const evidenceCommands = {
   commands: [
     { id: 'phase-1', command: 'npm run check:release-readiness:phase1', bounded: true },
     { id: 'presentation', command: 'npm run check:release-readiness:presentation', bounded: true },
+    { id: 'private-artifacts', command: 'npm run check:release-readiness:private-artifacts', bounded: true },
+    { id: 'dependency-licenses', command: 'npm run check:release-readiness:dependency-licenses', bounded: true },
+    { id: 'media-assets', command: 'npm run check:release-readiness:media-assets', bounded: true },
     { id: 'distribution', command: 'npm run check:release-readiness:distribution', bounded: true },
     { id: 'aggregate', command: 'npm run check:release-readiness', bounded: true },
   ],

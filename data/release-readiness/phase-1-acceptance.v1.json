@@ -32,11 +32,11 @@
     },
     {
       "path": "data/release-readiness/distribution-inventory.v1.json",
-      "sha256": "cdd8d6d13489c7e2ad30267a434564fc239786be5d2b3142b00ec15f6fc169a1"
+      "sha256": "275a5c4273b861a59fdea1ce1d581bb3576acffff4e51bd6899c9c8a375d00ff"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "d8460e2cc2691a834f19b7ed1d80025ec441f5453a0878919ca7e0de31b69e27"
+      "sha256": "c5d9d1ec0ce20669660598ccf08fadfaf62219354d28363a98986afc56382c47"
     },
     {
       "path": "data/release-readiness/known-limitations.v1.json",
@@ -44,7 +44,7 @@
     },
     {
       "path": "data/release-readiness/evidence-command-index.v1.json",
-      "sha256": "d78e895fa0aa78ca6d813f934a3918a7fd401c8e3cd0178f3a4e80274752bcdb"
+      "sha256": "c2bcf351dc0cd5c505ead28eb8af796d57f4d39dd87e8df32bbf7c5fe2758d46"
     },
     {
       "path": "data/release-readiness/schemas/certification.schema.v1.json",

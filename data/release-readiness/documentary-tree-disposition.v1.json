@@ -1,0 +1,76 @@
+{
+  "artifact": "release-documentary-tree-owner-disposition",
+  "schemaVersion": 1,
+  "decisionId": "p13-owner-documentary-tree-disposition-v1",
+  "ticket": "P13-058",
+  "status": "OWNER_APPROVED_APPLIED",
+  "recordedAt": "2026-08-27T14:13:36Z",
+  "ownerInstruction": "use your recommendation",
+  "acceptedRecommendation": {
+    "retainAndLabel": ["books/", "ptu-data/", "encounter_tables/", "trainer_sizes/"],
+    "prune": ["pokesheet.pdf", "notepad/"]
+  },
+  "families": [
+    {
+      "path": "books/",
+      "disposition": "retain-and-label",
+      "preDecisionPathCount": 1050,
+      "preDecisionPathSetSha256": "fbcf1dc73820ea08ddad2d42edd6b01ba403eff038e5e4815aabf41a0b2d6c5c",
+      "preDecisionContentSetSha256": "babb583065ca852aa6c38e0ebb9135a0677b5b8c17778e679709ea8147c3d96b",
+      "label": "books/README.md",
+      "rationale": "Preserve hash-bound documentary provenance used by reviewed migrations and acceptance evidence without granting runtime authority."
+    },
+    {
+      "path": "ptu-data/",
+      "disposition": "retain-and-label",
+      "preDecisionPathCount": 23,
+      "preDecisionPathSetSha256": "5ed04af3728b9dfbd4d81c4cb23ca2eb1cd81d4afc2fa060a032a14c35cd72e8",
+      "preDecisionContentSetSha256": "40a7de06581efa2fff6b986de31b186b1c5af84cb004a389378687a4a9e64e85",
+      "label": "ptu-data/README.md",
+      "rationale": "Preserve parser-source hashes and documentary conformance evidence while explicitly forbidding production use."
+    },
+    {
+      "path": "encounter_tables/",
+      "disposition": "retain-and-label",
+      "preDecisionPathCount": 4,
+      "preDecisionPathSetSha256": "43302a09009abc4a327f326216058d2fcd215b38a3dca2f8a68baf01521f86d5",
+      "preDecisionContentSetSha256": "23b7a71f558ff94a3e0a6de08b1de056e10037297b0f3f571f55afe798403978",
+      "label": "encounter_tables/README.md",
+      "rationale": "Preserve the four frozen legacy-table migration fixtures while labelling the tree non-authoritative and private-data-sensitive."
+    },
+    {
+      "path": "trainer_sizes/",
+      "disposition": "retain-and-label",
+      "preDecisionPathCount": 1459,
+      "preDecisionPathSetSha256": "88b0fc3b208d684c5551f69398ad6d126bd15529593320025feacb1801ea25db",
+      "preDecisionContentSetSha256": "a22e75a70a3881f8683a49b49837f762f0eaf69e66c4971290b10ad83103eb0a",
+      "label": "trainer_sizes/README.md",
+      "rationale": "The generated trainer catalog and sprite mount remain runtime dependencies; third-party media posture remains separately owner-reserved at P13-062."
+    },
+    {
+      "path": "pokesheet.pdf",
+      "disposition": "prune",
+      "preDecisionPathCount": 1,
+      "deletedFileSha256": "4b9f0b2fde3d0ba731ee94fff3ae0e203abde23284a6cc2afb36dd2ab9226085",
+      "preDecisionPathSetSha256": "35076ebe3e302c375180a369aea9bd1de71ee7e4cd59384c6e280da6ae6fc9b0",
+      "preDecisionContentSetSha256": "9726e3a6aad98d7fabfd2f2064e5d9c6c2007c910080f01746d2b563bc11278e",
+      "rationale": "No runtime or source-hash consumer exists; current denylist references remain as an intentional tombstone against documentary fallback."
+    },
+    {
+      "path": "notepad/",
+      "disposition": "prune",
+      "preDecisionPathCount": 1,
+      "deletedFileSha256": "effdeb36d7d3c36b2131fb917ca0f92295c28ac52c5ec626490eeb0d2a9b21ff",
+      "preDecisionPathSetSha256": "6d6150290fd173f8312f18a6599e7e8d959e7ae34d89a90d3b0b09c1b914a57f",
+      "preDecisionContentSetSha256": "079b64a1c7e02e02b564ade4334f4798ec5c409bf311f4da503637bf856ba166",
+      "rationale": "The historical working note has no runtime, test, generator, or provenance-hash consumer."
+    }
+  ],
+  "assertions": {
+    "silentDisposition": false,
+    "retainedTreesLabelled": true,
+    "prunedPathsAbsent": true,
+    "runtimeAuthorityChanged": false,
+    "licensingDispositionTaken": false
+  }
+}

@@ -30,13 +30,14 @@
     "staleRemoteTopics": 0
   },
   "trackedTreeClassification": {
-    "trackedPathCount": 16864,
-    "topLevelEntries": 47,
+    "trackedPathCount": 16875,
+    "topLevelEntries": 45,
     "categories": 5,
     "unclassifiedPaths": 0,
     "ambiguousPaths": 0,
-    "declaredAnomalies": 9,
-    "ownerDistributionDispositionsTaken": false,
+    "presentAnomalies": 7,
+    "ownerPrunedTrees": 2,
+    "ownerDistributionDispositionsTaken": true,
     "ownerLicensingDispositionsTaken": false
   },
   "gateRows": [
@@ -54,16 +55,16 @@
   ],
   "sourceEvidence": [
     { "path": "README.md", "sha256": "2f497006efe72e70fb2ced0923a7cb90c661e2c5623390c467653b18ad448c87" },
-    { "path": "docs/README.md", "sha256": "a842cff8478912c6a2f068c88e3efe45f7800d573e65cca02b948e687e210c61" },
+    { "path": "docs/README.md", "sha256": "a9bfe901cde696145525bd63ad27566ef20b46552376fd23a67144e4edfb8801" },
     { "path": "docs/screenshots.md", "sha256": "2d30c16c8830ec2f64535e384d008edd988ead6f7cd0fd4ae79a7e9d49a7eea4" },
     { "path": "docs/screenshots/field-guide-pikachu.png", "sha256": "a943d2688b4746c19f7d95fb1c4878ecefd7a8754faef8bb303c5041e274ceaf" },
     { "path": "docs/screenshots/release-settings.png", "sha256": "c6ac7ba34e9923d07565d49d7d7d02853b6a66a25ac87d2c26bc5c6797469516" },
     { "path": "docs/screenshots/role-picker.png", "sha256": "3440b686f43b9bf3e4cb09ba71fef1bc30cc798e94fee303b322f828db839d3e" },
-    { "path": "package.json", "sha256": "71a2f1398d74909ad30dddc21b90c9a6762c82b6520f0ab45778e18df0c91495" },
+    { "path": "package.json", "sha256": "a0d129af2f465a70597697e2cca3e8e98e87eee6cc9b83c5a4dd4d5c3c128064" },
     { "path": "package-lock.json", "sha256": "5fc5315e6325fa715d19e5a78d9fb62d8784073dc6e6bf64b2f9ab2b8a3e955a" },
     { "path": "scripts/release-readiness/check-presentation.mjs", "sha256": "424ff548cc2c62c6990db8f271f8509f8b84d6a7ec283a05dc979906d815b2a0" },
-    { "path": "scripts/release-readiness/classify-tracked-trees.mjs", "sha256": "801fc876788b950d34799e4168246a2e0d5244fbb91808eb04d156bf139c3b2b" },
-    { "path": "data/release-readiness/tracked-tree-policy.v1.json", "sha256": "a2ac5f4a93c822f43dfdc2d7993ec765996b43c3d32e50126f80595a052be578" },
+    { "path": "scripts/release-readiness/classify-tracked-trees.mjs", "sha256": "267edeac2761401af39b2a83736b0f0741787590e090652ac0d9e592c620f26a" },
+    { "path": "data/release-readiness/tracked-tree-policy.v1.json", "sha256": "25efdc6587c21b6b8399dee40a17d493e5f54d5a3c5a49cbcd740212ae1e82db" },
     { "path": "data/release-readiness/repository-metadata-disposition.v1.json", "sha256": "4dddd548b7ce0a849c993f2ed2117352fdc0bed2833cb3c0c96898675ab703c6" }
   ]
 }

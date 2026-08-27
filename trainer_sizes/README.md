@@ -1,4 +1,10 @@
-# Trainer sprite dataset
+# Trainer sprite dataset — retained and labelled
+
+**Distribution status:** retained by explicit owner disposition at P13-058 on 2026-08-27.
+
+Unlike the documentary-only trees, this dataset currently has a narrow runtime role: `data/trainerCatalog.ts` imports the generated metadata and `nuxt.config.ts` mounts the sprite tree as public assets. Pruning it requires a reviewed replacement for both surfaces.
+
+The downloaded sprites and represented Pokémon-related names are third-party material outside Rotom Table's license grant. Retention here records distribution intent only; the explicit media/notice posture remains owner-reserved at P13-062. Do not place private campaign portraits or player media in this tree.
 
 Source:
 - https://play.pokemonshowdown.com/sprites/trainers/?view=sprites

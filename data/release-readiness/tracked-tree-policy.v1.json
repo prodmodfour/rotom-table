@@ -58,13 +58,13 @@
     {
       "id": "documentary-trees",
       "category": "documentary",
-      "prefixes": ["books/", "docs/", "implementation-plans/", "notepad/", "ptu-data/"],
+      "prefixes": ["books/", "docs/", "implementation-plans/", "ptu-data/"],
       "excludePrefixes": ["docs/screenshots/"]
     },
     {
       "id": "documentary-root-files",
       "category": "documentary",
-      "exactPaths": ["AGENTS.md", "CONTRIBUTING.md", "DESIGN.md", "LICENSE", "NOTICE.md", "README.md", "SECURITY.md", "pokesheet.pdf", "trainer_sizes/README.md"]
+      "exactPaths": ["AGENTS.md", "CONTRIBUTING.md", "DESIGN.md", "LICENSE", "NOTICE.md", "README.md", "SECURITY.md", "trainer_sizes/README.md"]
     },
     {
       "id": "authored-data",
@@ -112,7 +112,6 @@
     "eslint.config.mjs",
     "implementation-plans",
     "justfile",
-    "notepad",
     "nuxt.config.ts",
     "package-lock.json",
     "package.json",
@@ -122,7 +121,6 @@
     "playwright.p8082-reuse.config.ts",
     "playwright.p8090-reuse.config.ts",
     "playwright.p8091-reuse.config.ts",
-    "pokesheet.pdf",
     "ptu-data",
     "public",
     "requirements.txt",
@@ -145,7 +143,9 @@
       "requiredTicket": "P13-058",
       "allowedDispositions": ["retain-and-label", "prune"],
       "pruneConsequence": "Requires a reviewed successor chain for documentary path and SHA-256 bindings used by generators, canonical migrations, and archived acceptance evidence.",
-      "status": "AWAITING_OWNER"
+      "disposition": "retain-and-label",
+      "labelPath": "books/README.md",
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "id": "P13-DIST-PTU-DATA",
@@ -154,7 +154,9 @@
       "requiredTicket": "P13-058",
       "allowedDispositions": ["retain-and-label", "prune"],
       "pruneConsequence": "Requires a reviewed successor chain for parser-source hashes and removal or repair of documentary conformance tests and generators; production runtime reads remain forbidden.",
-      "status": "AWAITING_OWNER"
+      "disposition": "retain-and-label",
+      "labelPath": "ptu-data/README.md",
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "id": "P13-DIST-ENCOUNTER-TABLES",
@@ -163,7 +165,9 @@
       "requiredTicket": "P13-058",
       "allowedDispositions": ["retain-and-label", "prune"],
       "pruneConsequence": "Requires a reviewed successor for the four hash-bound legacy-table migration fixtures and their archived GM Toolkit footprint evidence.",
-      "status": "AWAITING_OWNER"
+      "disposition": "retain-and-label",
+      "labelPath": "encounter_tables/README.md",
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "id": "P13-DIST-TRAINER-SIZES",
@@ -172,25 +176,9 @@
       "requiredTicket": "P13-058",
       "allowedDispositions": ["retain-and-label", "prune"],
       "pruneConsequence": "Requires replacement of the runtime trainer catalog JSON and Nitro trainer-sprite public-assets mount before the tree can be removed; third-party media posture is also reserved for P13-062.",
-      "status": "AWAITING_OWNER"
-    },
-    {
-      "id": "P13-DIST-POKESHEET",
-      "exactPath": "pokesheet.pdf",
-      "kind": "owner-distribution-disposition",
-      "requiredTicket": "P13-058",
-      "allowedDispositions": ["retain-and-label", "prune"],
-      "pruneConsequence": "No runtime or source-hash consumer was found; path labels in documentary boundary records must be updated if pruned.",
-      "status": "AWAITING_OWNER"
-    },
-    {
-      "id": "P13-DIST-NOTEPAD",
-      "pathPrefix": "notepad/",
-      "kind": "owner-distribution-disposition",
-      "requiredTicket": "P13-058",
-      "allowedDispositions": ["retain-and-label", "prune"],
-      "pruneConsequence": "No runtime, provenance-hash, or source consumer was found outside the working note; pruning removes historical planning context only.",
-      "status": "AWAITING_OWNER"
+      "disposition": "retain-and-label",
+      "labelPath": "trainer_sizes/README.md",
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "id": "P13-LICENSE-PUBLIC-MEDIA",
@@ -212,6 +200,28 @@
       "kind": "dependency-license-review",
       "requiredTicket": "P13-062",
       "status": "AWAITING_OWNER"
+    }
+  ],
+  "resolvedPrunedTrees": [
+    {
+      "id": "P13-DIST-POKESHEET",
+      "path": "pokesheet.pdf",
+      "disposition": "prune",
+      "status": "OWNER_APPROVED_APPLIED",
+      "prePrunePathCount": 1,
+      "prePrunePathSetSha256": "35076ebe3e302c375180a369aea9bd1de71ee7e4cd59384c6e280da6ae6fc9b0",
+      "prePruneContentSetSha256": "9726e3a6aad98d7fabfd2f2064e5d9c6c2007c910080f01746d2b563bc11278e",
+      "deletedFileSha256": "4b9f0b2fde3d0ba731ee94fff3ae0e203abde23284a6cc2afb36dd2ab9226085"
+    },
+    {
+      "id": "P13-DIST-NOTEPAD",
+      "path": "notepad/",
+      "disposition": "prune",
+      "status": "OWNER_APPROVED_APPLIED",
+      "prePrunePathCount": 1,
+      "prePrunePathSetSha256": "6d6150290fd173f8312f18a6599e7e8d959e7ae34d89a90d3b0b09c1b914a57f",
+      "prePruneContentSetSha256": "079b64a1c7e02e02b564ade4334f4798ec5c409bf311f4da503637bf856ba166",
+      "deletedFileSha256": "effdeb36d7d3c36b2131fb917ca0f92295c28ac52c5ec626490eeb0d2a9b21ff"
     }
   ]
 }

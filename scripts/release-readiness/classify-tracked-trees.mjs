@@ -76,8 +76,13 @@ function sortObjectEntries(entries) {
 }
 
 async function buildInventory(policy, policySource) {
-  if (policy.schemaVersion !== 1 || !Array.isArray(policy.rules) || !Array.isArray(policy.anomalies)) {
-    throw new Error('Tracked-tree policy must use schemaVersion 1 and declare rules plus anomalies.')
+  if (
+    policy.schemaVersion !== 1
+    || !Array.isArray(policy.rules)
+    || !Array.isArray(policy.anomalies)
+    || !Array.isArray(policy.resolvedPrunedTrees)
+  ) {
+    throw new Error('Tracked-tree policy must use schemaVersion 1 and declare rules, anomalies, and resolved pruned trees.')
   }
 
   const unknownCategories = policy.rules
@@ -163,11 +168,33 @@ async function buildInventory(policy, policySource) {
     }
   })
 
+  for (const prunedTree of policy.resolvedPrunedTrees) {
+    const prefix = prunedTree.path.endsWith('/') ? prunedTree.path : null
+    const stillPresent = distributionPaths.some((repositoryPath) => (
+      repositoryPath === prunedTree.path || (prefix !== null && repositoryPath.startsWith(prefix))
+    ))
+    if (stillPresent) {
+      throw new Error(`Owner-pruned distribution path is present again: ${prunedTree.path}`)
+    }
+  }
+
+  const unresolvedDistributionAnomalies = anomalies.filter((entry) => (
+    entry.requiredTicket === 'P13-058' && entry.status !== 'OWNER_APPROVED_APPLIED'
+  ))
+  const unresolvedLicensingAnomalies = anomalies.filter((entry) => (
+    entry.requiredTicket === 'P13-062' && entry.status !== 'OWNER_APPROVED_APPLIED'
+  ))
+  const status = unresolvedDistributionAnomalies.length > 0
+    ? 'COMPLETE_WITH_DECLARED_OWNER_ANOMALIES'
+    : unresolvedLicensingAnomalies.length > 0
+      ? 'COMPLETE_WITH_DECLARED_LICENSING_ANOMALIES'
+      : 'COMPLETE'
+
   return {
     schemaVersion: 1,
     inventoryId: 'p13-tracked-tree-inventory-v1',
     releaseVersion: policy.releaseVersion,
-    status: 'COMPLETE_WITH_DECLARED_OWNER_ANOMALIES',
+    status,
     policy: {
       id: policy.policyId,
       path: 'data/release-readiness/tracked-tree-policy.v1.json',
@@ -186,9 +213,12 @@ async function buildInventory(policy, policySource) {
       categories: sortObjectEntries((treeCounts.get(tree) ?? new Map()).entries()),
     })),
     anomalyInventory: anomalies,
+    resolvedPrunedTrees: policy.resolvedPrunedTrees,
     ownerGates: {
       distributionDispositionTicket: 'P13-058',
+      distributionDispositionStatus: unresolvedDistributionAnomalies.length === 0 ? 'RESOLVED' : 'AWAITING_OWNER',
       licensingDispositionTicket: 'P13-062',
+      licensingDispositionStatus: unresolvedLicensingAnomalies.length === 0 ? 'RESOLVED' : 'AWAITING_OWNER',
       automationMayApprove: false,
     },
   }
@@ -215,7 +245,7 @@ async function main() {
   }
 
   console.log(
-    `Tracked-tree inventory verified: ${inventory.trackedPathCount} paths, ${inventory.topLevelTrees.length} top-level entries, ${inventory.anomalyInventory.length} declared anomalies.`,
+    `Tracked-tree inventory verified: ${inventory.trackedPathCount} paths, ${inventory.topLevelTrees.length} top-level entries, ${inventory.anomalyInventory.length} present anomalies, ${inventory.resolvedPrunedTrees.length} owner-pruned trees.`,
   )
 }
 

@@ -2,9 +2,9 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-058`
+`CURRENT_TICKET: P13-062`
 
-`BLOCKED_BY: OWNER_DECISION_P13_058`
+`BLOCKED_BY: OWNER_DECISION_P13_062`
 
 `DEPENDS_ON: implementation-plans/done/POKEMON_CONTESTS_PLAN.md, implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md, implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md`
 
@@ -163,10 +163,10 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 3 — Campaign upgrade guarantee | P13-021–P13-032 | 12/12 |
 | 4 — Release-boundary backup and restore | P13-033–P13-042 | 10/10 |
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 10/10 |
-| 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 5/14 |
+| 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 9/14 |
 | 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 0/10 |
 | 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 0/10 |
-| **Total** | | **57/86** |
+| **Total** | | **61/86** |
 
 ## Tickets
 
@@ -415,22 +415,26 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
   - Apply the P13-006 inventory to the full tracked file set; every tree lands in exactly one class with zero unclassified files.
   - Anomalies (working notes, PDFs, third-party asset trees) are queued for P13-058 with exact contents and provenance-hash consequences.
   - Evidence: `tracked-tree-policy.v1.json` and `tracked-tree-inventory.v1.json` classify 16,864 paths across 47 top-level entries into five classes with zero missing or ambiguous paths; all nine anomalies carry exact path/content-set hashes and the six P13-058 candidates carry explicit prune consequences.
-- [ ] **P13-058 — Owner disposition: documentary and provenance trees** — `BLOCKED`
+- [x] **P13-058 — Owner disposition: documentary and provenance trees** — `DONE`
   - The owner explicitly decides retain-labelled versus prune for `books/`, `ptu-data/`, `encounter_tables/`, `trainer_sizes/`, `pokesheet.pdf`, and `notepad/`, honoring provenance-hash bindings; execute the recorded decision through reviewed changes only.
   - No silent removal or retention; the decision and its rationale enter the decision log.
-  - Blocker: automation has completed the exact inventories but may not choose any of the six dispositions; `OWNER_DECISION_P13_058` is required before execution can continue.
-- [ ] **P13-059 — Audit ignore rules and private artifacts** — `TODO`
+  - Evidence: the owner accepted the reviewed recommendation: retain-and-label `books/`, `ptu-data/`, `encounter_tables/`, and `trainer_sizes/`; prune `pokesheet.pdf` and `notepad/`. `documentary-tree-disposition.v1.json` preserves every pre-decision path/content hash and rationale; labels are installed and both pruned paths are absent.
+- [x] **P13-059 — Audit ignore rules and private artifacts** — `DONE`
   - Prove ignore-rule completeness for campaign data, env files, evidence artifacts, and local workspaces; prove zero tracked private or secret files; document clean-clone hygiene.
   - The audit is a registered command, not a manual pass.
-- [ ] **P13-060 — Inventory dependency licenses** — `TODO`
+  - Evidence: `npm run check:release-readiness:private-artifacts` audits 16,875 candidate paths, 29 required ignore probes, 10 reviewed tracked exceptions, disguised SQLite headers, forbidden filenames, owner-pruned tombstones, and strengthened provider-token patterns with zero findings; clean-clone practice is documented in `docs/release/source-tree-hygiene.md`.
+- [x] **P13-060 — Inventory dependency licenses** — `DONE`
   - npm and Python dependency license report with flagged copyleft, unknown, and incompatible entries.
   - Flags feed P13-062; the report is reproducible.
-- [ ] **P13-061 — Inventory fonts, sprites, and media assets** — `TODO`
+  - Evidence: `dependency-license-report.v1.json` uniquely inventories all 971 npm lock instances and six Python rows. One missing npm metadata value is hash-resolved to MIT; zero unknown or mandatory incompatible-copyleft rows remain, while 22 MPL/attribution/dual-license/unpinned-Python owner-review flags feed P13-062.
+- [x] **P13-061 — Inventory fonts, sprites, and media assets** — `DONE`
   - Provenance and posture for every shipped visual, audio, and font asset, including `public/` and `trainer_sizes/` third-party material.
   - Unknown-provenance assets are flagged for owner disposition.
-- [ ] **P13-062 — Owner disposition: license and notices** — `TODO`
+  - Evidence: `media-asset-inventory.v1.json` classifies and content-binds all 9,472 source-distribution media files in 14 families plus nine CSS imports and 18 OFL font binaries; zero media files are unclassified. It flags 29 unknown-provenance files, 7,949 files without an explicit redistribution license, and 1,460 edited Trainer profiles conflicting with the source index's do-not-edit warning.
+- [ ] **P13-062 — Owner disposition: license and notices** — `BLOCKED`
   - The owner explicitly approves or amends the license scope, `NOTICE.md`, the fan-content notice, dependency attributions, and asset postures; recorded per family.
   - Unresolved families fail the release gate under rule 7; automation approves nothing.
+  - Blocker: all eight licensing/notice families are inventoried in `licensing-attribution-inventory.v1.json`, but the owner must choose the disposition or required remediation for each. In particular, automation cannot approve unknown sprite redistribution rights, unknown-provenance assets, edited Trainer profiles subject to a do-not-edit warning, or the unpinned Python graph.
 - [ ] **P13-063 — Review support and contribution boundaries** — `TODO`
   - `SECURITY.md`, `CONTRIBUTING.md`, and support expectations state the trusted-table, single-operator reality at 1.0.
   - No implied public-service or commercial support promises.
@@ -551,3 +555,5 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - **2026-08-27 — Owner start gate lifted.** The owner's explicit instruction to complete Plan 13 authorizes implementation. `BLOCKED_BY` is now `NONE`, execution begins at P13-001, and the ledger, plan order, and agent instructions are synchronized.
 - **2026-08-27 — Release candidate identity minted.** The reviewed mint authority performed the exactly-once `NONE → 1.0.0-rc.1` transition. Package/lock/shared/server/UI/build surfaces agree; local annotated tag `v1.0.0-rc.1` records the Phase 2 rehearsal candidate at `863b1a0ee7b86a393a23936012b47aa704496fbc`. Publication remains owner-controlled and tag mutation is forbidden.
 - **2026-08-27 — Phase 6 presentation/classification checkpoint and owner disposition gate.** P13-053–P13-057 completed: repository and documentation entry points are truthful, three privacy-reviewed screenshots are hash-bound, package plus authenticated GitHub metadata now state Nuxt 4/SQLite/private-VPS liveplay, and all 16,864 distribution paths are uniquely classified. The six documentary/provenance candidates are exact path/content-set bound with prune consequences; per rule 10 automation takes no disposition. Execution is blocked at P13-058 by `OWNER_DECISION_P13_058` until the owner chooses `retain-and-label` or `prune` for each candidate.
+- **2026-08-27 — P13-058 owner documentary-tree disposition applied.** The owner explicitly accepted the reviewed recommendation: retain-and-label `books/`, `ptu-data/`, `encounter_tables/`, and runtime-required `trainer_sizes/`; prune the unused `pokesheet.pdf` and `notepad/`. Labels state runtime and license boundaries, pre-prune hashes remain recorded, no runtime authority changed, and the P13-058 blocker is lifted.
+- **2026-08-27 — P13-059–P13-061 inventory checkpoint and licensing gate.** Registered checks prove zero tracked private/secret artifacts, classify 971 npm instances plus the reviewed Python families, and uniquely bind all 9,472 shipped media files plus 18 runtime font binaries. The inventories surface no mandatory dependency copyleft conflict, but they do surface unknown sprite redistribution rights, 29 unknown-provenance files, 1,460 edited Trainer profiles against an explicit source warning, and an unpinned Python graph. Rule 10 therefore blocks execution at P13-062 under `OWNER_DECISION_P13_062`; automation records facts and takes no legal disposition.

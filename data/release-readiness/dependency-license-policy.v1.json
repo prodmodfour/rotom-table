@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "policyId": "p13-dependency-license-policy-v1",
+  "npmMissingMetadataOverrides": [
+    {
+      "name": "zigpty",
+      "version": "0.2.1",
+      "license": "MIT",
+      "evidencePathAfterNpmCi": "node_modules/zigpty/LICENSE",
+      "evidenceSha256": "46231df5a7733c3f52f11b71f3df61813007745b62b09031acfb45fb42d75082",
+      "reason": "The package-lock entry omits license metadata; the installed lock-bound package contains the standard MIT license."
+    }
+  ],
+  "pythonDeclaredDependencies": [
+    {
+      "name": "requests",
+      "requirement": "requests>=2.31",
+      "direct": true,
+      "license": "Apache-2.0",
+      "knownDependencyFamilies": ["certifi", "charset-normalizer", "idna", "urllib3"]
+    },
+    {
+      "name": "Pillow",
+      "requirement": "Pillow>=10.0",
+      "direct": true,
+      "license": "HPND",
+      "knownDependencyFamilies": []
+    },
+    {
+      "name": "certifi",
+      "requirement": "transitive-unpinned",
+      "direct": false,
+      "license": "MPL-2.0",
+      "knownDependencyFamilies": []
+    },
+    {
+      "name": "charset-normalizer",
+      "requirement": "transitive-unpinned",
+      "direct": false,
+      "license": "MIT",
+      "knownDependencyFamilies": []
+    },
+    {
+      "name": "idna",
+      "requirement": "transitive-unpinned",
+      "direct": false,
+      "license": "BSD-3-Clause",
+      "knownDependencyFamilies": []
+    },
+    {
+      "name": "urllib3",
+      "requirement": "transitive-unpinned",
+      "direct": false,
+      "license": "MIT",
+      "knownDependencyFamilies": []
+    }
+  ],
+  "classification": {
+    "weakCopyleftExpressions": ["MPL-2.0"],
+    "attributionExpressions": ["CC-BY-3.0", "CC-BY-4.0", "OFL-1.1"],
+    "copyleftTokens": ["AGPL", "GPL", "LGPL"],
+    "permissiveExpressions": [
+      "0BSD",
+      "Apache-2.0",
+      "BSD-2-Clause",
+      "BSD-3-Clause",
+      "BlueOak-1.0.0",
+      "CC0-1.0",
+      "HPND",
+      "ISC",
+      "MIT",
+      "MIT OR Apache-2.0",
+      "Python-2.0",
+      "(MIT OR CC0-1.0)"
+    ]
+  },
+  "releasePolicy": {
+    "unknown": "flag-for-owner",
+    "copyleft": "flag-for-owner-and-treat-incompatible-unless-reviewed",
+    "weakCopyleft": "flag-for-owner-and-notice-review",
+    "attribution": "flag-for-owner-and-attribution-review",
+    "dualLicense": "record-permissive-option-and-flag-for-owner",
+    "unpinnedPythonResolution": "flag-for-owner"
+  }
+}

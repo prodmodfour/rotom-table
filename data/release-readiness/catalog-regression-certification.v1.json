@@ -88,6 +88,6 @@
     { "path": "tests/integration/releaseGoldenJourney.test.ts", "sha256": "868f98f9cff392b82015888e5c12cee4b3c5c79c8c847687f9250f5a1bbd3b75" },
     { "path": "scripts/release-readiness/check-documentary-reads.mjs", "sha256": "ce48d82b8a0ca0e87137c868c5fb2c52d111a5ad51a9aeb7b6ae8a88e389e1b8" },
     { "path": "scripts/release-readiness/check-registry-finality.mjs", "sha256": "5a760149949eefd2111845ba8304efb6b3cb844d014a899624582816f86cede0" },
-    { "path": "package.json", "sha256": "71a2f1398d74909ad30dddc21b90c9a6762c82b6520f0ab45778e18df0c91495" }
+    { "path": "package.json", "sha256": "a0d129af2f465a70597697e2cca3e8e98e87eee6cc9b83c5a4dd4d5c3c128064" }
   ]
 }

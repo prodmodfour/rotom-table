@@ -2,39 +2,39 @@
   "schemaVersion": 1,
   "inventoryId": "p13-tracked-tree-inventory-v1",
   "releaseVersion": "1.0.0-rc.1",
-  "status": "COMPLETE_WITH_DECLARED_OWNER_ANOMALIES",
+  "status": "COMPLETE_WITH_DECLARED_LICENSING_ANOMALIES",
   "policy": {
     "id": "p13-tracked-tree-classification-v1",
     "path": "data/release-readiness/tracked-tree-policy.v1.json",
-    "sha256": "a2ac5f4a93c822f43dfdc2d7993ec765996b43c3d32e50126f80595a052be578"
+    "sha256": "25efdc6587c21b6b8399dee40a17d493e5f54d5a3c5a49cbcd740212ae1e82db"
   },
   "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
-  "trackedPathCount": 16864,
-  "trackedPathSetSha256": "5ae2887bfec1df82ec1d49cc6a32f3520f70d35fecfe67234b85cf4a369a22a0",
-  "trackedContentSetSha256": "ef9dafb538df18b54130f596344a5f139efba7d95d496ff3d22ff03387bf4e9d",
+  "trackedPathCount": 16875,
+  "trackedPathSetSha256": "fe6962a2bbce6d35f6fd85f6392c0b7424df9ef4c6ee8e988dce76e04cc28dba",
+  "trackedContentSetSha256": "a03d5d5eb7209284fadebc91b5f35ffac902422f3f8ad52abfe3cc96dcc44e17",
   "contentDigestExclusions": [
     "data/release-readiness/tracked-tree-inventory.v1.json"
   ],
   "categoryPathCounts": {
-    "authored": 5034,
-    "documentary": 1317,
-    "generated": 1056,
-    "private-data-sensitive": 4,
+    "authored": 5037,
+    "documentary": 1318,
+    "generated": 1062,
+    "private-data-sensitive": 5,
     "third-party": 9453
   },
   "rulePathCounts": {
     "authored-data": 359,
     "authored-root-files": 20,
-    "authored-source-trees": 4654,
+    "authored-source-trees": 4657,
     "authored-trainer-generator": 1,
-    "documentary-root-files": 9,
-    "documentary-trees": 1308,
+    "documentary-root-files": 8,
+    "documentary-trees": 1310,
     "generated-dependency-lock": 1,
-    "generated-release-evidence": 35,
+    "generated-release-evidence": 41,
     "generated-screenshots": 3,
     "generated-sheet-examples": 1015,
     "generated-trainer-datasets": 2,
-    "private-encounter-tables": 4,
+    "private-encounter-tables": 5,
     "third-party-public-media": 7984,
     "third-party-reference-authorities": 14,
     "third-party-trainer-sprites": 1455
@@ -147,17 +147,17 @@
     },
     {
       "path": "books",
-      "pathCount": 1050,
+      "pathCount": 1051,
       "categories": {
-        "documentary": 1050
+        "documentary": 1051
       }
     },
     {
       "path": "data",
-      "pathCount": 1423,
+      "pathCount": 1429,
       "categories": {
         "authored": 359,
-        "generated": 1050,
+        "generated": 1056,
         "third-party": 14
       }
     },
@@ -170,17 +170,17 @@
     },
     {
       "path": "docs",
-      "pathCount": 220,
+      "pathCount": 221,
       "categories": {
-        "documentary": 217,
+        "documentary": 218,
         "generated": 3
       }
     },
     {
       "path": "encounter_tables",
-      "pathCount": 4,
+      "pathCount": 5,
       "categories": {
-        "private-data-sensitive": 4
+        "private-data-sensitive": 5
       }
     },
     {
@@ -202,13 +202,6 @@
       "pathCount": 1,
       "categories": {
         "authored": 1
-      }
-    },
-    {
-      "path": "notepad",
-      "pathCount": 1,
-      "categories": {
-        "documentary": 1
       }
     },
     {
@@ -275,17 +268,10 @@
       }
     },
     {
-      "path": "pokesheet.pdf",
-      "pathCount": 1,
-      "categories": {
-        "documentary": 1
-      }
-    },
-    {
       "path": "ptu-data",
-      "pathCount": 23,
+      "pathCount": 24,
       "categories": {
-        "documentary": 23
+        "documentary": 24
       }
     },
     {
@@ -311,9 +297,9 @@
     },
     {
       "path": "scripts",
-      "pathCount": 127,
+      "pathCount": 130,
       "categories": {
-        "authored": 127
+        "authored": 130
       }
     },
     {
@@ -387,10 +373,12 @@
         "prune"
       ],
       "pruneConsequence": "Requires a reviewed successor chain for documentary path and SHA-256 bindings used by generators, canonical migrations, and archived acceptance evidence.",
-      "status": "AWAITING_OWNER",
-      "matchedPathCount": 1050,
-      "pathSetSha256": "fbcf1dc73820ea08ddad2d42edd6b01ba403eff038e5e4815aabf41a0b2d6c5c",
-      "contentSetSha256": "babb583065ca852aa6c38e0ebb9135a0677b5b8c17778e679709ea8147c3d96b"
+      "disposition": "retain-and-label",
+      "labelPath": "books/README.md",
+      "status": "OWNER_APPROVED_APPLIED",
+      "matchedPathCount": 1051,
+      "pathSetSha256": "66d621886a30c3d8315d80d4869a24899c1f0b61904f0cd586c9bb84a2f571ac",
+      "contentSetSha256": "467e8bb8c1aef5a56de3e7f75f20c04689ab001f4eac93d71d0d649394aec165"
     },
     {
       "id": "P13-DIST-PTU-DATA",
@@ -402,10 +390,12 @@
         "prune"
       ],
       "pruneConsequence": "Requires a reviewed successor chain for parser-source hashes and removal or repair of documentary conformance tests and generators; production runtime reads remain forbidden.",
-      "status": "AWAITING_OWNER",
-      "matchedPathCount": 23,
-      "pathSetSha256": "5ed04af3728b9dfbd4d81c4cb23ca2eb1cd81d4afc2fa060a032a14c35cd72e8",
-      "contentSetSha256": "40a7de06581efa2fff6b986de31b186b1c5af84cb004a389378687a4a9e64e85"
+      "disposition": "retain-and-label",
+      "labelPath": "ptu-data/README.md",
+      "status": "OWNER_APPROVED_APPLIED",
+      "matchedPathCount": 24,
+      "pathSetSha256": "880fff89cd8f7b4b879781fe532daffabb2972507418bcd99e10f7fa77eaf3d3",
+      "contentSetSha256": "89ade23bc964f6cca3eb6b4f0c24caa5fea2b18b5169870713a66a3b0d86bfc2"
     },
     {
       "id": "P13-DIST-ENCOUNTER-TABLES",
@@ -417,10 +407,12 @@
         "prune"
       ],
       "pruneConsequence": "Requires a reviewed successor for the four hash-bound legacy-table migration fixtures and their archived GM Toolkit footprint evidence.",
-      "status": "AWAITING_OWNER",
-      "matchedPathCount": 4,
-      "pathSetSha256": "43302a09009abc4a327f326216058d2fcd215b38a3dca2f8a68baf01521f86d5",
-      "contentSetSha256": "23b7a71f558ff94a3e0a6de08b1de056e10037297b0f3f571f55afe798403978"
+      "disposition": "retain-and-label",
+      "labelPath": "encounter_tables/README.md",
+      "status": "OWNER_APPROVED_APPLIED",
+      "matchedPathCount": 5,
+      "pathSetSha256": "8d600fa251db254dde5f3769fda2a59485b8605e6083ec43a46443c3a077b97d",
+      "contentSetSha256": "0ab6f5f1ec804a423bb0f868ba985d2dbd5dedd2d5cb67bba12533ce928e5777"
     },
     {
       "id": "P13-DIST-TRAINER-SIZES",
@@ -432,40 +424,12 @@
         "prune"
       ],
       "pruneConsequence": "Requires replacement of the runtime trainer catalog JSON and Nitro trainer-sprite public-assets mount before the tree can be removed; third-party media posture is also reserved for P13-062.",
-      "status": "AWAITING_OWNER",
+      "disposition": "retain-and-label",
+      "labelPath": "trainer_sizes/README.md",
+      "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 1459,
       "pathSetSha256": "88b0fc3b208d684c5551f69398ad6d126bd15529593320025feacb1801ea25db",
-      "contentSetSha256": "a22e75a70a3881f8683a49b49837f762f0eaf69e66c4971290b10ad83103eb0a"
-    },
-    {
-      "id": "P13-DIST-POKESHEET",
-      "exactPath": "pokesheet.pdf",
-      "kind": "owner-distribution-disposition",
-      "requiredTicket": "P13-058",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
-      "pruneConsequence": "No runtime or source-hash consumer was found; path labels in documentary boundary records must be updated if pruned.",
-      "status": "AWAITING_OWNER",
-      "matchedPathCount": 1,
-      "pathSetSha256": "35076ebe3e302c375180a369aea9bd1de71ee7e4cd59384c6e280da6ae6fc9b0",
-      "contentSetSha256": "9726e3a6aad98d7fabfd2f2064e5d9c6c2007c910080f01746d2b563bc11278e"
-    },
-    {
-      "id": "P13-DIST-NOTEPAD",
-      "pathPrefix": "notepad/",
-      "kind": "owner-distribution-disposition",
-      "requiredTicket": "P13-058",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
-      "pruneConsequence": "No runtime, provenance-hash, or source consumer was found outside the working note; pruning removes historical planning context only.",
-      "status": "AWAITING_OWNER",
-      "matchedPathCount": 1,
-      "pathSetSha256": "6d6150290fd173f8312f18a6599e7e8d959e7ae34d89a90d3b0b09c1b914a57f",
-      "contentSetSha256": "079b64a1c7e02e02b564ade4334f4798ec5c409bf311f4da503637bf856ba166"
+      "contentSetSha256": "f780c92d3678272a95b78073d01c95848b0e50131db7c70681140af5408efb78"
     },
     {
       "id": "P13-LICENSE-PUBLIC-MEDIA",
@@ -498,9 +462,33 @@
       "contentSetSha256": "41aef3d4d5268271c18b8aefb0d8c360cf8f27657ad12b2a544142c985a16484"
     }
   ],
+  "resolvedPrunedTrees": [
+    {
+      "id": "P13-DIST-POKESHEET",
+      "path": "pokesheet.pdf",
+      "disposition": "prune",
+      "status": "OWNER_APPROVED_APPLIED",
+      "prePrunePathCount": 1,
+      "prePrunePathSetSha256": "35076ebe3e302c375180a369aea9bd1de71ee7e4cd59384c6e280da6ae6fc9b0",
+      "prePruneContentSetSha256": "9726e3a6aad98d7fabfd2f2064e5d9c6c2007c910080f01746d2b563bc11278e",
+      "deletedFileSha256": "4b9f0b2fde3d0ba731ee94fff3ae0e203abde23284a6cc2afb36dd2ab9226085"
+    },
+    {
+      "id": "P13-DIST-NOTEPAD",
+      "path": "notepad/",
+      "disposition": "prune",
+      "status": "OWNER_APPROVED_APPLIED",
+      "prePrunePathCount": 1,
+      "prePrunePathSetSha256": "6d6150290fd173f8312f18a6599e7e8d959e7ae34d89a90d3b0b09c1b914a57f",
+      "prePruneContentSetSha256": "079b64a1c7e02e02b564ade4334f4798ec5c409bf311f4da503637bf856ba166",
+      "deletedFileSha256": "effdeb36d7d3c36b2131fb917ca0f92295c28ac52c5ec626490eeb0d2a9b21ff"
+    }
+  ],
   "ownerGates": {
     "distributionDispositionTicket": "P13-058",
+    "distributionDispositionStatus": "RESOLVED",
     "licensingDispositionTicket": "P13-062",
+    "licensingDispositionStatus": "AWAITING_OWNER",
     "automationMayApprove": false
   }
 }

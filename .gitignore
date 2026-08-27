@@ -8,6 +8,7 @@ node_modules
 .npm/
 .playwright-cli
 .playwright-campaign/
+.playwright-*/
 playwright-report/
 test-results/
 release-evidence/
@@ -26,6 +27,7 @@ temp/
 
 # Local prodlike workspace/runtime artifacts if a developer chooses to keep them
 # inside the app checkout instead of the default parent workspace.
+campaign/
 campaigns/
 backups/
 logs/
@@ -41,11 +43,18 @@ env/*.local
 *.db
 *.db-wal
 *.db-shm
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
 data/maps/
 data/player-profiles/
 data/reference-overrides/
 data/sessions/
 data/live-play-ops/
+data/group-inventories/
 data/shops/
 data/sheets/*
 !data/sheets/examples/
@@ -53,6 +62,7 @@ data/sheets/*
 data/trainers/
 assets/
 encounter_tables/*
+!encounter_tables/README.md
 !encounter_tables/spire-city/
 encounter_tables/spire-city/*
 !encounter_tables/spire-city/streets.json

@@ -19,6 +19,21 @@
       "bounded": true
     },
     {
+      "id": "private-artifacts",
+      "command": "npm run check:release-readiness:private-artifacts",
+      "bounded": true
+    },
+    {
+      "id": "dependency-licenses",
+      "command": "npm run check:release-readiness:dependency-licenses",
+      "bounded": true
+    },
+    {
+      "id": "media-assets",
+      "command": "npm run check:release-readiness:media-assets",
+      "bounded": true
+    },
+    {
       "id": "distribution",
       "command": "npm run check:release-readiness:distribution",
       "bounded": true

@@ -19,6 +19,7 @@ Release identity and compatibility:
 - [Private VPS readiness summary](private-vps-readiness-summary.md)
 - [API mutation audit](api-route-mutation-audit.md)
 - [Campaign repository/private-root layout](campaign-repositories.md)
+- [Source-tree and private-data hygiene](release/source-tree-hygiene.md)
 
 Use `npm run upgrade:campaign`, `backup:campaign`, `restore:campaign`, and `audit:campaign` only as documented. Local Nuxt development is not a supported liveplay host.
 

@@ -2,12 +2,12 @@
   "artifact": "release-distribution-inventory",
   "schemaVersion": 1,
   "releaseVersion": "1.0.0-rc.1",
-  "status": "CLASSIFIED_PENDING_OWNER_DISPOSITION",
+  "status": "OWNER_DISTRIBUTION_DISPOSITION_APPLIED_LICENSING_PENDING",
   "distributable": "tagged-source-repository-plus-documented-production-build",
   "trackedTreeAuthority": {
     "policy": "data/release-readiness/tracked-tree-policy.v1.json",
     "inventory": "data/release-readiness/tracked-tree-inventory.v1.json",
-    "classificationStatus": "COMPLETE_WITH_DECLARED_OWNER_ANOMALIES"
+    "classificationStatus": "COMPLETE_WITH_DECLARED_LICENSING_ANOMALIES"
   },
   "classes": [
     {
@@ -94,15 +94,23 @@
       ]
     },
     {
-      "id": "owner-disposition-candidates",
+      "id": "owner-disposition-retained-labelled",
       "includes": [
         "books/",
         "ptu-data/",
         "encounter_tables/",
-        "trainer_sizes/",
+        "trainer_sizes/"
+      ],
+      "dispositionEvidence": "data/release-readiness/documentary-tree-disposition.v1.json"
+    },
+    {
+      "id": "owner-disposition-pruned",
+      "excludes": [
         "pokesheet.pdf",
         "notepad/"
-      ]
+      ],
+      "sourceTreeMembership": false,
+      "dispositionEvidence": "data/release-readiness/documentary-tree-disposition.v1.json"
     }
   ],
   "generatedOrPrivatePathsNeverCommittedToTheSourceDistribution": [
@@ -131,73 +139,57 @@
     "supportedDeployment": "private Linux x86-64 VPS",
     "operatorRunbook": "docs/private-vps-hosting.md"
   },
-  "anomalyCandidates": [
+  "ownerDispositionResults": [
     {
       "path": "books/",
       "classification": "documentary",
-      "reason": "documentary PTU text; provenance-bound",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
+      "disposition": "retain-and-label",
+      "label": "books/README.md",
       "ownerTicket": "P13-058",
-      "status": "AWAITING_OWNER"
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "path": "ptu-data/",
       "classification": "documentary",
-      "reason": "parser/provenance tree; not runtime authority",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
+      "disposition": "retain-and-label",
+      "label": "ptu-data/README.md",
       "ownerTicket": "P13-058",
-      "status": "AWAITING_OWNER"
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "path": "encounter_tables/",
       "classification": "private-data-sensitive",
-      "reason": "retired campaign-shaped legacy tables",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
+      "disposition": "retain-and-label",
+      "label": "encounter_tables/README.md",
       "ownerTicket": "P13-058",
-      "status": "AWAITING_OWNER"
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "path": "trainer_sizes/",
       "classification": "mixed-authored-generated-third-party",
-      "reason": "third-party sprite assets plus generator and derived data",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
+      "disposition": "retain-and-label",
+      "label": "trainer_sizes/README.md",
       "ownerTicket": "P13-058",
-      "status": "AWAITING_OWNER"
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "path": "pokesheet.pdf",
       "classification": "documentary",
-      "reason": "tracked PDF with unresolved distribution posture",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
+      "disposition": "prune",
       "ownerTicket": "P13-058",
-      "status": "AWAITING_OWNER"
+      "status": "OWNER_APPROVED_APPLIED"
     },
     {
       "path": "notepad/",
       "classification": "documentary",
-      "reason": "historical working note",
-      "allowedDispositions": [
-        "retain-and-label",
-        "prune"
-      ],
+      "disposition": "prune",
       "ownerTicket": "P13-058",
-      "status": "AWAITING_OWNER"
+      "status": "OWNER_APPROVED_APPLIED"
     }
   ],
-  "disposition": "UNRESOLVED_OWNER_DECISION_REQUIRED_AT_P13-058"
+  "ownerPrunedPathsForbidden": [
+    "pokesheet.pdf",
+    "notepad/"
+  ],
+  "disposition": "OWNER_DECISION_APPLIED_AT_P13_058"
 }
