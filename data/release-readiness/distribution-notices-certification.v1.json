@@ -63,7 +63,7 @@
   },
   "phaseExit": {
     "phase": 6,
-    "tickets": "P13-053–P13-066",
+    "tickets": "P13-053\u2013P13-066",
     "completedTickets": 14,
     "totalTickets": 14,
     "zeroUnresolvedDispositionFamilies": true,
@@ -72,7 +72,7 @@
   "sourceEvidence": [
     {
       "path": "data/release-readiness/repository-presentation-certification.v1.json",
-      "sha256": "7a4a79109a3755dac74446db06806d32ec28d32d1246c454b447c6f945dcf3ca"
+      "sha256": "9b58f52493ae6306e96ec3e4a7ba55a46c2562bb70e86e6fa7590e4a95b5cd15"
     },
     {
       "path": "data/release-readiness/distribution-inventory.v1.json",
@@ -80,7 +80,7 @@
     },
     {
       "path": "data/release-readiness/distribution-manifest.v1.json",
-      "sha256": "40e78c231aef97069b4b3e62b97cba5b9b8299af4cc4e9659f1224f8c1191af5"
+      "sha256": "ae45907efe3c06a0dec74d9098828154a80eb1721a9bfba60882ba5639583fd5"
     },
     {
       "path": "data/release-readiness/documentary-tree-disposition.v1.json",
@@ -88,11 +88,11 @@
     },
     {
       "path": "data/release-readiness/private-artifact-audit.v1.json",
-      "sha256": "97661fdbf4b78ca54da30cd4ee4b33bc307da04450151e5f5309f5f2d201fecb"
+      "sha256": "aa43ee157a268e7df5ae847bfb499f213a635269ae52c647cd789454d62f3ebd"
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",
-      "sha256": "d0835fa1692839a03fb6d1105ad34fc0ccd5a1748ad1742050913ea96e6facd2"
+      "sha256": "3590d46060e5c0010ea87fbafea7f26e82bbdddedeacef2897bf5183f6e6dab7"
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
@@ -100,7 +100,7 @@
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "c193922d944a4f2f5054f3ddd9053bb1f026b4cbd259a96baa81162025761a8b"
+      "sha256": "76a8adbb09ac7dcad24bd00ec3cdfbe4d4f75fbc50c90f4b7325487c373b72e9"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
@@ -108,7 +108,7 @@
     },
     {
       "path": "data/release-readiness/licensing-notice-disposition.v1.json",
-      "sha256": "f50b29f134fa743d0d4bb2ebaa2140e71ae6f5e02effec734e627a71406f6f6f"
+      "sha256": "76e6d5e27cb3d96a17d556287e38f612b79a885916466a4c5705f79b879b3b62"
     },
     {
       "path": "data/release-readiness/tracked-tree-policy.v1.json",

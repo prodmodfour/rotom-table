@@ -21,9 +21,10 @@ function assertOrdered(source, markers) {
 }
 
 async function main() {
-  const [command, generator, evidenceCheck, docs, gitignore, packageJson, policy, platform, certification, rubric] = await Promise.all([
+  const [command, generator, normalizer, evidenceCheck, docs, gitignore, packageJson, policy, platform, certification, rubric] = await Promise.all([
     read('scripts/release-readiness/release-command.mjs'),
     read('scripts/release-readiness/generate-build-evidence.mjs'),
+    read('scripts/release-readiness/normalize-release-build-output.mjs'),
     read('scripts/release-readiness/check-release-evidence.mjs'),
     read('docs/release/releasing.md'),
     read('.gitignore'),
@@ -35,6 +36,7 @@ async function main() {
   ])
 
   assert(packageJson.scripts['release:prepare'] === 'node scripts/release-readiness/release-command.mjs', 'release:prepare is not the single release command.')
+  assert(packageJson.scripts.build?.endsWith('&& node scripts/release-readiness/normalize-release-build-output.mjs'), 'Build command omits release-output normalization.')
   assert(packageJson.scripts['release:check-evidence'] === 'node scripts/release-readiness/check-release-evidence.mjs', 'Release evidence check is not registered.')
   assert(packageJson.scripts['release:audit-artifact'] === 'node scripts/release-readiness/audit-built-artifact.mjs', 'Built-artifact audit is not registered.')
   assert(packageJson.scripts['check:release-readiness:release-command']?.includes('check-release-command.mjs'), 'Release-command source gate is not registered.')
@@ -46,6 +48,8 @@ async function main() {
   assertOrdered(command, [
     "assertCleanTree('before gates')",
     '\n  assertAnnotatedHeadTag(commit)\n',
+    "run('npm', ['ci', '--include=dev'])",
+    "assertCleanTree('after exact-lock install')",
     "run('node', ['scripts/release-readiness/check-identity.mjs', '--require-tag'])",
     "run('npm', ['run', 'check:release-readiness'])",
     "assertCleanTree('after gates')",
@@ -66,6 +70,10 @@ async function main() {
     assert(command.includes(environment), `Release production build omits deterministic environment: ${environment}`)
   }
 
+  for (const requirement of ['Release output normalization accepts no arguments.', "process.env.ROTOM_RELEASE_BUILD !== '1'", 'SOURCE_DATE_EPOCH', 'Expected exactly one Nitro public-asset map', 'nitroMetadata.date = stamp', 'mtime: stamp']) {
+    assert(normalizer.includes(requirement), `Release-output normalizer omits fail-closed rule: ${requirement}`)
+  }
+
   assert(generator.includes("if (releaseMode)"), 'Build evidence generator has no release mode.')
   assert(generator.includes('Release evidence requires a full Git commit SHA'), 'Build evidence does not require a full commit.')
   assert(generator.includes('Release tag must be v${packageMetadata.version}'), 'Build evidence does not require tag/version agreement.')
@@ -76,9 +84,17 @@ async function main() {
 
   for (const generated of ['.nuxt-build', '.output', 'release-evidence/']) assert(gitignore.split('\n').includes(generated), `Generated release path is not ignored: ${generated}`)
   assert(platform.runtime.node === '>=24 <25' && platform.operatingSystem.some(row => row.family === 'Linux' && row.architecture === 'x86-64'), 'Release command platform assumptions drifted.')
-  assert(policy.rules.tagMutationForbidden === true && policy.releaseBuildRequirements.includes('clean tracked worktree'), 'Version policy no longer requires immutable tags and clean release builds.')
+  assert(
+    policy.rules.tagMutationForbidden === true
+    && policy.rules.finalTagDivergenceRequiresNextPatch === true
+    && policy.rules.checksumComparisonMayBeWeakened === false
+    && policy.releaseBuildRequirements.includes('clean tracked worktree')
+    && policy.releaseBuildRequirements.includes('exact package-lock install through npm ci --include=dev')
+    && policy.releaseBuildRequirements.includes('byte-exact checksum reproduction from a second clean tagged build'),
+    'Version policy no longer requires immutable, exact-lock, byte-reproducible release builds.',
+  )
 
-  for (const phrase of ['npm run release:prepare', 'accepts no bypass', 'annotated', 'SOURCE_DATE_EPOCH', 'release-evidence/checksums.sha256', 'Publication remains an owner action']) {
+  for (const phrase of ['npm run release:prepare', 'npm ci --include=dev', 'accepts no bypass', 'annotated', 'SOURCE_DATE_EPOCH', 'release-evidence/checksums.sha256', 'Publication remains an owner action']) {
     assert(docs.includes(phrase), `Release command documentation omits: ${phrase}`)
   }
 
@@ -88,7 +104,7 @@ async function main() {
   const rubricRow = rubric.rows.find(row => row.id === 'provenance-release-command')
   assert(rubricRow?.allowedFinalStates?.includes('Certified'), 'Release-command rubric row no longer permits Certified.')
 
-  console.log(`Release command verified for ${packageJson.version}: clean/tag gates, bounded aggregate, deterministic build, artifact audit, five-file evidence bundle, and zero bypass arguments.`)
+  console.log(`Release command verified for ${packageJson.version}: exact-lock install, clean/tag gates, bounded aggregate, normalized deterministic build, artifact audit, five-file evidence bundle, and zero bypass arguments.`)
 }
 
 main().catch(error => {

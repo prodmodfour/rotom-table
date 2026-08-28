@@ -1,0 +1,221 @@
+{
+  "artifact": "released-identity-verification",
+  "schemaVersion": 1,
+  "ticket": "P13-085",
+  "status": "BLOCKED_REPRODUCIBILITY_DIVERGENCE",
+  "release": {
+    "version": "1.0.0",
+    "tag": "v1.0.0",
+    "commit": "5ef7c8741ab19c5a2b58db28d8f90fca8c61ce6a",
+    "tree": "1bbe48789ba2e5340510b8fa884523392b08411b",
+    "annotatedTagObject": "435599ad457c6e40a7491dbab618b94828e5a81d",
+    "tagMutationAllowed": false,
+    "remotePublicationAuthorized": false,
+    "remotePublicationOccurred": false
+  },
+  "supportedBuilder": {
+    "platform": "linux",
+    "architecture": "x64",
+    "node": "v24.16.0",
+    "npm": "11.13.0",
+    "sourceDateEpoch": "1787924982"
+  },
+  "verificationAttempts": [
+    {
+      "id": "tagged-release-prepare-reference",
+      "admissible": true,
+      "outputFiles": 13629,
+      "checksumManifestSha256": "c4a206f06aa5a0ce291fe3f67b1eb0862f0bc2c2e7052a4eaf461dab4564dd76",
+      "evidencePath": ".pi/logs/release-acceptance/1.0.0/reproducibility/reference-evidence/checksums.sha256",
+      "evidenceFileSha256": "c4a206f06aa5a0ce291fe3f67b1eb0862f0bc2c2e7052a4eaf461dab4564dd76"
+    },
+    {
+      "id": "clean-lock-tag-rebuild",
+      "admissible": true,
+      "outputFiles": 13629,
+      "checksumManifestSha256": "c368ede6b9396580c23094096bc93da7dacbf61c49fe6f12e2e11fa2d223547f",
+      "evidencePath": ".pi/logs/release-acceptance/1.0.0/reproducibility/rebuild-evidence/checksums.sha256",
+      "evidenceFileSha256": "c368ede6b9396580c23094096bc93da7dacbf61c49fe6f12e2e11fa2d223547f"
+    },
+    {
+      "id": "third-identical-tag-build",
+      "admissible": true,
+      "outputFiles": 13629,
+      "checksumManifestSha256": "a10c35aa3b5c37025c4db528bb5be3b2c692e60a8a086771c455e8728ad3ec4f",
+      "evidencePath": ".pi/logs/release-acceptance/1.0.0/reproducibility/third-evidence/checksums.sha256",
+      "evidenceFileSha256": "a10c35aa3b5c37025c4db528bb5be3b2c692e60a8a086771c455e8728ad3ec4f"
+    }
+  ],
+  "comparison": {
+    "byteExact": false,
+    "referenceVersusCleanRebuild": {
+      "referenceOnlyPaths": 292,
+      "rebuildOnlyPaths": 292,
+      "changedCommonPaths": 4,
+      "unchangedCommonPaths": 13333
+    },
+    "cleanRebuildVersusThirdBuild": {
+      "rebuildOnlyPaths": 396,
+      "thirdOnlyPaths": 396,
+      "changedCommonPaths": 4,
+      "unchangedCommonPaths": 13229
+    },
+    "blockerRule": "P13-085 divergence reopens the release; an unregistered gate failure is a blocker under activation decision 9"
+  },
+  "rootCause": {
+    "confirmed": true,
+    "families": [
+      "Nuxt production build IDs used random UUID authority",
+      "Nuxt SSR style-aggregator chunks followed asynchronous module-resolution order",
+      "Nitro embedded public assets in parallel completion order",
+      "Nitro embedded wall-clock build dates and generated asset mtimes"
+    ],
+    "runtimeMechanicsOrCanonicalDataAffected": false
+  },
+  "repairPreparation": {
+    "status": "PREPARED_UNTAGGED_NOT_RELEASE_EVIDENCE",
+    "changes": [
+      "derive release-only Nuxt build ID from package and commit identity",
+      "disable nondeterministic SSR style aggregators while retaining linked client CSS",
+      "sort Nitro embedded public assets by path",
+      "normalize Nitro dates and mtimes to SOURCE_DATE_EPOCH",
+      "install the exact lock inside release:prepare",
+      "fail closed when expected generated metadata cannot be normalized"
+    ],
+    "diagnosticBuilds": {
+      "count": 2,
+      "outputFilesEach": 12663,
+      "totalBytesEach": 377746793,
+      "checksumManifestSha256Each": "db0e9ea7ec9dde8dec9225dd2002899f696c12f793903bc8d14f672878a8adee",
+      "artifactAuditFindings": 0,
+      "byteExact": true,
+      "admissibleAsReleaseAcceptance": false,
+      "reason": "repair source was intentionally untagged during diagnosis"
+    },
+    "productionLiveplaySmoke": {
+      "status": "passed",
+      "rolePickerStyleSheetsLoaded": 3,
+      "rolePickerStyleRuleCounts": [
+        230,
+        8,
+        40
+      ],
+      "settingsStyleSheetsLoaded": 40,
+      "settingsStyleRulesLoaded": 2462,
+      "releaseVersionVisible": true,
+      "storageSchemaVisible": true,
+      "horizontalOverflowPixels": 0,
+      "consoleErrors": 0,
+      "consoleWarnings": 0
+    }
+  },
+  "boundedGateIsolation": {
+    "allStagesBeforeReleasedIdentityPassed": true,
+    "catalogAggregatePassedAfterDocumentaryProofRefresh": true,
+    "finalReadOnlySlice": {
+      "commands": [
+        "check:release-readiness:distribution",
+        "check:release-readiness:distribution-acceptance",
+        "check:release-readiness:changelog",
+        "check:release-readiness:release-notes",
+        "check:release-readiness:release-command",
+        "check:release-readiness:artifact-audit",
+        "check:release-readiness:clean-host",
+        "check:release-readiness:final-acceptance",
+        "check:release-readiness:released-identity"
+      ],
+      "status": 1,
+      "soleFailure": "expected P13-085 owner patch authorization blocker",
+      "logPath": ".pi/logs/release-acceptance/reproducibility-repair/post-distribution-release-readiness.log",
+      "logSha256": "8d4a2fd29c3e486052cf02f97902b1a4dbc6fb1e9fc9aee7491348fecf3cbffb"
+    },
+    "otherUnresolvedTechnicalGates": 0
+  },
+  "disposition": {
+    "v1_0_0MayBeRepresentedAsVerified": false,
+    "nextPermittedVersion": "1.0.1",
+    "ownerPatchReleaseAuthorizationRequired": true,
+    "ownerPatchReleaseAuthorizationRecorded": false,
+    "releaseTransactionsAuthorizedRemaining": 0,
+    "blocker": "OWNER_PATCH_RELEASE_AUTHORIZATION_P13_085",
+    "remotePublicationRemainsUnauthorized": true
+  },
+  "sourceEvidence": [
+    {
+      "path": "package.json",
+      "sha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a"
+    },
+    {
+      "path": "nuxt.config.ts",
+      "sha256": "d6c3e93224ee9964629a8277f9e0a891cf8ef131ce9d08255767a5db91884eb5"
+    },
+    {
+      "path": "scripts/release-readiness/normalize-release-build-output.mjs",
+      "sha256": "4363e83144b4cac6c3dde9d796bdba5a77cdc6e12a90377c2a86c64f446b5524"
+    },
+    {
+      "path": "scripts/release-readiness/release-command.mjs",
+      "sha256": "0f2d12cfdd848687ce50eebd7cdd6a30cbbbf780655b9ac07f4885961e8c7ec3"
+    },
+    {
+      "path": "scripts/release-readiness/check-release-command.mjs",
+      "sha256": "15e064e6a0829e03e1d92aec9c4573c18f44d8c7900e8dc566646fb4c4cc8184"
+    },
+    {
+      "path": "scripts/release-readiness/check-final-acceptance.mjs",
+      "sha256": "ce76294db8f3c51d01c3b730a7408f79789a65a44b86c6fb34b24b1c72fcbb38"
+    },
+    {
+      "path": "scripts/release-readiness/check-released-identity.mjs",
+      "sha256": "0ba07e550fb6a098a68c6565c7abb7e74b07670c7e2ec6a20bae4713f02baa9c"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "f283b02af6b555f0d933e65e8b42226d05814999fbe9e29e8c4c520970ef6a3f"
+    },
+    {
+      "path": "docs/release/releasing.md",
+      "sha256": "0398ea69ee23e2f91b96d343308351650018e4c556b87711662f554aa587651a"
+    },
+    {
+      "path": "docs/release/versioning.md",
+      "sha256": "b9744f22de86fe032cf2dba9033f24d0b4da906984f77369147d5bd77ffa9e57"
+    },
+    {
+      "path": "tests/scripts/releaseBuildNormalization.test.ts",
+      "sha256": "199bb50a444a36389eda44eb39c0aad86e4d8a99141595895cdf09331bd07a5e"
+    },
+    {
+      "path": "tests/data/releaseFinalAcceptanceEvidence.test.ts",
+      "sha256": "4044077718db43371f2e10f8dd4eb23028c5740ad26e7b0d02657662ddc34c30"
+    },
+    {
+      "path": "implementation-plans/RELEASE_READINESS_PLAN.md",
+      "sha256": "09ac2cac4ddf585999c0367aa9382b806a8263006eabc44a5fb0bce8eed423d5"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "9a130b7de20cee9118eae099a034fcc72025c194b95a8e20ce128e8d91b519e8"
+    },
+    {
+      "path": "README.md",
+      "sha256": "bd9d9d1858ab5a67b4fb642555fce68c24c4cf40e49aacf7795470d8a672e8ad"
+    },
+    {
+      "path": "docs/releases/1.0.0.md",
+      "sha256": "2383b3b81d2a2c5fe5ab60c1c5bbdd522dfa3e8868a7624a9a7ae171d391d60a"
+    },
+    {
+      "path": "scripts/release-readiness/check-presentation.mjs",
+      "sha256": "0b245291036d4478004bdd4003d8bbcd2403be996828cad3ba9b936f928823f6"
+    },
+    {
+      "path": "scripts/release-readiness/check-release-notes.mjs",
+      "sha256": "69e6769fccfb9862619871be3d6e8fe9afed58fad223b7898ae42574dfe77253"
+    },
+    {
+      "path": "data/release-readiness/version-policy.v1.json",
+      "sha256": "0aea0e853da104fd5605862016e2592bc24f465a5c29f695df7c4da774263833"
+    }
+  ]
+}

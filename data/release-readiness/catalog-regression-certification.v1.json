@@ -106,7 +106,7 @@
     },
     {
       "path": "data/release-readiness/documentary-read-proof.v1.json",
-      "sha256": "f56d01fc51235796656f32de203b3cc600adc082738366beb4946b9c84be4946"
+      "sha256": "426d1619b41dedebcb85eaeb4ee7efa8fbf4b00339cb6b68bdcd87bbda6eb4a7"
     },
     {
       "path": "data/release-readiness/mechanics-registry-finality.v1.json",
@@ -114,7 +114,7 @@
     },
     {
       "path": "data/deferred-closure/successor-chain.v1.json",
-      "sha256": "537755ff286cb903ee7e98c6416091ac50e98cc08e6fdeaebbdf9cc8f735720c"
+      "sha256": "d3587b1edd4911f633fbc60211e8be9e643e31d0c774358c43e541ef7900c013"
     },
     {
       "path": "data/release-readiness/release-golden-journey.v1.json",
@@ -150,7 +150,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "1666856ca72e3d17cb6e91019621e3db95113a15f24aa332e3f8f0b4ef136a0f"
+      "sha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a"
     }
   ]
 }

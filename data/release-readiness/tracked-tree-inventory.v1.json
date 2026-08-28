@@ -9,29 +9,29 @@
     "sha256": "54a972c431cbaf35f680bb4d72961f1e48353031f1241e96586fb540c9b3b6dd"
   },
   "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
-  "trackedPathCount": 16888,
-  "trackedPathSetSha256": "51af60b0f867a9f4acefa8963b7330852cff8869fefbf9f16a312bc55d8ae1a7",
-  "trackedContentSetSha256": "7b5886d269a7aca75ca76688dcdc5dbbccb3c502d9f2e109b1e789af20ecd37b",
+  "trackedPathCount": 16892,
+  "trackedPathSetSha256": "d003c3f5100974b9fc2505df055549071063d5584ad4252c6acd7e33bd9d4eab",
+  "trackedContentSetSha256": "b8f592384bff830ab6a6cdaf112b3fff0ac3d4843129e8a13bcb072a2e9a3d89",
   "contentDigestExclusions": [
     "data/release-readiness/distribution-manifest.v1.json",
     "data/release-readiness/tracked-tree-inventory.v1.json"
   ],
   "categoryPathCounts": {
-    "authored": 5058,
+    "authored": 5061,
     "documentary": 1323,
-    "generated": 1077,
+    "generated": 1078,
     "private-data-sensitive": 5,
     "third-party": 9425
   },
   "rulePathCounts": {
     "authored-data": 359,
     "authored-root-files": 20,
-    "authored-source-trees": 4678,
+    "authored-source-trees": 4681,
     "authored-trainer-generator": 1,
     "documentary-root-files": 9,
     "documentary-trees": 1314,
     "generated-dependency-lock": 1,
-    "generated-release-evidence": 56,
+    "generated-release-evidence": 57,
     "generated-screenshots": 3,
     "generated-sheet-examples": 1015,
     "generated-trainer-datasets": 2,
@@ -162,10 +162,10 @@
     },
     {
       "path": "data",
-      "pathCount": 1444,
+      "pathCount": 1445,
       "categories": {
         "authored": 359,
-        "generated": 1071,
+        "generated": 1072,
         "third-party": 14
       }
     },
@@ -305,9 +305,9 @@
     },
     {
       "path": "scripts",
-      "pathCount": 149,
+      "pathCount": 151,
       "categories": {
-        "authored": 149
+        "authored": 151
       }
     },
     {
@@ -333,9 +333,9 @@
     },
     {
       "path": "tests",
-      "pathCount": 1824,
+      "pathCount": 1825,
       "categories": {
-        "authored": 1824
+        "authored": 1825
       }
     },
     {

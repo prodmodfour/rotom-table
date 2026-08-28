@@ -15,7 +15,14 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Rotom Table 1.0.0 i
 
 ## [Unreleased]
 
-No changes have been recorded after 1.0.0.
+### Fixed
+
+- Prepared deterministic release-output generation by deriving release-only Nuxt build identity from package/commit authority, using stable linked CSS instead of asynchronously grouped SSR style chunks, sorting Nitro's embedded public assets, and normalizing generated dates and mtimes to the immutable commit timestamp.
+- Made the one-command release workflow install the exact checked-in dependency lock before gates and fail closed if generated Nitro metadata cannot be normalized.
+
+### Operations
+
+- Released-identity verification found that the local, unpublished `v1.0.0` tag produced three different checksum manifests from identical supported-shape builds. The tag remains immutable, must not be published or deployed as a verified release, and requires a separately authorized `1.0.1` successor after the deterministic repair passes tagged verification.
 
 ## [1.0.0] - 2026-08-28
 
@@ -39,7 +46,7 @@ No changes have been recorded after 1.0.0.
 
 ### Operations
 
-- The immutable annotated `v1.0.0` tag binds the release commit, final notes, machine-readable acceptance, package and lock identity, source-distribution manifest, and deterministic build inputs.
+- The immutable annotated `v1.0.0` tag binds the release commit, final notes, machine-readable acceptance, package and lock identity, source-distribution manifest, and recorded build inputs. Its subsequent checksum-reproduction failure is preserved in **Unreleased** rather than hidden or repaired by moving the tag.
 - Database rollback means restoring the exact pre-upgrade backup; in-place database downgrade is unsupported.
 - Checksums and provenance are generated locally from the tagged commit. Remote publication of tags, notes, artifacts, or evidence remains separately owner-controlled.
 

@@ -279,7 +279,7 @@
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "476f25315bc8c823547c26be5092bc408bb572db0db2fb64d1aa53870874687e"
+      "sha256": "f283b02af6b555f0d933e65e8b42226d05814999fbe9e29e8c4c520970ef6a3f"
     },
     {
       "path": "data/release-readiness/schemas/rehearsal.schema.v1.json",
@@ -291,7 +291,7 @@
     },
     {
       "path": "data/release-readiness/version-policy.v1.json",
-      "sha256": "3e65a10e9d29b1bce604bc52a2b3873272632f13a6ae396345782054257e533f"
+      "sha256": "0aea0e853da104fd5605862016e2592bc24f465a5c29f695df7c4da774263833"
     },
     {
       "path": "data/release-readiness/version-mints.v1.json",

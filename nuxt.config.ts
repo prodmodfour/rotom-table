@@ -27,6 +27,9 @@ const gitCommit = (): string | null => {
 }
 const buildCommit = gitCommit()
 const buildTag = process.env.ROTOM_BUILD_TAG?.trim() || null
+const releaseBuildId = releaseBuildRequested && buildCommit
+  ? `rotom-${ROTOM_TABLE_VERSION}-${buildCommit}`
+  : undefined
 const prereleaseCandidate = /-rc\.\d+$/.test(ROTOM_TABLE_VERSION)
 const buildKind: ReleaseBuildIdentity['kind'] = isDev
   ? 'development'
@@ -87,6 +90,9 @@ export default defineNuxtConfig({
     public: 'public',
   },
   buildDir: isDev ? '.nuxt-dev' : '.nuxt-build',
+  // Nuxt otherwise generates a random UUID that leaks into the server bundle.
+  // A release build is identified by immutable package and commit authority.
+  buildId: releaseBuildId,
   components: [
     {
       path: '~/components',
@@ -109,6 +115,12 @@ export default defineNuxtConfig({
   ],
   experimental: {
     appManifest: false,
+  },
+  features: {
+    // Nitro's SSR style-aggregator chunks are emitted in asynchronous module
+    // resolution order. Keep release output deterministic by using the stable
+    // client CSS assets instead of per-component inline SSR style aggregators.
+    inlineStyles: false,
   },
   runtimeConfig: {
     public: {

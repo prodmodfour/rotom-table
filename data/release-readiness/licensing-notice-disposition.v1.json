@@ -21,12 +21,12 @@
     },
     {
       "number": 2,
-      "recommendation": "Keep Pokémon/PTU-derived data, text, names, and concepts outside the Rotom Table license grant.",
+      "recommendation": "Keep Pok\u00e9mon/PTU-derived data, text, names, and concepts outside the Rotom Table license grant.",
       "decision": "ACCEPTED_IMPLEMENTED"
     },
     {
       "number": 3,
-      "recommendation": "Retain the primary item, Pokémon, and Trainer sprite libraries with source and artist attribution where available and with redistribution uncertainty disclosed.",
+      "recommendation": "Retain the primary item, Pok\u00e9mon, and Trainer sprite libraries with source and artist attribution where available and with redistribution uncertainty disclosed.",
       "decision": "ACCEPTED_IMPLEMENTED"
     },
     {
@@ -235,7 +235,7 @@
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "c193922d944a4f2f5054f3ddd9053bb1f026b4cbd259a96baa81162025761a8b"
+      "sha256": "76a8adbb09ac7dcad24bd00ec3cdfbe4d4f75fbc50c90f4b7325487c373b72e9"
     },
     {
       "path": "src/components/TypeBadge.vue",
@@ -271,7 +271,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "1666856ca72e3d17cb6e91019621e3db95113a15f24aa332e3f8f0b4ef136a0f"
+      "sha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a"
     },
     {
       "path": "package-lock.json",

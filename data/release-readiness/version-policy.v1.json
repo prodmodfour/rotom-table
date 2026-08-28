@@ -13,13 +13,18 @@
     "longLivedReleaseBranches": false,
     "finalMintExactlyOnce": true,
     "tagMutationForbidden": true,
-    "outOfBandVersionEditsForbidden": true
+    "outOfBandVersionEditsForbidden": true,
+    "finalTagDivergenceRequiresNextPatch": true,
+    "checksumComparisonMayBeWeakened": false
   },
   "releaseBuildRequirements": [
     "clean tracked worktree",
+    "exact package-lock install through npm ci --include=dev",
     "green bounded release gates",
     "annotated tag and package version agreement",
-    "commit and embedded build identity agreement"
+    "commit and embedded build identity agreement",
+    "SOURCE_DATE_EPOCH-normalized generated build metadata",
+    "byte-exact checksum reproduction from a second clean tagged build"
   ],
   "mintAuthority": "node scripts/release-readiness/mint-version.mjs"
 }

@@ -68,7 +68,7 @@ async function main() {
   ))
 
   assert(packageJson.name === 'rotom-table', 'package.json name must remain rotom-table.')
-  assert(/^1\.0\.0(?:-rc\.\d+)?$/u.test(packageJson.version), 'Presentation check expects the current 1.0 release identity.')
+  assert(/^1\.0\.\d+(?:-rc\.\d+)?$/u.test(packageJson.version), 'Presentation check expects the current 1.0 release identity.')
   assert(packageJson.private === true, 'Rotom Table must remain a private npm package.')
   assert(packageJson.license === 'SEE LICENSE IN LICENSE', 'package.json must point to the repository-scoped license.')
   assert(packageJson.repository?.url === 'git+https://github.com/prodmodfour/rotom-table.git', 'Repository metadata drifted.')
@@ -82,10 +82,17 @@ async function main() {
   assert(!repositoryMetadata.after?.topics.includes('nuxt3'), 'Remote repository topics retain nuxt3.')
   assert(!repositoryMetadata.after?.topics.includes('local-first'), 'Remote repository topics retain local-first.')
 
-  const identityClaim = packageJson.version === '1.0.0'
-    ? `The current release is **${packageJson.version}**`
-    : `The current candidate is **${packageJson.version}**`
-  assert(readme.includes(identityClaim), 'README release identity disagrees with package.json.')
+  const identityClaims = [
+    `The current release is **${packageJson.version}**`,
+    `The current package identity is **${packageJson.version}**`,
+    `The current candidate is **${packageJson.version}**`,
+  ]
+  assert(identityClaims.some(claim => readme.includes(claim)), 'README release identity disagrees with package.json.')
+  if (readme.includes(`The current package identity is **${packageJson.version}**`)) {
+    for (const boundary of ['did not reproduce its build checksums', 'was not remotely published', 'must not be deployed as a verified release', '`1.0.1` successor']) {
+      assert(readme.includes(boundary), `README verification hold omits: ${boundary}`)
+    }
+  }
   assert(readme.includes('Nuxt 4'), 'README must identify Nuxt 4.')
   assert(!/Nuxt\s*3/i.test(readme), 'README contains stale Nuxt 3 presentation.')
   assert(readme.includes('private Linux x86-64 VPS'), 'README must state the supported deployment shape.')

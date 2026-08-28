@@ -91,6 +91,8 @@ function main() {
   const sourceDateEpoch = git(['show', '-s', '--format=%ct', commit])
   if (!/^\d+$/u.test(sourceDateEpoch)) fail('Could not derive SOURCE_DATE_EPOCH from the release commit.')
 
+  run('npm', ['ci', '--include=dev'])
+  assertCleanTree('after exact-lock install')
   run('node', ['scripts/release-readiness/check-identity.mjs', '--require-tag'])
   run('npm', ['run', 'check:release-readiness'])
   assertCleanTree('after gates')
@@ -142,6 +144,7 @@ function main() {
       sourceDateEpoch,
     },
     commands: [
+      { command: 'npm ci --include=dev', status: 'passed', bounded: true },
       { command: 'node scripts/release-readiness/check-identity.mjs --require-tag', status: 'passed', bounded: true },
       { command: 'npm run check:release-readiness', status: 'passed', bounded: true },
       { command: 'npm run build', status: 'passed', bounded: true },

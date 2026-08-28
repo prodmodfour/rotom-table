@@ -46,7 +46,14 @@ async function main() {
   const finalRelease = packageJson.version === '1.0.0'
   assert(notes.startsWith('# Rotom Table 1.0 release notes\n'), 'Release notes title drifted.')
   if (finalRelease) {
-    assert(notes.includes('> **Released:** Rotom Table 1.0.0 was released on 2026-08-28'), 'Release notes omit the final release marker and date.')
+    const releasedMarker = '> **Released:** Rotom Table 1.0.0 was released on 2026-08-28'
+    const verificationHoldMarker = '> **Released locally, verification hold:** Rotom Table 1.0.0 was minted on 2026-08-28'
+    assert(notes.includes(releasedMarker) || notes.includes(verificationHoldMarker), 'Release notes omit the final transaction marker and date.')
+    if (notes.includes(verificationHoldMarker)) {
+      for (const boundary of ['failed exact checksum reproduction', 'was never published', 'Do not publish or deploy it as a verified release', 'released-identity-verification.v1.json', 'separately authorized `1.0.1` successor']) {
+        assert(notes.includes(boundary), `Release-note verification hold omits: ${boundary}`)
+      }
+    }
     assert(notes.includes('These surfaces report `1.0.0` and storage schema v56.'), 'Release-note final identity disagrees with package.json.')
     assert(!notes.includes('> **Release-candidate document:**'), 'Release notes retain the candidate marker after release.')
   } else {

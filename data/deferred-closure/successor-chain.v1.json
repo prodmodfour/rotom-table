@@ -7826,6 +7826,54 @@
       ],
       "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:agents-md:p13-successor-v7",
+      "ticket": "P13-046",
+      "surface": "AGENTS.md",
+      "beforeSha256": "4a8f9ecbc671138b220d21454f4042c227d680f04d17cdc4fd64057fecd11b9b",
+      "afterSha256": "e7ba0d9855f3848ef9a290fd361a34438f474c6c4a8c58899de71fc7d4b32dad",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-plan-order-md:p13-successor-v7",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "dcf7e1aba2fc9cf16babe3602b4d004fffb175e1f4f4a37a1a78ac4749c09b85",
+      "afterSha256": "da4660295ecbb0eb7c1e77c96dd083e2b89cf84bcb93c31ba3505bb93897ce24",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:package-json:p13-successor-v10",
+      "ticket": "P13-046",
+      "surface": "package.json",
+      "beforeSha256": "1666856ca72e3d17cb6e91019621e3db95113a15f24aa332e3f8f0b4ef136a0f",
+      "afterSha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:scripts-quality-gate-sh:p13-successor-v6",
+      "ticket": "P13-046",
+      "surface": "scripts/quality-gate.sh",
+      "beforeSha256": "476f25315bc8c823547c26be5092bc408bb572db0db2fb64d1aa53870874687e",
+      "afterSha256": "f283b02af6b555f0d933e65e8b42226d05814999fbe9e29e8c4c520970ef6a3f",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [

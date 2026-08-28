@@ -13,7 +13,9 @@ Rotom Table is a fan project. It is not official, endorsed, or a commercial Pok√
 
 ## Release identity
 
-The current release is **1.0.0**, storage schema **v56**. A running private deployment reports the same package/build identity at:
+The current package identity is **1.0.0**, storage schema **v56**. Released-identity verification found that the immutable local `v1.0.0` tag did not reproduce its build checksums, so it was not remotely published and must not be deployed as a verified release. A deterministic repair is prepared for a separately authorized `1.0.1` successor.
+
+A running private deployment reports its package/build identity at:
 
 - `/api/health`
 - `/api/version`

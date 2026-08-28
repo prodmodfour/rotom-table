@@ -18,7 +18,7 @@
     "pokesheet.pdf"
   ],
   "productionSourceFiles": 2677,
-  "productionSourceGraphSha256": "ed6f350cb34acc2603705b385b245593596f28a51c0ca8a8da3e0129fd8ce1eb",
+  "productionSourceGraphSha256": "8b54b860c8f97cc72009e8a2c725e367c47d36d2865beb1c7a4d124fecebc723",
   "staticViolations": 0,
   "runtimeProbe": "checked-separately-by-registered-command",
   "retiredRuntimeSeam": "/api/pokedex/restore-from-books",

@@ -24,7 +24,7 @@
   "sourceEvidence": [
     {
       "path": "package.json",
-      "sha256": "1666856ca72e3d17cb6e91019621e3db95113a15f24aa332e3f8f0b4ef136a0f"
+      "sha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a"
     },
     {
       "path": ".gitignore",
@@ -32,7 +32,7 @@
     },
     {
       "path": "scripts/release-readiness/release-command.mjs",
-      "sha256": "396f851f0f4d0fe5f8cd8c196660ca48a7c8ceb95cf33a7c99bd98d453d77f08"
+      "sha256": "0f2d12cfdd848687ce50eebd7cdd6a30cbbbf780655b9ac07f4885961e8c7ec3"
     },
     {
       "path": "scripts/release-readiness/generate-build-evidence.mjs",
@@ -44,23 +44,23 @@
     },
     {
       "path": "scripts/release-readiness/check-release-command.mjs",
-      "sha256": "1e49a8e41df4e3c0f40fa2ad1f5a482ec9d23c024052612f15885768f9772088"
+      "sha256": "15e064e6a0829e03e1d92aec9c4573c18f44d8c7900e8dc566646fb4c4cc8184"
     },
     {
       "path": "docs/release/releasing.md",
-      "sha256": "9f3165937bdecf051694c6e91f20b6947cd45fd927e832f640846bf04d781f69"
+      "sha256": "0398ea69ee23e2f91b96d343308351650018e4c556b87711662f554aa587651a"
     },
     {
       "path": "docs/releases/1.0.0.md",
-      "sha256": "e8d19b9f3d2704347d69f6ae8344135dd04d6b7625323fd36a7be8a4ecfd65f3"
+      "sha256": "2383b3b81d2a2c5fe5ab60c1c5bbdd522dfa3e8868a7624a9a7ae171d391d60a"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "26f954648bef820a1e3cdc3a512ff04e1b0fd78757ada194220d4392c79943ea"
+      "sha256": "9a130b7de20cee9118eae099a034fcc72025c194b95a8e20ce128e8d91b519e8"
     },
     {
       "path": "data/release-readiness/version-policy.v1.json",
-      "sha256": "3e65a10e9d29b1bce604bc52a2b3873272632f13a6ae396345782054257e533f"
+      "sha256": "0aea0e853da104fd5605862016e2592bc24f465a5c29f695df7c4da774263833"
     },
     {
       "path": "data/release-readiness/supported-platform-matrix.v1.json",
@@ -69,6 +69,10 @@
     {
       "path": "data/release-readiness/known-limitations.v1.json",
       "sha256": "cf731b8144de936de353afc4cab676123f3acab366066c5a2c714bbd9e2abc4b"
+    },
+    {
+      "path": "scripts/release-readiness/normalize-release-build-output.mjs",
+      "sha256": "4363e83144b4cac6c3dde9d796bdba5a77cdc6e12a90377c2a86c64f446b5524"
     }
   ]
 }

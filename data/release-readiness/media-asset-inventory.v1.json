@@ -11,7 +11,7 @@
     },
     "nuxtConfig": {
       "path": "nuxt.config.ts",
-      "sha256": "2cd37228092584874f3862aa3cc24ab9660302de074a755452ff5d00bd2a1498"
+      "sha256": "d6c3e93224ee9964629a8277f9e0a891cf8ef131ce9d08255767a5db91884eb5"
     },
     "trackedAndCandidateCommand": "git ls-files --cached --others --exclude-standard -z"
   },

@@ -50,7 +50,7 @@ function implementationPlanSources(directory) {
   return rows
 }
 
-function verifySourceEvidence(rows) {
+function verifySourceEvidence(rows, sourceBytes) {
   assert(Array.isArray(rows) && rows.length >= 12, 'Final acceptance has insufficient source evidence.')
   const seen = new Set()
   for (const row of rows) {
@@ -58,8 +58,8 @@ function verifySourceEvidence(rows) {
     assert(!seen.has(row.path), `Final acceptance repeats source evidence ${row.path}.`)
     seen.add(row.path)
     assert(hashPattern.test(row.sha256), `Final acceptance has an invalid SHA-256 for ${row.path}.`)
-    assert(existsSync(resolve(ROOT, row.path)), `Final acceptance source evidence is absent: ${row.path}.`)
-    assert(sha256(bytes(row.path)) === row.sha256, `Final acceptance source evidence drift: ${row.path}.`)
+    assert(existsSync(resolve(ROOT, row.path)), `Final acceptance source evidence is absent from the current checkout: ${row.path}.`)
+    assert(sha256(sourceBytes(row.path)) === row.sha256, `Final acceptance tagged source evidence drift: ${row.path}.`)
   }
 }
 
@@ -100,13 +100,17 @@ function verifyTag(acceptance) {
 function main() {
   const acceptance = json(ACCEPTANCE_PATH)
   const schema = json('data/release-readiness/schemas/final-acceptance.schema.v1.json')
-  const pkg = json('package.json')
-  const lock = json('package-lock.json')
-  const mints = json('data/release-readiness/version-mints.v1.json')
-  const rubric = json('data/release-readiness/release-gate-rubric.v1.json')
-  const dossier = json('data/release-readiness/acceptance-dossier.v1.json')
-  const changelog = bytes('CHANGELOG.md').toString('utf8')
-  const notes = bytes('docs/releases/1.0.0.md').toString('utf8')
+  const finalTagExists = tagExists(FINAL_TAG)
+  const releaseBytes = path => finalTagExists ? taggedBytes(path) : bytes(path)
+  const releaseJson = path => JSON.parse(releaseBytes(path).toString('utf8'))
+  const pkg = releaseJson('package.json')
+  const lock = releaseJson('package-lock.json')
+  const mints = releaseJson('data/release-readiness/version-mints.v1.json')
+  const rubric = releaseJson('data/release-readiness/release-gate-rubric.v1.json')
+  const dossier = releaseJson('data/release-readiness/acceptance-dossier.v1.json')
+  const changelog = releaseBytes('CHANGELOG.md').toString('utf8')
+  const notes = releaseBytes('docs/releases/1.0.0.md').toString('utf8')
+  const currentPackage = json('package.json')
   const qualityGate = bytes('scripts/quality-gate.sh').toString('utf8')
 
   for (const field of schema.required) assert(Object.hasOwn(acceptance, field), `Final acceptance lacks required field ${field}.`)
@@ -135,7 +139,7 @@ function main() {
 
   assert(dossier.status === 'READY_FOR_OWNER_REVIEW' && dossier.ownerReview?.releaseTransactionsAuthorized === 0, 'The immutable pre-decision dossier was rewritten as authorization.')
   assert(acceptance.dossier?.path === 'data/release-readiness/acceptance-dossier.v1.json', 'Final acceptance dossier path drifted.')
-  assert(sha256(bytes(acceptance.dossier.path)) === acceptance.dossier.sha256, 'Final acceptance dossier binding drifted.')
+  assert(sha256(releaseBytes(acceptance.dossier.path)) === acceptance.dossier.sha256, 'Final acceptance dossier binding drifted.')
 
   assert(rubric.rows.length === 67, 'Release rubric no longer contains 67 rows.')
   const expectedTransactionRows = [
@@ -152,16 +156,16 @@ function main() {
   assert(changelog.includes('## [1.0.0] - 2026-08-28') && !changelog.includes('Final `1.0.0` remains pending'), 'Final changelog state drifted.')
   assert(notes.includes('> **Released:** Rotom Table 1.0.0 was released on 2026-08-28') && !notes.includes('> **Release-candidate document:**'), 'Final release-note state drifted.')
   verifyProductPhase()
-  verifySourceEvidence(acceptance.sourceEvidence)
+  verifySourceEvidence(acceptance.sourceEvidence, releaseBytes)
 
-  assert(pkg.scripts?.['check:release-readiness:final-acceptance'] === 'node scripts/release-readiness/check-final-acceptance.mjs', 'Final-acceptance command is not registered.')
-  assert(pkg.scripts?.['check:release-readiness']?.includes('check:release-readiness:final-acceptance'), 'Aggregate release-readiness gate omits final acceptance.')
+  assert(currentPackage.scripts?.['check:release-readiness:final-acceptance'] === 'node scripts/release-readiness/check-final-acceptance.mjs', 'Final-acceptance command is not registered.')
+  assert(currentPackage.scripts?.['check:release-readiness']?.includes('check:release-readiness:final-acceptance'), 'Aggregate release-readiness gate omits final acceptance.')
   assert(qualityGate.includes('run_cmd node scripts/release-readiness/check-final-acceptance.mjs'), 'Full quality gate omits final acceptance.')
   assert(acceptance.publication?.localTagCreated === true && acceptance.publication?.remoteTagPublished === false, 'Final acceptance blurs local release and publication.')
   assert(acceptance.releaseEvidence?.tracked === false && acceptance.releaseEvidence?.command === 'npm run release:prepare', 'Final acceptance release-evidence posture drifted.')
 
   const tagVerified = verifyTag(acceptance)
-  process.stdout.write(`Final acceptance passed: 1.0.0 minted once, owner GO consumed once, PRODUCT_PHASE released once, 65/67 rows final at the atomic transaction; ${tagVerified ? 'immutable v1.0.0 verified' : 'annotated v1.0.0 pending preflight'}; remote publication unauthorized.\n`)
+  process.stdout.write(`Final acceptance passed: 1.0.0 minted once, owner GO consumed once, PRODUCT_PHASE released once, 65/67 rows final at the atomic transaction; ${tagVerified ? 'immutable v1.0.0 transaction binding verified (released-identity verification is separate)' : 'annotated v1.0.0 pending preflight'}; remote publication unauthorized.\n`)
 }
 
 try {
