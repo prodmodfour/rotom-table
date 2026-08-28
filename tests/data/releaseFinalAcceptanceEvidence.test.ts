@@ -52,6 +52,20 @@ describe('release final-acceptance evidence', () => {
     }
     else {
       expect(artifact.status).toBe('VERIFIED')
+      expect(artifact.gateOutcome).toEqual({
+        releaseRubricRows: 67,
+        rowsFinal: 67,
+        blockedRows: 0,
+        sequencePendingRows: [],
+      })
+      expect(artifact.planClosure).toMatchObject({
+        ticket: 'P13-086',
+        status: 'ARCHIVED',
+        ticketsDone: 86,
+        ticketsTotal: 86,
+        allRegisteredPlansDone: true,
+        post1_0ScopeActivated: false,
+      })
       expect(run('scripts/release-readiness/check-released-identity.mjs'))
         .toContain('two clean tagged builds reproduced every output checksum exactly')
     }

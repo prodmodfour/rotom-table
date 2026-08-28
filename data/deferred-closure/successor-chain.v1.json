@@ -7910,6 +7910,42 @@
       ],
       "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:agents-md:p13-successor-v9",
+      "ticket": "P13-046",
+      "surface": "AGENTS.md",
+      "beforeSha256": "f4429824d675312d2fb7649d6f0f1e784a0f7a225ce45f06d34426a83fa79984",
+      "afterSha256": "ca2a0b7fbfc7999c2b00d0fb8bed69c74335485e1291a7f596f0cd0c43462cd6",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-plan-order-md:p13-successor-v9",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "e4c90c289a8a3a5dc4b47d665d02cf3919f9e3dd42fd088d3088d2e74751420c",
+      "afterSha256": "db1e288a13773de63e88353bc5a767679ca6315aabf5cb1ca17ff2188ab59d0b",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-drafts-release-readiness-plan-md:p13-successor-v2",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/drafts/RELEASE_READINESS_PLAN.md",
+      "beforeSha256": "5a88c5abd79a5f92e4acfdc60dd25fc64354c40f95e19086ae92a0d1b16f2fd6",
+      "afterSha256": "7165809b75c787d18e9f36126f3183e506052b4e650a76f7b194f687036f2b0d",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [

@@ -1,8 +1,8 @@
 # 1.0 Release Readiness Implementation Plan
 
-`PLAN_STATUS: IN_PROGRESS`
+`PLAN_STATUS: DONE`
 
-`CURRENT_TICKET: P13-085`
+`CURRENT_TICKET: NONE`
 
 `BLOCKED_BY: NONE`
 
@@ -165,8 +165,8 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 10/10 |
 | 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 14/14 |
 | 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 10/10 |
-| 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 8/10 |
-| **Total** | | **84/86** |
+| 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 10/10 |
+| **Total** | | **86/86** |
 
 ## Tickets
 
@@ -529,15 +529,14 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
   - One reviewed release commit mints `1.0.0` exactly once, finalizes notes and changelog, generates checksums and the provenance record, transitions `PRODUCT_PHASE` out of `ALPHA`, and records `data/release-readiness/final-acceptance.v1.json`; the commit is annotated-tagged `v1.0.0`.
   - Agreement across version, tag, notes, provenance, phase, and acceptance is proven by the P13-016 gate before the transaction closes.
   - Evidence: mint sequence 8 records the only `1.0.0-rc.7 → 1.0.0` transition; package/lock, final changelog, release notes, `PRODUCT_PHASE: RELEASED`, and `final-acceptance.v1.json` are one reviewed release tree. The strict tag-aware identity and final-acceptance gates bind that tree to immutable annotated `v1.0.0`; `npm run release:prepare` produces and verifies the ignored local checksum/provenance bundle without remote publication. The final acceptance closes owner-go and atomic-transition rows, leaving only released-identity verification and archival in sequence.
-- [ ] **P13-085 — Verify the released identity** — `IN_PROGRESS`
+- [x] **P13-085 — Verify the released identity** — `DONE`
   - On the supported deployment shape at the tagged commit: reported version, tag, notes, schema version, and build provenance agree; the tag-commit rebuild reproduces the recorded checksums per policy.
   - Divergence reopens the release under rule 9; the tag is never mutated.
-  - Failed-closed evidence: immutable `v1.0.0` at `5ef7c874…` passed identity/health/provenance checks, but its 13,629-file release-preparation checksum `c4a206f0…` did not reproduce after an exact-lock clean-output rebuild (`c368ede6…`); a third identical-source build produced `a10c35aa…`. The first comparison had 292 paths unique to each output plus four changed common paths; the next had 396 unique to each plus four changed common paths. `released-identity-verification.v1.json` therefore forbids representing `v1.0.0` as verified, preserves the tag unchanged and unpublished, and makes the default released-identity gate non-zero.
-  - Repair prepared, not accepted: release-only Nuxt build IDs now derive from package/commit identity; nondeterministic SSR style aggregators are disabled in favour of stable linked CSS; Nitro public assets are sorted and their dates/mtimes normalized to `SOURCE_DATE_EPOCH`; `release:prepare` installs the exact lock itself. Two diagnostic builds reproduced all 12,663 output checksums exactly at `db0e9ea7…`, and production liveplay loaded 3 stylesheets with 278 rules, zero overflow, and zero console errors/warnings. Because that repair source is untagged, the proof is deliberately inadmissible as release acceptance.
-  - Owner authorization: after the failed-closed evidence and plain-language effect were explained, the owner responded explicit `GO`, authorizing exactly one local atomic `1.0.1` successor transaction. The authorization does not permit moving `v1.0.0`, remote publication, deployment, artifact upload, evidence upload, or any legal-clearance claim. The transaction is consumed by the reviewed `1.0.1` commit and annotated `v1.0.1` tag; P13-085 closes only after a second clean tagged build reproduces the reference checksums exactly.
-- [ ] **P13-086 — Archive the ledger and record the post-1.0 boundary** — `TODO`
+  - Failed-closed predecessor evidence: immutable `v1.0.0` at `5ef7c874…` passed identity/health/provenance checks, but its 13,629-file release-preparation checksum `c4a206f0…` did not reproduce after an exact-lock clean-output rebuild (`c368ede6…`); a third identical-source build produced `a10c35aa…`. `released-identity-verification.v1.json` permanently forbids representing `v1.0.0` as verified and preserves the tag unchanged and unpublished.
+  - Deterministic successor evidence: owner-authorized release commit `3dd60fd843af50b3efc40735cc2bf8bb8e8652b4`, tree `4a29af0e3478f11f3b7b0a7d3135bbd977df18bd`, and immutable annotated tag object `05ff9237bd6607e4b4d5b1a6ff8e298529043a4d` bind `v1.0.1`. A status-zero `npm run release:prepare` reference and a second clean exact-lock tagged build each produced 12,663 files/377,746,951 bytes, zero artifact-audit findings, and the exact checksum manifest SHA-256 `82fb0dfd…`; comparison found zero differing paths. The rebuilt Nitro server's `/api/health` and `/api/version` both reported `1.0.1`, schema v56, the exact commit/tag, and complete release provenance. One earlier host-OOM interruption and two non-build operator setup failures are explicitly inadmissible. No tag moved and nothing was published, uploaded, deployed, or represented as legal clearance.
+- [x] **P13-086 — Archive the ledger and record the post-1.0 boundary** — `DONE`
   - Archive this ledger to `implementation-plans/done/`, synchronize `plan-order.md` and `AGENTS.md`, and record that 1.x expansion scopes remain intent-only until reviewed into numbered ledgers.
-  - The finish line defined in `plan-order.md` is met; no autonomous-continuation obligation survives archival.
+  - Evidence: this 86/86 ledger is archived at `implementation-plans/done/RELEASE_READINESS_PLAN.md`; `plan-order.md` and `AGENTS.md` record all 13 numbered plans `DONE`, the verified local `v1.0.1` identity, the immutable failed `v1.0.0`, and the unchanged no-publication boundary. No prospective or post-1.0 scope is activated.
 
 ## Phase exit gates
 
@@ -570,7 +569,7 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - All 86 tickets are `DONE` and every release-gate rubric row is `Certified`, `Approved`, `Documented boundary` (register-listed only), or `Repaired` — zero `Blocked` rows.
 - Every promised campaign upgrade and restore path passes; complete-catalog golden regression is green; distribution contains no private authority; licensing and fan-content notices have explicit reviewed owner dispositions.
 - Full repository validation and traced desktop/mobile production liveplay pass at the release candidate.
-- Version, tag, notes, checksums, build provenance, `PRODUCT_PHASE`, and the machine-readable `data/release-readiness/final-acceptance.v1.json` agree through one atomic release transaction, verified on the supported deployment shape.
+- The historical atomic `1.0.0` transaction remains immutable and failed closed on checksum reproduction; owner-authorized `v1.0.1` binds the deterministic repair and reproduces every tagged output checksum exactly while `PRODUCT_PHASE` remains `RELEASED` and schema authority remains v56.
 - The ledger is archived, both authoritative indexes are synchronized, and the post-1.0 boundary is recorded.
 
 ## Decision log
@@ -595,3 +594,4 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - **2026-08-28 — Owner GO and atomic 1.0 transaction.** The owner responded explicit `GO`, authorizing exactly one local P13-084 release transaction after the dossier and its recommendation-5 residual risk were explained; remote publication remains unauthorized. Mint sequence 8 performs the only `1.0.0-rc.7 → 1.0.0` transition. One reviewed release tree binds final package/lock identity, changelog, notes, `PRODUCT_PHASE: RELEASED`, and `final-acceptance.v1.json` to immutable annotated `v1.0.0`; the strict release command generates and verifies local ignored checksums and provenance before P13-084 closes. No candidate or final tag is pushed.
 - **2026-08-28 — P13-085 checksum divergence failed closed.** The exact-lock rebuild from immutable `v1.0.0` retained correct runtime identity and zero artifact-audit findings but did not reproduce its checksum manifest (`c4a206f0…` reference, `c368ede6…` rebuild, `a10c35aa…` third build). Investigation confirmed Nuxt random build identity/asynchronous SSR style aggregation and Nitro parallel asset ordering/wall-clock metadata as output entropy. A source repair now produces two byte-exact 12,663-file diagnostic outputs (`db0e9ea7…`) and passes production liveplay styling/console checks, but untagged diagnostics cannot close P13-085. `v1.0.0` remains immutable and unpublished; activation decision 9 reopens the release. The consumed one-transaction GO does not authorize the required `1.0.1` successor, so execution is blocked on `OWNER_PATCH_RELEASE_AUTHORIZATION_P13_085`; remote publication remains unauthorized regardless.
 - **2026-08-28 — Owner GO for one local `1.0.1` successor.** After the checksum failure, immutable-tag rule, deterministic repair, and no-publication boundary were explained in plain English, the owner responded `go`. This authorizes exactly one local atomic patch transaction: mint `1.0.1`, bind the repair, notes, acceptance, commit, and annotated `v1.0.1` tag, then perform exact tagged checksum verification. It does not authorize moving `v1.0.0`, pushing either tag, publishing notes/artifacts/evidence, deploying, or changing the accepted recommendation-5 licensing boundary.
+- **2026-08-28 — `v1.0.1` exact reproduction verified and Plan 13 archived.** The consumed patch transaction created release commit `3dd60fd843af50b3efc40735cc2bf8bb8e8652b4` and immutable annotated tag object `05ff9237bd6607e4b4d5b1a6ff8e298529043a4d`. The first tagged reference attempt was rejected after a kernel-confirmed host OOM, and two later setup-only failures reached no build. A fresh inhibited status-zero `release:prepare` reference and one independent clean exact-lock tagged build then each produced 12,663 files/377,746,951 bytes, zero audit findings, and checksum manifest `82fb0dfd…`; all 12,663 rows matched exactly. Immutable `v1.0.0` remains failed and unpublished, remote publication remains unauthorized, all 86 tickets are done, and no post-1.0 scope is activated by this archive.

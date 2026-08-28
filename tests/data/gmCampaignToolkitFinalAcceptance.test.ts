@@ -121,14 +121,15 @@ describe('P12-096 GM Campaign Toolkit final acceptance', () => {
     })
     const draft = read(acceptance.nextProspectivePlan.draftPath)
     expect(draft).toContain('`DRAFT_STATUS: CONVERTED`')
-    expect(draft).toContain('`AUTHORITATIVE_LEDGER: implementation-plans/RELEASE_READINESS_PLAN.md`')
-    const ledger = read('implementation-plans/RELEASE_READINESS_PLAN.md')
-    expect(ledger).toContain('`PLAN_STATUS: IN_PROGRESS`')
-    expect(ledger).toContain('`BLOCKED_BY: NONE`')
+    expect(draft).toContain('`AUTHORITATIVE_LEDGER: implementation-plans/done/RELEASE_READINESS_PLAN.md`')
+    const ledger = read('implementation-plans/done/RELEASE_READINESS_PLAN.md')
+    expect(ledger).toContain('`PLAN_STATUS: DONE`')
+    expect(ledger).toContain('`CURRENT_TICKET: NONE`')
+    expect(ledger).toContain('**86/86**')
     expect(read('implementation-plans/plan-order.md')).toContain(
-      '| 13 | [1.0 Release Readiness](RELEASE_READINESS_PLAN.md) | `IN_PROGRESS` |',
+      '| 13 | [1.0 Release Readiness](done/RELEASE_READINESS_PLAN.md) | `DONE` |',
     )
-    expect(read('AGENTS.md')).toContain('Plan 13 ([1.0 Release Readiness](implementation-plans/RELEASE_READINESS_PLAN.md)) is active')
+    expect(read('AGENTS.md')).toContain('Plans 1–13 are `DONE` and archived')
     expect(Object.values(acceptance.finalAssertions).every(Boolean)).toBe(true)
   })
 })

@@ -13,7 +13,7 @@ Rotom Table is a fan project. It is not official, endorsed, or a commercial Pok√
 
 ## Release identity
 
-The current release is **1.0.1**, storage schema **v56**. It is the deterministic successor to the immutable, unpublished `v1.0.0` tag that failed exact checksum reproduction. No gameplay, canonical PTU data, or campaign migration changed in this patch.
+The current release is **1.0.1**, storage schema **v56**, verified locally only. It is the deterministic successor to the immutable, unpublished `v1.0.0` tag that failed exact checksum reproduction. Two clean tagged builds reproduced all 12,663 output checksums exactly (manifest SHA-256 `82fb0dfd‚Ä¶`) with zero artifact-audit findings. No gameplay, canonical PTU data, or campaign migration changed in this patch, and remote publication remains unauthorized.
 
 A running private deployment reports the same package/build identity at:
 

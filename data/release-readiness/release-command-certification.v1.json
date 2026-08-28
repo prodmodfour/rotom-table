@@ -52,11 +52,11 @@
     },
     {
       "path": "docs/releases/1.0.1.md",
-      "sha256": "de4b373848f4c3e6aa1f7a4ccefc98cf3f7d5cfe361983470489f92231d67b8f"
+      "sha256": "8b25d8068dcdb5218ecff40309c2f599b19e9ccc9a3e43c67ee9eb1083f5cfed"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "065658e2110316135fae0a418f95531fcf7e5a56a47029bafce912f408f2d37a"
+      "sha256": "b9bd57f4ede6f821bb63b5619644fe66dd934847959c0acb330b7aefff996e14"
     },
     {
       "path": "data/release-readiness/version-policy.v1.json",

@@ -2,7 +2,7 @@
   "artifact": "released-identity-verification",
   "schemaVersion": 1,
   "ticket": "P13-085",
-  "status": "PATCH_TRANSACTION_ACCEPTED_VERIFICATION_PENDING",
+  "status": "VERIFIED",
   "failedRelease": {
     "release": {
       "version": "1.0.0",
@@ -186,34 +186,94 @@
       ]
     },
     "verification": {
-      "status": "PENDING_TAGGED_REPRODUCTION",
+      "status": "VERIFIED_EXACT_REPRODUCTION",
       "referenceCommand": "npm run release:prepare",
       "rebuildCommand": "npm ci --include=dev && npm run build",
       "comparison": "byte-for-byte checksums.sha256 equality",
       "requiredBuilds": 2,
-      "acceptedBuilds": 0
+      "acceptedBuilds": 2,
+      "outputFilesPerBuild": 12663,
+      "outputBytesPerBuild": 377746951,
+      "checksumManifestSha256": "82fb0dfde37d6c4ec74a5b3cc40fc27d6ae751fc34b7c2668d91ecdb64a6ea9e"
     },
     "publication": {
-      "localTagCreated": false,
+      "localTagCreated": true,
       "remoteTagPublished": false,
       "releaseNotesPublished": false,
       "artifactsUploaded": false,
       "evidenceUploaded": false,
       "deploymentPerformed": false
+    },
+    "commit": "3dd60fd843af50b3efc40735cc2bf8bb8e8652b4",
+    "tree": "4a29af0e3478f11f3b7b0a7d3135bbd977df18bd",
+    "annotatedTagObject": "05ff9237bd6607e4b4d5b1a6ff8e298529043a4d",
+    "supportedBuilder": {
+      "platform": "linux",
+      "architecture": "x64",
+      "node": "v24.16.0",
+      "npm": "11.13.0",
+      "sourceDateEpoch": "1787930761"
+    },
+    "runtimeIdentitySmoke": {
+      "status": "passed",
+      "version": "1.0.1",
+      "storageSchemaVersion": 56,
+      "buildKind": "release",
+      "commit": "3dd60fd843af50b3efc40735cc2bf8bb8e8652b4",
+      "tag": "v1.0.1",
+      "provenanceComplete": true,
+      "healthEvidencePath": ".pi/logs/release-acceptance/1.0.1/runtime-identity-smoke/health.json",
+      "healthEvidenceSha256": "ca08b626ab20c63b9967606778b7f95a4c8213ffe7b0d45ae351b0e90861d4dc",
+      "versionEvidencePath": ".pi/logs/release-acceptance/1.0.1/runtime-identity-smoke/version.json",
+      "versionEvidenceSha256": "a38f0e8b33f12e7b4ac087d6e354e879882a479a40bc2de1ae33df1e346ab11d"
     }
   },
-  "verificationAttempts": [],
+  "verificationAttempts": [
+    {
+      "id": "tagged-release-prepare-reference-attempt-4",
+      "admissible": true,
+      "status": 0,
+      "outputFiles": 12663,
+      "outputBytes": 377746951,
+      "checksumManifestSha256": "82fb0dfde37d6c4ec74a5b3cc40fc27d6ae751fc34b7c2668d91ecdb64a6ea9e",
+      "evidencePath": ".pi/logs/release-acceptance/1.0.1/reproducibility/reference-evidence/checksums.sha256",
+      "evidenceFileSha256": "82fb0dfde37d6c4ec74a5b3cc40fc27d6ae751fc34b7c2668d91ecdb64a6ea9e",
+      "artifactAuditSha256": "01a050a17d7742a1f24f7451152aedd29a51469ab2971b78b292d7b809578a0e",
+      "invocationLogPath": ".pi/logs/release-acceptance/1.0.1/release-prepare-reference-attempt-4.log",
+      "invocationLogSha256": "cc97a8da7acfc13b0aadf98cf0b047a94c10638873628c46feee884efa405117"
+    },
+    {
+      "id": "clean-exact-lock-tag-rebuild",
+      "admissible": true,
+      "status": 0,
+      "outputFiles": 12663,
+      "outputBytes": 377746951,
+      "checksumManifestSha256": "82fb0dfde37d6c4ec74a5b3cc40fc27d6ae751fc34b7c2668d91ecdb64a6ea9e",
+      "evidencePath": ".pi/logs/release-acceptance/1.0.1/reproducibility/rebuild-evidence/checksums.sha256",
+      "evidenceFileSha256": "82fb0dfde37d6c4ec74a5b3cc40fc27d6ae751fc34b7c2668d91ecdb64a6ea9e",
+      "artifactAuditSha256": "01a050a17d7742a1f24f7451152aedd29a51469ab2971b78b292d7b809578a0e",
+      "invocationLogPath": ".pi/logs/release-acceptance/1.0.1/independent-rebuild.log",
+      "invocationLogSha256": "a7cf9557138fa428e27276f2f79aa317691a165e9ebd3c3f888b666a159458ef"
+    }
+  ],
   "comparison": {
-    "byteExact": null,
-    "differentPaths": null,
-    "changedCommonPaths": null
+    "byteExact": true,
+    "differentPaths": 0,
+    "changedCommonPaths": 0,
+    "unchangedCommonPaths": 12663,
+    "outputFilesPerBuild": 12663,
+    "outputBytesPerBuild": 377746951,
+    "checksumManifestSha256": "82fb0dfde37d6c4ec74a5b3cc40fc27d6ae751fc34b7c2668d91ecdb64a6ea9e",
+    "operatorReportPath": ".pi/logs/release-acceptance/1.0.1/reproducibility/comparison-report.v1.json",
+    "operatorReportSha256": "d6cb4b55ad84301a5bc8af97df195993f3a79067324575b3b1bae0bcea900174"
   },
   "disposition": {
     "v1_0_0MayBeRepresentedAsVerified": false,
-    "v1_0_1MayBeRepresentedAsVerified": false,
+    "v1_0_1MayBeRepresentedAsVerified": true,
     "ownerPatchReleaseAuthorizationRecorded": true,
     "releaseTransactionsAuthorizedRemaining": 0,
-    "remotePublicationRemainsUnauthorized": true
+    "remotePublicationRemainsUnauthorized": true,
+    "plan13ReleasedIdentityRowMayClose": true
   },
   "sourceEvidence": [
     {
@@ -341,5 +401,61 @@
       "path": "tests/data/releaseFinalAcceptanceEvidence.test.ts",
       "sha256": "34db9a892e6a4991170577e12555cc3411ab12ea8ffccfdecee4f794f3a7e941"
     }
-  ]
+  ],
+  "excludedAttempts": [
+    {
+      "id": "tagged-release-prepare-reference-attempt-1",
+      "admissible": false,
+      "status": null,
+      "reason": "HOST_OOM_KILL",
+      "buildCompleted": false,
+      "evidencePath": ".pi/logs/release-acceptance/1.0.1/release-prepare-reference-attempt-1-interruption.v1.json",
+      "evidenceSha256": "69585d004b57f0835f4ed95c5f842b071b6d9531bef493c9ebc957f52a5a8980"
+    },
+    {
+      "id": "tagged-release-prepare-reference-attempt-2",
+      "admissible": false,
+      "status": 1,
+      "reason": "SYSTEM_SERVICE_INHIBITOR_PERMISSION_DENIED",
+      "buildStarted": false,
+      "logPath": ".pi/logs/release-acceptance/1.0.1/release-prepare-reference-attempt-2.log",
+      "logSha256": "ed63217ee6093557324f3ab2b1be9112c84d4d99ca261640fd9257dd460db850"
+    },
+    {
+      "id": "tagged-release-prepare-reference-attempt-3",
+      "admissible": false,
+      "status": 1,
+      "reason": "INTERRUPTED_ATTEMPT_REMOVED_IGNORED_RELEASE_EVIDENCE_DIRECTORY",
+      "buildStarted": false,
+      "logPath": ".pi/logs/release-acceptance/1.0.1/release-prepare-reference-attempt-3.log",
+      "logSha256": "65ef950a7afec927fabf578fbfdb87c985c3512b5f2b4aafc4c20527530c98fe"
+    }
+  ],
+  "gateRows": [
+    {
+      "id": "transition-released-identity",
+      "state": "Certified",
+      "ticket": "P13-085"
+    },
+    {
+      "id": "transition-archive",
+      "state": "Certified",
+      "ticket": "P13-086"
+    }
+  ],
+  "gateOutcome": {
+    "releaseRubricRows": 67,
+    "rowsFinal": 67,
+    "blockedRows": 0,
+    "sequencePendingRows": []
+  },
+  "planClosure": {
+    "ticket": "P13-086",
+    "status": "ARCHIVED",
+    "ticketsDone": 86,
+    "ticketsTotal": 86,
+    "ledger": "implementation-plans/done/RELEASE_READINESS_PLAN.md",
+    "allRegisteredPlansDone": true,
+    "post1_0ScopeActivated": false
+  }
 }

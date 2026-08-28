@@ -27,6 +27,7 @@ No changes have been recorded after 1.0.1.
 ### Operations
 
 - Preserved the local, unpublished `v1.0.0` checksum failure instead of moving or rewriting its tag. `v1.0.1` is its owner-authorized deterministic successor; remote publication remains a separate owner action.
+- Verified the immutable local `v1.0.1` tag with a status-zero release reference and a second clean exact-lock tagged build: both produced 12,663 files, 377,746,951 bytes, zero artifact-audit findings, and checksum manifest SHA-256 `82fb0dfd…` with no differing paths.
 - Kept storage authority at schema v56 with no gameplay, canonical PTU data, or campaign migration change.
 
 ## [1.0.0] - 2026-08-28
@@ -51,7 +52,7 @@ No changes have been recorded after 1.0.1.
 
 ### Operations
 
-- The immutable annotated `v1.0.0` tag binds the release commit, final notes, machine-readable acceptance, package and lock identity, source-distribution manifest, and recorded build inputs. Its subsequent checksum-reproduction failure is preserved in **Unreleased** rather than hidden or repaired by moving the tag.
+- The immutable annotated `v1.0.0` tag binds the release commit, final notes, machine-readable acceptance, package and lock identity, source-distribution manifest, and recorded build inputs. Its subsequent checksum-reproduction failure is preserved in the `1.0.1` history and machine-readable verification record rather than hidden or repaired by moving the tag.
 - Database rollback means restoring the exact pre-upgrade backup; in-place database downgrade is unsupported.
 - Checksums and provenance are generated locally from the tagged commit. Remote publication of tags, notes, artifacts, or evidence remains separately owner-controlled.
 

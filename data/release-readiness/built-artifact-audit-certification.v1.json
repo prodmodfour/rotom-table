@@ -78,7 +78,7 @@
     },
     {
       "path": "data/release-readiness/distribution-manifest.v1.json",
-      "sha256": "2cbc55ba879c4f025cb0d18b3122754412dda7f849960767dd92e5ea152dc89f"
+      "sha256": "47dd930284e12e133c8721a0baae6fad5c42962f9bf25164e3ab0502d900ee3b"
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",

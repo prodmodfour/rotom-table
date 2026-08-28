@@ -10,7 +10,7 @@
       "id": "tagged-source-repository",
       "authority": "data/release-readiness/tracked-tree-inventory.v1.json",
       "pathCount": 16893,
-      "pathSetSha256": "6a6bd80bd8a28d667803aa8c93d030718872432f53253131b35ffc353f8a9a57"
+      "pathSetSha256": "1fc0dbc4e09fa317d6b9b75be3df82c55dada4284ed45782c51182a17321ab1f"
     },
     {
       "id": "generated-production-build",
@@ -30,7 +30,7 @@
     },
     "status": "COMPLETE",
     "trackedPathCount": 16893,
-    "trackedPathSetSha256": "6a6bd80bd8a28d667803aa8c93d030718872432f53253131b35ffc353f8a9a57",
+    "trackedPathSetSha256": "1fc0dbc4e09fa317d6b9b75be3df82c55dada4284ed45782c51182a17321ab1f",
     "categoryPathCounts": {
       "authored": 5061,
       "documentary": 1324,
@@ -476,7 +476,7 @@
       "data/release-readiness/distribution-manifest.v1.json",
       "data/release-readiness/tracked-tree-inventory.v1.json"
     ],
-    "stableBindingSha256": "6b6ab5b04c1e7cd4e7e55769d9e5d522766692158765f06eb435c29ce3ec655b",
+    "stableBindingSha256": "29e2d0a2132b633c3c4289493f39a4641f77df6f29dda224dd8eefad1424a690",
     "note": "The manifest path is classified but excluded from the aggregate content digest to avoid self-reference; its own bytes are checked by this generator."
   },
   "ownerDispositions": {
@@ -672,7 +672,7 @@
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",
-      "sha256": "17c94ba5f9d68044ee57cc1fcc7cc3fc192e795d5a6b42a55189b6e79208b56a"
+      "sha256": "4ed2d7b1017c13e8aa4d972d2e31289716feb6d93be90f1a09e30d475b76340d"
     },
     {
       "path": "data/release-readiness/documentary-tree-disposition.v1.json",

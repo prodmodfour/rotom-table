@@ -72,7 +72,7 @@
   "sourceEvidence": [
     {
       "path": "data/release-readiness/repository-presentation-certification.v1.json",
-      "sha256": "6184a07f05a569d1370458786bc011e5a6e0f47148dc9b521679a8291ca3a9bd"
+      "sha256": "1c2bbd3c2d3662c9a502955900629a7b2ae02ef0e4c34540fc373c1cee1378c7"
     },
     {
       "path": "data/release-readiness/distribution-inventory.v1.json",
@@ -80,7 +80,7 @@
     },
     {
       "path": "data/release-readiness/distribution-manifest.v1.json",
-      "sha256": "2cbc55ba879c4f025cb0d18b3122754412dda7f849960767dd92e5ea152dc89f"
+      "sha256": "47dd930284e12e133c8721a0baae6fad5c42962f9bf25164e3ab0502d900ee3b"
     },
     {
       "path": "data/release-readiness/documentary-tree-disposition.v1.json",
@@ -92,7 +92,7 @@
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",
-      "sha256": "17c94ba5f9d68044ee57cc1fcc7cc3fc192e795d5a6b42a55189b6e79208b56a"
+      "sha256": "4ed2d7b1017c13e8aa4d972d2e31289716feb6d93be90f1a09e30d475b76340d"
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
