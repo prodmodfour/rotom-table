@@ -2,7 +2,7 @@
 
 All notable Rotom Table product and operator changes are recorded here.
 
-Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.0 release transaction is approved and completed, the repository remains on a release-candidate identity; a pending section is not a released version.
+Rotom Table uses [Semantic Versioning](https://semver.org/). Rotom Table 1.0.0 is the first core-complete trusted-table release; a pending section is not a released version.
 
 ## Changelog convention
 
@@ -15,7 +15,39 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Until the atomic 1.
 
 ## [Unreleased]
 
-No changes have been recorded after the current candidate.
+No changes have been recorded after 1.0.0.
+
+## [1.0.0] - 2026-08-28
+
+### Added
+
+- Released one connected Field Guide, Workshop, and Live Encounter product with server-authoritative encounters, ordinary sheets, onboarding, breeding and Egg lifecycle, Contests, settlement and continuation, and deterministic private GM preparation.
+- Added role-safe release identity through `/api/health`, `/api/version`, and **Settings → About Rotom Table**, all reporting package version `1.0.0`, storage schema v56, and build provenance from one source of truth.
+- Added certified SQLite v1–v55 upgrades, documented JSON-era import, deterministic backup archives, fresh-host restore, aggregate integrity audit, and exact-backup rollback procedures.
+
+### Changed
+
+- The supported liveplay deployment is one private Linux x86-64 VPS per campaign group with Node 24, a production Nuxt/Nitro build under systemd, loopback origin binding, an outer access gate, and private operator-controlled campaign storage.
+- Runtime PTU authority is limited to the fourteen app-owned `data/reference/*.json` registries plus `shared/ruleset/natures.ts`; documentary and provenance trees are not runtime fallback sources.
+- Local hosting is deprecated. Browser certification covers Desktop Chrome and Pixel 7 Chromium.
+
+### Security
+
+- Production campaign writes remain disabled unless the operator deliberately configures exactly `ROTOM_ENABLE_HOSTED_WRITES=1` behind the outer access gate.
+- The GM/Player picker is a trusted-table role choice, not public authentication.
+- Release artifacts are audited for campaign data, credentials, SQLite sidecars, browser traces, documentary runtime sources, and unreviewed dependencies before local evidence is accepted.
+
+### Operations
+
+- The immutable annotated `v1.0.0` tag binds the release commit, final notes, machine-readable acceptance, package and lock identity, source-distribution manifest, and deterministic build inputs.
+- Database rollback means restoring the exact pre-upgrade backup; in-place database downgrade is unsupported.
+- Checksums and provenance are generated locally from the tagged commit. Remote publication of tags, notes, artifacts, or evidence remains separately owner-controlled.
+
+### Boundaries
+
+- The project remains an unofficial, non-commercial fan project. Rotom's limited license does not grant rights to third-party Pokémon or PTU material, and notices are not legal clearance.
+- The recommendation-5 residual risk remains explicit: the owner accepted retaining 1,460 edited Trainer-profile derivatives despite the recorded source warning.
+- Public SaaS, multi-tenancy, public authentication, federation, non-Chromium certification, and supplement or expansion content packs are outside the 1.0 support promise.
 
 ## [1.0.0-rc.7] - 2026-08-27
 
@@ -160,4 +192,4 @@ These plan-level milestones describe the capability spine accumulated before the
 
 ### Release readiness
 
-- **1.0 Release Readiness** freezes version, upgrade, backup/restore, complete-catalog, distribution, licensing/notices, rehearsal, and final-acceptance guarantees. Final `1.0.0` remains pending the explicit owner go/no-go and one atomic release transaction.
+- **1.0 Release Readiness** froze version, upgrade, backup/restore, complete-catalog, distribution, licensing/notices, rehearsal, and final-acceptance guarantees, then completed the owner-approved atomic `1.0.0` transition.

@@ -20,7 +20,7 @@ git rev-parse HEAD
 git tag --points-at HEAD
 ```
 
-The package version must have been minted through the version authority. `v<package version>` must already exist as an **annotated** tag at `HEAD`, and its annotation must identify that version. Existing tags are immutable; if a rehearsal candidate changes, mint and tag the next candidate rather than moving the old tag.
+The package version must have been minted through the version authority. `v<package version>` must already exist as an **annotated** tag at `HEAD`, and its annotation must identify that version. Existing tags are immutable; if a rehearsal candidate changes, mint and tag the next candidate rather than moving the old tag. If a final tagged release needs a source repair, mint the next patch version.
 
 The command accepts no bypass, skip, path, or “allow dirty” arguments. `.output/`, `.nuxt-build/`, and `release-evidence/` must remain git-ignored generated directories and may not be symlinks.
 
@@ -65,6 +65,6 @@ The check requires the same immutable commit/tag and exact `.output` bytes. Any 
 
 - **Dirty tree:** review or commit source changes; never bypass the check.
 - **Missing/mismatched tag:** mint the intended next version if needed and create a new annotated tag at the reviewed commit. Never move an existing tag.
-- **Gate failure:** repair the owning source or certification and rerun from the beginning.
-- **Build or audit failure:** preserve private diagnostic material outside the checkout if needed, repair the source, mint a successor candidate when the tagged commit changed, and rerun.
+- **Gate failure:** repair the owning source or certification and rerun from the beginning. A repair after a final tag requires the next patch version.
+- **Build or audit failure:** preserve private diagnostic material outside the checkout if needed, repair the source, mint a successor candidate or patch when the tagged commit changed, and rerun.
 - **Evidence drift:** delete only ignored `.output/` and `release-evidence/`, then rerun from the immutable tagged source. Do not edit generated checksums or provenance by hand.

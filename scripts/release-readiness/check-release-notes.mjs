@@ -43,10 +43,17 @@ async function main() {
     readFile(path.join(repositoryRoot, 'data/release-readiness/known-limitations.v1.json'), 'utf8').then(JSON.parse),
   ])
 
+  const finalRelease = packageJson.version === '1.0.0'
   assert(notes.startsWith('# Rotom Table 1.0 release notes\n'), 'Release notes title drifted.')
-  assert(notes.includes('> **Release-candidate document:**'), 'Release notes must fail closed as release-candidate material before P13-084.')
-  assert(notes.includes(`currently \`${packageJson.version}\``), 'Release-note candidate identity disagrees with package.json.')
-  assert(!/^## 1\.0\.0 - \d{4}-\d{2}-\d{2}$/mu.test(notes), 'Release notes claim a final dated 1.0.0 before the atomic transaction.')
+  if (finalRelease) {
+    assert(notes.includes('> **Released:** Rotom Table 1.0.0 was released on 2026-08-28'), 'Release notes omit the final release marker and date.')
+    assert(notes.includes('These surfaces report `1.0.0` and storage schema v56.'), 'Release-note final identity disagrees with package.json.')
+    assert(!notes.includes('> **Release-candidate document:**'), 'Release notes retain the candidate marker after release.')
+  } else {
+    assert(notes.includes('> **Release-candidate document:**'), 'Release notes must fail closed as release-candidate material before P13-084.')
+    assert(notes.includes(`currently \`${packageJson.version}\``), 'Release-note candidate identity disagrees with package.json.')
+    assert(!/^## 1\.0\.0 - \d{4}-\d{2}-\d{2}$/mu.test(notes), 'Release notes claim a final dated 1.0.0 before the atomic transaction.')
+  }
 
   const operator = section(notes, 'Operator release notes')
   const operatorHeadings = [

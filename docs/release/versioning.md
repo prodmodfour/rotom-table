@@ -8,13 +8,13 @@ Never edit either package file directly. Use the reviewed mint authority with th
 
 ```bash
 npm run release:mint-version -- \
-  --from 1.0.0-rc.6 \
-  --to 1.0.0-rc.7 \
-  --ticket P13-077 \
+  --from 1.0.0 \
+  --to 1.0.1 \
+  --ticket P14-001 \
   --recorded-at YYYY-MM-DD
 ```
 
-Allowed 1.0 transitions are `NONE → 1.0.0-rc.1`, sequential `rc.N → rc.N+1`, and one `rc.N → 1.0.0` transition. The command synchronizes `package.json`, `package-lock.json`, and the append-only mint ledger. `npm run check:release-readiness:identity` rejects out-of-band edits.
+Replace the example ticket with the actual reviewed ticket from a registered numbered ledger. The completed 1.0 history used `NONE → 1.0.0-rc.1`, sequential `rc.N → rc.N+1`, and exactly one `rc.N → 1.0.0` transition. Post-1.0 transitions advance one patch at a time (`1.0.x → 1.0.x+1`). The command synchronizes `package.json`, `package-lock.json`, and the append-only mint ledger. `npm run check:release-readiness:identity` rejects out-of-band edits.
 
 ## Build and tag agreement
 

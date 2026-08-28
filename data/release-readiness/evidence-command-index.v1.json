@@ -84,6 +84,11 @@
       "bounded": true
     },
     {
+      "id": "final-acceptance",
+      "command": "npm run check:release-readiness:final-acceptance",
+      "bounded": true
+    },
+    {
       "id": "aggregate",
       "command": "npm run check:release-readiness",
       "bounded": true

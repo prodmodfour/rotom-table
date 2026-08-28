@@ -2,9 +2,9 @@
   "artifact": "release-private-artifact-audit",
   "schemaVersion": 1,
   "auditId": "p13-private-artifact-and-ignore-audit-v1",
-  "releaseVersion": "1.0.0-rc.7",
+  "releaseVersion": "1.0.0",
   "status": "Certified",
-  "distributionCandidatePaths": 16886,
+  "distributionCandidatePaths": 16888,
   "gitignore": {
     "path": ".gitignore",
     "sha256": "b2b6c4bed73dcd30013cc55724afc2330a84c0f904f44572007341a2f764fcc8",

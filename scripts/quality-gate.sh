@@ -130,6 +130,9 @@ if have npm; then
   if [[ -f scripts/release-readiness/check-acceptance-dossier.mjs ]]; then
     run_cmd node scripts/release-readiness/check-acceptance-dossier.mjs
   fi
+  if [[ -f scripts/release-readiness/check-final-acceptance.mjs ]]; then
+    run_cmd node scripts/release-readiness/check-final-acceptance.mjs
+  fi
 
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation

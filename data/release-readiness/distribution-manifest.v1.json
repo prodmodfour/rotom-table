@@ -2,15 +2,15 @@
   "artifact": "release-source-distribution-manifest",
   "schemaVersion": 1,
   "manifestId": "p13-065-source-distribution-v1",
-  "releaseVersion": "1.0.0-rc.7",
+  "releaseVersion": "1.0.0",
   "ticket": "P13-065",
   "status": "Certified",
   "distributionForms": [
     {
       "id": "tagged-source-repository",
       "authority": "data/release-readiness/tracked-tree-inventory.v1.json",
-      "pathCount": 16886,
-      "pathSetSha256": "5ad694ecfe09df1d921c94e74e41298be4d5834cc4c161219ddd009a106d11b9"
+      "pathCount": 16888,
+      "pathSetSha256": "51af60b0f867a9f4acefa8963b7330852cff8869fefbf9f16a312bc55d8ae1a7"
     },
     {
       "id": "generated-production-build",
@@ -29,24 +29,24 @@
       "sha256": "54a972c431cbaf35f680bb4d72961f1e48353031f1241e96586fb540c9b3b6dd"
     },
     "status": "COMPLETE",
-    "trackedPathCount": 16886,
-    "trackedPathSetSha256": "5ad694ecfe09df1d921c94e74e41298be4d5834cc4c161219ddd009a106d11b9",
+    "trackedPathCount": 16888,
+    "trackedPathSetSha256": "51af60b0f867a9f4acefa8963b7330852cff8869fefbf9f16a312bc55d8ae1a7",
     "categoryPathCounts": {
-      "authored": 5057,
+      "authored": 5058,
       "documentary": 1323,
-      "generated": 1076,
+      "generated": 1077,
       "private-data-sensitive": 5,
       "third-party": 9425
     },
     "rulePathCounts": {
       "authored-data": 359,
       "authored-root-files": 20,
-      "authored-source-trees": 4677,
+      "authored-source-trees": 4678,
       "authored-trainer-generator": 1,
       "documentary-root-files": 9,
       "documentary-trees": 1314,
       "generated-dependency-lock": 1,
-      "generated-release-evidence": 55,
+      "generated-release-evidence": 56,
       "generated-screenshots": 3,
       "generated-sheet-examples": 1015,
       "generated-trainer-datasets": 2,
@@ -177,10 +177,10 @@
       },
       {
         "path": "data",
-        "pathCount": 1443,
+        "pathCount": 1444,
         "categories": {
           "authored": 359,
-          "generated": 1070,
+          "generated": 1071,
           "third-party": 14
         }
       },
@@ -320,9 +320,9 @@
       },
       {
         "path": "scripts",
-        "pathCount": 148,
+        "pathCount": 149,
         "categories": {
-          "authored": 148
+          "authored": 149
         }
       },
       {
@@ -428,7 +428,7 @@
         "status": "OWNER_APPROVED_APPLIED",
         "matchedPathCount": 7956,
         "pathSetSha256": "b6f870724e3edb2ca4c8d981d0361f28724c18d6061f9a7728b3f5258291bd07",
-        "contentSetSha256": "0504f10e24b90d9f8d75c208c372acc3a8b4837ce649e9530564ae05c451193e",
+        "contentSetSha256": "5b72a95b7a4627cbc63befaf8b7c6cef557633806346c663103a57af347af757",
         "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json"
       },
       {
@@ -446,7 +446,7 @@
         "status": "OWNER_APPROVED_APPLIED",
         "matchedPathCount": 1,
         "pathSetSha256": "62d1b5e7751856dfa5d7d9fb28996e1e32b47223f0098ea6169c4984ad0d2645",
-        "contentSetSha256": "1de7b2c1a54eb3a5de19f4572b8fa726e0a7dd6f0b0a84366ebf9ca97d5e6cb3",
+        "contentSetSha256": "8cd905b21043b1277c2c79f90ef01a803d58a4f6a2bf5163f771f2b2ac401c68",
         "dispositionEvidence": "data/release-readiness/licensing-notice-disposition.v1.json"
       }
     ],
@@ -476,7 +476,7 @@
       "data/release-readiness/distribution-manifest.v1.json",
       "data/release-readiness/tracked-tree-inventory.v1.json"
     ],
-    "stableBindingSha256": "867740f1f86a5f3025e97b31cc02ac485c76218e579e939b1f540a9694a1cde7",
+    "stableBindingSha256": "bf95be90468bc4e2cd288e1b78cf933b740e862a5e65d1e6ff971a6b26956b03",
     "note": "The manifest path is classified but excluded from the aggregate content digest to avoid self-reference; its own bytes are checked by this generator."
   },
   "ownerDispositions": {
@@ -542,7 +542,7 @@
   "exclusionAudit": {
     "artifact": "data/release-readiness/private-artifact-audit.v1.json",
     "status": "Certified",
-    "distributionCandidatePaths": 16886,
+    "distributionCandidatePaths": 16888,
     "ignoreProbes": 29,
     "failedIgnoreProbes": 0,
     "scans": {
@@ -618,7 +618,7 @@
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
       "purpose": "generated npm, Python, and OFL notice bundle",
-      "sha256": "78c272415ff9ee921d57625b1fabaf195b4cbac98bd61d41cfddb9edf61c00ca"
+      "sha256": "deaf5ecd4b64f68521ee0f904a9bc13dc7e956428cfe31ce3b1f138e25a1793a"
     },
     {
       "path": "books/README.md",
@@ -668,11 +668,11 @@
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
-      "sha256": "78896465557b330865a7c484993f1c6de0c8a7af3ce216cbd1d8571370df17a3"
+      "sha256": "ca69e298145539b33d092fb637e2171f92514eed4a9a06bff13cfd7b504a6c9b"
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",
-      "sha256": "74658d6da2bb9e106dd8c6ef102a224dea92766883e2dccf63225d4bcbe6a72e"
+      "sha256": "d0835fa1692839a03fb6d1105ad34fc0ccd5a1748ad1742050913ea96e6facd2"
     },
     {
       "path": "data/release-readiness/documentary-tree-disposition.v1.json",
@@ -680,19 +680,19 @@
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "cb5a31ed8925986e4302ae8d483a840d314b66cd301ac145b7cf900578327e61"
+      "sha256": "c7cb457df1ccd582a87d1bfe610817372b3fd3a4f2dc462c758066c0294daced"
     },
     {
       "path": "data/release-readiness/licensing-notice-disposition.v1.json",
-      "sha256": "ff08c3baf101b92faa4f96493f27ca203e48f751f88eba550a88c9b30bdf16ee"
+      "sha256": "f50b29f134fa743d0d4bb2ebaa2140e71ae6f5e02effec734e627a71406f6f6f"
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "0d22c7a493f2d718ff8e959a7649c092d5c9e22a744d6b6a85d7a3e075e77f50"
+      "sha256": "c193922d944a4f2f5054f3ddd9053bb1f026b4cbd259a96baa81162025761a8b"
     },
     {
       "path": "data/release-readiness/private-artifact-audit.v1.json",
-      "sha256": "36dac81888eb31c0ab7e71f94ae2e44fbd4325eaccbe21c5d4f1850f9c469d1a"
+      "sha256": "97661fdbf4b78ca54da30cd4ee4b33bc307da04450151e5f5309f5f2d201fecb"
     },
     {
       "path": "data/release-readiness/tracked-tree-policy.v1.json",
@@ -716,15 +716,15 @@
     },
     {
       "path": "package-lock.json",
-      "sha256": "bab447155e73ab5a210c04b3ae5e6e8ade9ffa526fa9e7390102b5abacf4f190"
+      "sha256": "95793c40c834b5ae01f7057da8a53ad01281d0d5a3ab7f0595fe946f8eccf2a0"
     },
     {
       "path": "package.json",
-      "sha256": "e3efb38c0e1f8bfd4dd505ffd58d5858b70737f9535dfb6286c391d5fc634de0"
+      "sha256": "1666856ca72e3d17cb6e91019621e3db95113a15f24aa332e3f8f0b4ef136a0f"
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
-      "sha256": "78c272415ff9ee921d57625b1fabaf195b4cbac98bd61d41cfddb9edf61c00ca"
+      "sha256": "deaf5ecd4b64f68521ee0f904a9bc13dc7e956428cfe31ce3b1f138e25a1793a"
     },
     {
       "path": "requirements.txt",

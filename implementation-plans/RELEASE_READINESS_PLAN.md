@@ -2,15 +2,15 @@
 
 `PLAN_STATUS: IN_PROGRESS`
 
-`CURRENT_TICKET: P13-083`
+`CURRENT_TICKET: P13-085`
 
-`BLOCKED_BY: OWNER_GO_NO_GO_P13_083`
+`BLOCKED_BY: NONE`
 
 `DEPENDS_ON: implementation-plans/done/POKEMON_CONTESTS_PLAN.md, implementation-plans/done/DEFERRED_MECHANICS_CLOSURE_PLAN.md, implementation-plans/done/GM_CAMPAIGN_TOOLKIT_PLAN.md`
 
 `DESIGN_AUTHORITY: DESIGN.md`
 
-`PRODUCT_PHASE: ALPHA`
+`PRODUCT_PHASE: RELEASED`
 
 ## Owner start gate
 
@@ -165,8 +165,8 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 | 5 — Complete-catalog regression and mechanics finality | P13-043–P13-052 | 10/10 |
 | 6 — Distribution, presentation, licensing, notices | P13-053–P13-066 | 14/14 |
 | 7 — Release notes, artifacts, and rehearsal | P13-067–P13-076 | 10/10 |
-| 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 6/10 |
-| **Total** | | **82/86** |
+| 8 — Final acceptance and the 1.0 transition | P13-077–P13-086 | 8/10 |
+| **Total** | | **84/86** |
 
 ## Tickets
 
@@ -521,12 +521,14 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
   - One machine-readable pre-acceptance record binding every certification artifact, evidence hash, gate outcome, and disposition.
   - The dossier is the input to the go/no-go, not a retrospective.
   - Evidence: `acceptance-dossier.v1.json` and `check-acceptance-dossier.mjs` bind 17 certifications, 13 direct evidence authorities, five explicit dispositions, all six frozen limitations, the immutable rc.7 identity, and 63/63 now-due rubric rows (54 `Certified`, two `Approved`, one `Repaired`, six `Documented boundary`, zero `Blocked`). It records recommendation 5 and `legalClearanceClaimed: false`, leaves `PENDING_OWNER_GO_NO_GO`, authorizes zero release transactions, and enumerates the exact atomic transaction without claiming final `1.0.0`.
-- [ ] **P13-083 — Owner go/no-go review** — `TODO`
+- [x] **P13-083 — Owner go/no-go review** — `DONE`
   - The owner reviews the dossier, dispositions, notes, boundaries, and the release transaction plan, and records an explicit go or no-go in the decision log.
   - No-go returns to the failing phase; go authorizes exactly one release transaction.
-- [ ] **P13-084 — Execute the atomic 1.0 release transaction** — `TODO`
+  - Evidence: the owner responded explicit `GO` after reviewing the plain-language effect of the transaction. The decision authorizes exactly one local P13-084 transaction, accepts the dossier's named recommendation-5 residual risk without claiming legal clearance, and does not authorize pushing a tag or publishing notes, artifacts, evidence, or a hosted release.
+- [x] **P13-084 — Execute the atomic 1.0 release transaction** — `DONE`
   - One reviewed release commit mints `1.0.0` exactly once, finalizes notes and changelog, generates checksums and the provenance record, transitions `PRODUCT_PHASE` out of `ALPHA`, and records `data/release-readiness/final-acceptance.v1.json`; the commit is annotated-tagged `v1.0.0`.
   - Agreement across version, tag, notes, provenance, phase, and acceptance is proven by the P13-016 gate before the transaction closes.
+  - Evidence: mint sequence 8 records the only `1.0.0-rc.7 → 1.0.0` transition; package/lock, final changelog, release notes, `PRODUCT_PHASE: RELEASED`, and `final-acceptance.v1.json` are one reviewed release tree. The strict tag-aware identity and final-acceptance gates bind that tree to immutable annotated `v1.0.0`; `npm run release:prepare` produces and verifies the ignored local checksum/provenance bundle without remote publication. The final acceptance closes owner-go and atomic-transition rows, leaving only released-identity verification and archival in sequence.
 - [ ] **P13-085 — Verify the released identity** — `TODO`
   - On the supported deployment shape at the tagged commit: reported version, tag, notes, schema version, and build provenance agree; the tag-commit rebuild reproduces the recorded checksums per policy.
   - Divergence reopens the release under rule 9; the tag is never mutated.
@@ -587,3 +589,4 @@ The slice must be complete at the Phase 7 exit before Phase 8 final acceptance b
 - **2026-08-28 — Immutable rc.6 and rc.7 candidate succession recorded.** P13-077 retained failed-closed `v1.0.0-rc.6` at `3e2532e5703c0adb2abbda82c73b260a250b4aa5` after its tracked-content digest exposed a final evidence-ordering defect. The append-only mint then created immutable annotated `v1.0.0-rc.7` (commit `95521c497ace395e7681aa20f4606926169aa6a3`, tree `ed6592a3…`, tag object `fb12d418…`). No tag moved or was published. One rc.7 invocation lost transport and a later detached attempt was destroyed by an orderly host poweroff before an exit status existed; neither was admitted as release evidence.
 - **2026-08-28 — Final candidate validation and liveplay evidence accepted.** A fresh rc.7 bounded quality gate completed with explicit status zero, followed by 16/16 traced Desktop Chrome journeys, 15/15 mobile-applicable Pixel 7 journeys, inspected privacy-safe contact sheets, and the exact synthetic v55 restore→upgrade plus fresh-host restore→two-restart drill. All tracked certifications bind immutable candidate sources while the 31 browser traces, logs, databases, and backups remain ignored operator-local evidence. No critical usability/accessibility defect or manual campaign repair remains.
 - **2026-08-28 — Zero-unresolved sweep and owner dossier completed.** The machine sweep closes 62/62 pre-dossier rows and the dossier closes row 63, leaving only the explicit owner go plus three transition rows sequence-pending. The dossier binds 17 certifications, 13 direct evidence authorities, five dispositions, six frozen limitations, and the named recommendation-5 residual risk without claiming legal clearance. `P13-083` is now blocked on `OWNER_GO_NO_GO_P13_083`: automation authorizes zero release transactions and must not mint, commit, tag, publish, or claim `1.0.0` until the owner records an explicit GO.
+- **2026-08-28 — Owner GO and atomic 1.0 transaction.** The owner responded explicit `GO`, authorizing exactly one local P13-084 release transaction after the dossier and its recommendation-5 residual risk were explained; remote publication remains unauthorized. Mint sequence 8 performs the only `1.0.0-rc.7 → 1.0.0` transition. One reviewed release tree binds final package/lock identity, changelog, notes, `PRODUCT_PHASE: RELEASED`, and `final-acceptance.v1.json` to immutable annotated `v1.0.0`; the strict release command generates and verifies local ignored checksums and provenance before P13-084 closes. No candidate or final tag is pushed.

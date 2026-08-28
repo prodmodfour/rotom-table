@@ -275,11 +275,11 @@
   "sourceEvidence": [
     {
       "path": "scripts/release-readiness/check-release-rehearsal.mjs",
-      "sha256": "f45864d89530bf3db9a4a934c2031caaf115f2d54143987c3a8f765ac926eaaf"
+      "sha256": "35c8b92483c861be319da62e5e7594190d5e55ee9d86660e45fdb04bd197e697"
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "137702ea8e4f9a78a538cc3426ed7ca32d1840e971ff342e0d2dc2387bd37130"
+      "sha256": "476f25315bc8c823547c26be5092bc408bb572db0db2fb64d1aa53870874687e"
     },
     {
       "path": "data/release-readiness/schemas/rehearsal.schema.v1.json",
@@ -295,7 +295,7 @@
     },
     {
       "path": "data/release-readiness/version-mints.v1.json",
-      "sha256": "a769404b2b22d841515846ac8b3fd3d9c036c5f4784fcddf272266838520da5b"
+      "sha256": "d3b3bd5b0dc11cc4374f89fabb3b4aee71013e69e318f5b765180e4efc465f39"
     },
     {
       "path": "data/release-readiness/supported-platform-matrix.v1.json",

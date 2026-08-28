@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inventoryId": "p13-tracked-tree-inventory-v1",
-  "releaseVersion": "1.0.0-rc.7",
+  "releaseVersion": "1.0.0",
   "status": "COMPLETE",
   "policy": {
     "id": "p13-tracked-tree-classification-v1",
@@ -9,29 +9,29 @@
     "sha256": "54a972c431cbaf35f680bb4d72961f1e48353031f1241e96586fb540c9b3b6dd"
   },
   "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
-  "trackedPathCount": 16886,
-  "trackedPathSetSha256": "5ad694ecfe09df1d921c94e74e41298be4d5834cc4c161219ddd009a106d11b9",
-  "trackedContentSetSha256": "c72832999cdd2311ff9367e90d06746574a5dbddcd7b0c1d1f91d64b5fa9edf4",
+  "trackedPathCount": 16888,
+  "trackedPathSetSha256": "51af60b0f867a9f4acefa8963b7330852cff8869fefbf9f16a312bc55d8ae1a7",
+  "trackedContentSetSha256": "7b5886d269a7aca75ca76688dcdc5dbbccb3c502d9f2e109b1e789af20ecd37b",
   "contentDigestExclusions": [
     "data/release-readiness/distribution-manifest.v1.json",
     "data/release-readiness/tracked-tree-inventory.v1.json"
   ],
   "categoryPathCounts": {
-    "authored": 5057,
+    "authored": 5058,
     "documentary": 1323,
-    "generated": 1076,
+    "generated": 1077,
     "private-data-sensitive": 5,
     "third-party": 9425
   },
   "rulePathCounts": {
     "authored-data": 359,
     "authored-root-files": 20,
-    "authored-source-trees": 4677,
+    "authored-source-trees": 4678,
     "authored-trainer-generator": 1,
     "documentary-root-files": 9,
     "documentary-trees": 1314,
     "generated-dependency-lock": 1,
-    "generated-release-evidence": 55,
+    "generated-release-evidence": 56,
     "generated-screenshots": 3,
     "generated-sheet-examples": 1015,
     "generated-trainer-datasets": 2,
@@ -162,10 +162,10 @@
     },
     {
       "path": "data",
-      "pathCount": 1443,
+      "pathCount": 1444,
       "categories": {
         "authored": 359,
-        "generated": 1070,
+        "generated": 1071,
         "third-party": 14
       }
     },
@@ -305,9 +305,9 @@
     },
     {
       "path": "scripts",
-      "pathCount": 148,
+      "pathCount": 149,
       "categories": {
-        "authored": 148
+        "authored": 149
       }
     },
     {
@@ -448,7 +448,7 @@
       "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 7956,
       "pathSetSha256": "b6f870724e3edb2ca4c8d981d0361f28724c18d6061f9a7728b3f5258291bd07",
-      "contentSetSha256": "0504f10e24b90d9f8d75c208c372acc3a8b4837ce649e9530564ae05c451193e"
+      "contentSetSha256": "5b72a95b7a4627cbc63befaf8b7c6cef557633806346c663103a57af347af757"
     },
     {
       "id": "P13-LICENSE-REFERENCE-DATA",
@@ -470,7 +470,7 @@
       "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 1,
       "pathSetSha256": "62d1b5e7751856dfa5d7d9fb28996e1e32b47223f0098ea6169c4984ad0d2645",
-      "contentSetSha256": "1de7b2c1a54eb3a5de19f4572b8fa726e0a7dd6f0b0a84366ebf9ca97d5e6cb3"
+      "contentSetSha256": "8cd905b21043b1277c2c79f90ef01a803d58a4f6a2bf5163f771f2b2ac401c68"
     }
   ],
   "resolvedPrunedTrees": [

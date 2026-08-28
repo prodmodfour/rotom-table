@@ -82,7 +82,10 @@ async function main() {
   assert(!repositoryMetadata.after?.topics.includes('nuxt3'), 'Remote repository topics retain nuxt3.')
   assert(!repositoryMetadata.after?.topics.includes('local-first'), 'Remote repository topics retain local-first.')
 
-  assert(readme.includes(`The current candidate is **${packageJson.version}**`), 'README candidate identity disagrees with package.json.')
+  const identityClaim = packageJson.version === '1.0.0'
+    ? `The current release is **${packageJson.version}**`
+    : `The current candidate is **${packageJson.version}**`
+  assert(readme.includes(identityClaim), 'README release identity disagrees with package.json.')
   assert(readme.includes('Nuxt 4'), 'README must identify Nuxt 4.')
   assert(!/Nuxt\s*3/i.test(readme), 'README contains stale Nuxt 3 presentation.')
   assert(readme.includes('private Linux x86-64 VPS'), 'README must state the supported deployment shape.')

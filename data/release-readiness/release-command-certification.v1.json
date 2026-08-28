@@ -2,7 +2,7 @@
   "artifact": "release-command-certification",
   "schemaVersion": 1,
   "certificationId": "p13-071-release-command-v1",
-  "releaseVersion": "1.0.0-rc.7",
+  "releaseVersion": "1.0.0",
   "ticket": "P13-071",
   "status": "Certified",
   "gateRows": [
@@ -24,7 +24,7 @@
   "sourceEvidence": [
     {
       "path": "package.json",
-      "sha256": "e3efb38c0e1f8bfd4dd505ffd58d5858b70737f9535dfb6286c391d5fc634de0"
+      "sha256": "1666856ca72e3d17cb6e91019621e3db95113a15f24aa332e3f8f0b4ef136a0f"
     },
     {
       "path": ".gitignore",
@@ -48,15 +48,15 @@
     },
     {
       "path": "docs/release/releasing.md",
-      "sha256": "419bb89a5dee03167003d373cf0dcd410dc0b660e6839e555615f9aa40cedfd1"
+      "sha256": "9f3165937bdecf051694c6e91f20b6947cd45fd927e832f640846bf04d781f69"
     },
     {
       "path": "docs/releases/1.0.0.md",
-      "sha256": "0765959c46e4aeaf2f9a9e203393d8eaada0a67731b1d603ee4777570b95a691"
+      "sha256": "e8d19b9f3d2704347d69f6ae8344135dd04d6b7625323fd36a7be8a4ecfd65f3"
     },
     {
       "path": "CHANGELOG.md",
-      "sha256": "d805568a492f8ef5299c7b1a0a0e1a28e275ab154cb764d56b204c847c20c44b"
+      "sha256": "26f954648bef820a1e3cdc3a512ff04e1b0fd78757ada194220d4392c79943ea"
     },
     {
       "path": "data/release-readiness/version-policy.v1.json",

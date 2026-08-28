@@ -452,6 +452,7 @@ const evidenceCommands = {
     { id: 'release-command', command: 'npm run check:release-readiness:release-command', bounded: true },
     { id: 'artifact-audit', command: 'npm run check:release-readiness:artifact-audit', bounded: true },
     { id: 'clean-host', command: 'npm run check:release-readiness:clean-host', bounded: true },
+    { id: 'final-acceptance', command: 'npm run check:release-readiness:final-acceptance', bounded: true },
     { id: 'aggregate', command: 'npm run check:release-readiness', bounded: true },
   ],
   wideningPolicy: 'Focused release checks compose existing gates; full suites remain closure-only.',

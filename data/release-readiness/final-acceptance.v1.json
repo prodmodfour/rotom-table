@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "acceptanceId": "rotom-table-1.0-final-v1",
+  "ticket": "P13-084",
+  "status": "accepted",
+  "acceptedAt": "2026-08-28T13:29:11.000Z",
+  "version": "1.0.0",
+  "storageSchemaVersion": 56,
+  "productPhase": "released",
+  "tag": "v1.0.0",
+  "candidate": {
+    "version": "1.0.0-rc.7",
+    "commit": "95521c497ace395e7681aa20f4606926169aa6a3",
+    "tree": "ed6592a3351544a61e4c2ce585d6fabbb635f9ed",
+    "tag": "v1.0.0-rc.7",
+    "annotatedTagObject": "fb12d418373d3dd9823b0257d7a6c0fd2d149435"
+  },
+  "dossier": {
+    "path": "data/release-readiness/acceptance-dossier.v1.json",
+    "sha256": "ca19aae5f4376eede72791c3ab0f596263079c4e5e04fdf8a0e1a919df92dd92",
+    "statusAtOwnerReview": "READY_FOR_OWNER_REVIEW"
+  },
+  "ownerDecision": {
+    "decision": "GO",
+    "recordedAt": "2026-08-28T13:29:11.000Z",
+    "automationMayDecide": false,
+    "releaseTransactionsAuthorized": 1,
+    "releaseTransactionsConsumed": 1,
+    "remotePublicationAuthorized": false,
+    "recommendation5ResidualRiskAccepted": true,
+    "legalClearanceClaimed": false
+  },
+  "releaseCommitBinding": {
+    "tagResolution": "refs/tags/v1.0.0^{commit}",
+    "annotatedTagRequired": true,
+    "taggedAcceptanceMustMatchCurrent": true,
+    "tagMutationAllowed": false
+  },
+  "releaseTransaction": {
+    "versionMint": "1.0.0-rc.7 -> 1.0.0",
+    "mintSequence": 8,
+    "productPhaseTransition": "ALPHA -> RELEASED",
+    "atomicSurfaces": [
+      "package.json",
+      "package-lock.json",
+      "data/release-readiness/version-mints.v1.json",
+      "CHANGELOG.md",
+      "docs/releases/1.0.0.md",
+      "implementation-plans/RELEASE_READINESS_PLAN.md",
+      "data/release-readiness/final-acceptance.v1.json"
+    ],
+    "releaseCommand": "npm run release:prepare",
+    "releaseCommandMustPassBeforeTransactionCloses": true
+  },
+  "releaseEvidence": {
+    "command": "npm run release:prepare",
+    "directory": "release-evidence/",
+    "tracked": false,
+    "checksumManifest": "release-evidence/checksums.sha256",
+    "provenance": "release-evidence/provenance.json",
+    "artifactAudit": "release-evidence/artifact-audit.json",
+    "deterministicCommitTimeAuthority": true,
+    "privateOrCampaignValuesRecorded": false
+  },
+  "gateRows": [
+    {
+      "id": "acceptance-owner-go",
+      "state": "Approved",
+      "authority": "owner GO recorded in Plan 13 decision log"
+    },
+    {
+      "id": "transition-atomic",
+      "state": "Certified",
+      "authority": "data/release-readiness/final-acceptance.v1.json"
+    }
+  ],
+  "gateOutcome": {
+    "releaseRubricRows": 67,
+    "rowsFinalBeforeOwnerDecision": 63,
+    "rowsFinalAtReleaseTransaction": 65,
+    "blocked": 0,
+    "sequencePendingRows": [
+      "transition-released-identity",
+      "transition-archive"
+    ]
+  },
+  "licensingBoundary": {
+    "ownerAcceptedRisk": "recommendation-5-retained-trainer-profiles",
+    "affectedFiles": 1460,
+    "noticeCuresRisk": false,
+    "legalClearanceClaimed": false
+  },
+  "publication": {
+    "localTagCreated": true,
+    "remoteTagPublished": false,
+    "releaseNotesPublished": false,
+    "artifactsUploaded": false,
+    "evidenceUploaded": false,
+    "ownerControlled": true
+  },
+  "sourceEvidence": [
+    {
+      "path": "package.json",
+      "sha256": "1666856ca72e3d17cb6e91019621e3db95113a15f24aa332e3f8f0b4ef136a0f"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "95793c40c834b5ae01f7057da8a53ad01281d0d5a3ab7f0595fe946f8eccf2a0"
+    },
+    {
+      "path": "data/release-readiness/version-mints.v1.json",
+      "sha256": "d3b3bd5b0dc11cc4374f89fabb3b4aee71013e69e318f5b765180e4efc465f39"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "26f954648bef820a1e3cdc3a512ff04e1b0fd78757ada194220d4392c79943ea"
+    },
+    {
+      "path": "docs/releases/1.0.0.md",
+      "sha256": "e8d19b9f3d2704347d69f6ae8344135dd04d6b7625323fd36a7be8a4ecfd65f3"
+    },
+    {
+      "path": "data/release-readiness/acceptance-dossier.v1.json",
+      "sha256": "ca19aae5f4376eede72791c3ab0f596263079c4e5e04fdf8a0e1a919df92dd92"
+    },
+    {
+      "path": "data/release-readiness/full-repository-validation-certification.v1.json",
+      "sha256": "7d1cfddbc932490659ee8ad0bd3b200374512f1d6546bf6de79426a54457d932"
+    },
+    {
+      "path": "data/release-readiness/desktop-liveplay-acceptance.v1.json",
+      "sha256": "baa04047156c1c678364c733e43c0191c5ba381a1160aab438a666932c73e78e"
+    },
+    {
+      "path": "data/release-readiness/mobile-liveplay-acceptance.v1.json",
+      "sha256": "c494d089ecd23908e90814874d424a8b66406f5b4bed9527e24d6b499b09f351"
+    },
+    {
+      "path": "data/release-readiness/final-restore-drill-certification.v1.json",
+      "sha256": "d712b94de6d3667e48e6f817c20b4ba78c0588fee947aeef4674df064092dadb"
+    },
+    {
+      "path": "data/release-readiness/zero-unresolved-certification.v1.json",
+      "sha256": "b9737e8cb5f38300151848341857e59d49f87d401d71b2315f7fe5e5ae916249"
+    },
+    {
+      "path": "data/release-readiness/known-limitations.v1.json",
+      "sha256": "cf731b8144de936de353afc4cab676123f3acab366066c5a2c714bbd9e2abc4b"
+    },
+    {
+      "path": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "sha256": "f50b29f134fa743d0d4bb2ebaa2140e71ae6f5e02effec734e627a71406f6f6f"
+    },
+    {
+      "path": "data/release-readiness/release-command-certification.v1.json",
+      "sha256": "374a321c65c42367448de3577f3d641128e74db0fcbf71d8d8c37737bd318759"
+    },
+    {
+      "path": "data/release-readiness/release-rehearsal-certification.v1.json",
+      "sha256": "78f05bb0518f035c0201224efee49bce594b898d7ea35038a97281635b581816"
+    },
+    {
+      "path": "data/release-readiness/distribution-notices-certification.v1.json",
+      "sha256": "a0cd212c6ddb31885f100ffe479730c63a3bca66921057c7c8c83c0c029bc5f1"
+    },
+    {
+      "path": "data/release-readiness/catalog-regression-certification.v1.json",
+      "sha256": "1980ef6ea79202694ebeeb9c506214e74b6c61d93f8330fb042df8695c9cc86b"
+    },
+    {
+      "path": "scripts/release-readiness/release-command.mjs",
+      "sha256": "396f851f0f4d0fe5f8cd8c196660ca48a7c8ceb95cf33a7c99bd98d453d77f08"
+    },
+    {
+      "path": "scripts/release-readiness/check-identity.mjs",
+      "sha256": "9e77757fc13c0e3107f2baaff35cb4571c1fe3fa9f9cdc5906fa619b937af95d"
+    }
+  ],
+  "finalAssertions": {
+    "candidateAcceptanceComplete": true,
+    "ownerGoExplicit": true,
+    "oneReleaseTransactionConsumed": true,
+    "versionMintedExactlyOnce": true,
+    "productPhaseLeavesAlphaExactlyOnce": true,
+    "finalIdentitySurfacesAgree": true,
+    "releaseEvidenceIgnoredAndLocal": true,
+    "remotePublicationUnauthorized": true,
+    "releasedIdentityAndArchiveRemainSequential": true
+  }
+}

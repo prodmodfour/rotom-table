@@ -31,7 +31,7 @@ if (!from || !to || !ticket || !recordedAt) {
   process.exit(2)
 }
 if (!SEMVER.test(to)) fail(`Invalid semantic version: ${to}`)
-if (!/^P13-\d{3}$/.test(ticket)) fail(`Invalid Plan 13 ticket: ${ticket}`)
+if (!/^P\d{1,3}-\d{3}$/.test(ticket)) fail(`Invalid reviewed implementation ticket: ${ticket}`)
 if (!/^\d{4}-\d{2}-\d{2}$/.test(recordedAt)) fail(`Invalid recorded date: ${recordedAt}`)
 
 const pkg = readJson(PACKAGE_PATH)

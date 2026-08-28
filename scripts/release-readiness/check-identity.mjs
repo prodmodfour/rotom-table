@@ -35,6 +35,16 @@ try {
     const source = readFileSync(resolve(ROOT, path), 'utf8')
     if (source.includes(`'${pkg.version}'`) || source.includes(`"${pkg.version}"`)) fail(`Duplicated runtime version literal in ${path}`)
   }
+  const finalAcceptancePath = 'data/release-readiness/final-acceptance.v1.json'
+  if (pkg.version === '1.0.0') {
+    const finalAcceptance = readJson(finalAcceptancePath)
+    if (finalAcceptance.status !== 'accepted'
+      || finalAcceptance.version !== pkg.version
+      || finalAcceptance.tag !== `v${pkg.version}`
+      || finalAcceptance.productPhase !== 'released') {
+      fail('Final package identity disagrees with the machine-readable 1.0 acceptance record')
+    }
+  }
   if (process.argv.includes('--require-tag')) {
     const tag = `v${pkg.version}`
     const tagType = runGit(['cat-file', '-t', tag])
@@ -42,6 +52,11 @@ try {
     if (runGit(['rev-list', '-n', '1', tag]) !== runGit(['rev-parse', 'HEAD'])) fail(`${tag} does not point at HEAD`)
     const subject = runGit(['for-each-ref', '--format=%(subject)', `refs/tags/${tag}`])
     if (!subject.includes(pkg.version)) fail(`${tag} annotation does not identify ${pkg.version}`)
+    if (pkg.version === '1.0.0') {
+      const taggedAcceptance = runGit(['show', `${tag}:${finalAcceptancePath}`])
+      const currentAcceptance = readFileSync(resolve(ROOT, finalAcceptancePath), 'utf8').trim()
+      if (taggedAcceptance !== currentAcceptance) fail(`${tag} does not bind the current final acceptance record`)
+    }
   }
   process.stdout.write(`Release identity guard passed for ${pkg.version} across package, lock, mint history, server, UI, and build configuration.\n`)
 } catch (error) {

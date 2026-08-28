@@ -31,6 +31,15 @@ function verifySourceEvidence(rows) {
 
 function verifyOperatorLocalEvidence(artifact) {
   if (!existsSync(EVIDENCE_ROOT)) return false
+  const manifestPath = resolve(EVIDENCE_ROOT, 'release-bundle-manifest.json')
+  if (!existsSync(manifestPath)) return false
+  const localManifest = readJson(manifestPath)
+  const matchesHistoricalRehearsal = localManifest.version === artifact.identity.version
+    && localManifest.commit === artifact.identity.commit
+  const isUnrelatedEvidence = localManifest.version !== artifact.identity.version
+    && localManifest.commit !== artifact.identity.commit
+  if (isUnrelatedEvidence) return false
+  assert(matchesHistoricalRehearsal, 'Operator-local release evidence partially matches the historical rehearsal identity.')
   const expectedRows = artifact.evidence.releaseCommand.files
   const actualNames = readdirSync(EVIDENCE_ROOT, { withFileTypes: true })
     .filter(entry => entry.isFile())
@@ -45,7 +54,7 @@ function verifyOperatorLocalEvidence(artifact) {
     assert(bytes.length === row.size && sha256(bytes) === row.sha256, `Operator-local rehearsal evidence drift: ${row.path}`)
     assert((statSync(path).mode & 0o777) === 0o640, `Operator-local rehearsal evidence mode drift: ${row.path}`)
   }
-  const manifest = readJson(resolve(EVIDENCE_ROOT, 'release-bundle-manifest.json'))
+  const manifest = localManifest
   const provenance = readJson(resolve(EVIDENCE_ROOT, 'provenance.json'))
   const audit = readJson(resolve(EVIDENCE_ROOT, 'artifact-audit.json'))
   const summary = readJson(resolve(EVIDENCE_ROOT, 'gate-summary.json'))
