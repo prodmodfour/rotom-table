@@ -1,0 +1,118 @@
+{
+  "artifact": "release-full-repository-validation-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-077-v1.0.0-rc.7",
+  "ticket": "P13-077",
+  "status": "Certified",
+  "certifiedAt": "2026-08-28T09:25:20.221Z",
+  "identity": {
+    "version": "1.0.0-rc.7",
+    "storageSchemaVersion": 56,
+    "commit": "95521c497ace395e7681aa20f4606926169aa6a3",
+    "tree": "ed6592a3351544a61e4c2ce585d6fabbb635f9ed",
+    "tag": "v1.0.0-rc.7",
+    "annotatedTagObject": "fb12d418373d3dd9823b0257d7a6c0fd2d149435"
+  },
+  "environment": {
+    "platform": "linux",
+    "architecture": "x64",
+    "node": "v24.16.0",
+    "npm": "11.13.0",
+    "cleanInstall": "npm ci --include=dev",
+    "vitestMaxWorkers": 1,
+    "vitestFileParallelism": false,
+    "playwrightWorkers": 1,
+    "productionBuild": true,
+    "liveplayOnly": true
+  },
+  "results": {
+    "qualityGate": "passed",
+    "recordedExitStatus": 0,
+    "shellSyntax": "passed",
+    "secretAndGeneratedPrivateFileGuardrails": "passed",
+    "releaseReadiness": "passed",
+    "mechanicsRegistryRowsFinal": 2457,
+    "mechanicsRegistryRowsTotal": 2457,
+    "lintErrors": 0,
+    "lintWarnings": 119,
+    "typecheck": "passed",
+    "vitestFilesPassed": 1673,
+    "vitestTestsPassed": 11737,
+    "vitestTestsFailed": 0,
+    "nuxtTestFilesPassed": 2,
+    "nuxtTestsPassed": 7,
+    "playwrightTestsScheduled": 98,
+    "playwrightTestsPassed": 97,
+    "playwrightTestsSkipped": 1,
+    "playwrightTestsFailed": 0,
+    "productionBuild": "passed",
+    "qualityGateDurationSeconds": 4408,
+    "trackedTreeCleanBeforeAndAfter": true
+  },
+  "attemptHistory": [
+    {
+      "candidate": "1.0.0-rc.6",
+      "outcome": "failed-closed",
+      "reason": "Tracked-content digest was stale after the final rehearsal-checker repair; broad validation did not continue and the immutable tag was not moved."
+    },
+    {
+      "candidate": "1.0.0-rc.7",
+      "outcome": "interrupted",
+      "reason": "A prior invocation lost transport and then host power before an exit status existed; it is not acceptance evidence."
+    },
+    {
+      "candidate": "1.0.0-rc.7",
+      "outcome": "passed",
+      "reason": "One exact tagged-source invocation completed under a shutdown/sleep inhibitor with explicit status zero."
+    }
+  ],
+  "operatorLocalEvidence": {
+    "tracked": false,
+    "privacySafe": true,
+    "logPath": ".pi/logs/release-acceptance/1.0.0-rc.7/quality/quality-gate.log",
+    "logBytes": 466683,
+    "logSha256": "d786a01dd458a07397873b4618c8f33093c98df6e68571767d4a9a7c23f38d34",
+    "statusPath": ".pi/logs/release-acceptance/1.0.0-rc.7/quality/status",
+    "statusSha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "recordedExitStatus": 0
+  },
+  "taggedSourceBindings": [
+    {
+      "path": "package.json",
+      "sha256": "e3efb38c0e1f8bfd4dd505ffd58d5858b70737f9535dfb6286c391d5fc634de0"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "bab447155e73ab5a210c04b3ae5e6e8ade9ffa526fa9e7390102b5abacf4f190"
+    },
+    {
+      "path": "scripts/quality-gate.sh",
+      "sha256": "df68ef83a489ee3a6a0be53dff69c9290bbd4ed073ab740b6fdde3c098b970fe"
+    },
+    {
+      "path": "playwright.config.ts",
+      "sha256": "be67ece60a8e4d2a29b73c4a2581ef6177fc91a1802bb1d58f7bbab3a857a503"
+    },
+    {
+      "path": "data/release-readiness/tracked-tree-inventory.v1.json",
+      "sha256": "32e223f779281c0da79670014f7d2b61839d156bc89504615e64b897b2846a8d"
+    }
+  ],
+  "gateRows": [
+    {
+      "id": "acceptance-quality",
+      "state": "Certified",
+      "authority": "data/release-readiness/full-repository-validation-certification.v1.json"
+    }
+  ],
+  "privacy": {
+    "campaignValuesRecorded": false,
+    "credentialsRecorded": false,
+    "privateHostsRecorded": false,
+    "operatorLocalEvidenceIgnored": true
+  },
+  "commands": [
+    "bash scripts/quality-gate.sh"
+  ],
+  "nextTicket": "P13-078"
+}

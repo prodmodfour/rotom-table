@@ -1,0 +1,93 @@
+{
+  "artifact": "release-desktop-liveplay-acceptance",
+  "schemaVersion": 1,
+  "acceptanceId": "p13-078-v1.0.0-rc.7-desktop",
+  "ticket": "P13-078",
+  "status": "Certified",
+  "acceptedAt": "2026-08-28T09:32:00.000Z",
+  "identity": {
+    "version": "1.0.0-rc.7",
+    "storageSchemaVersion": 56,
+    "commit": "95521c497ace395e7681aa20f4606926169aa6a3",
+    "tree": "ed6592a3351544a61e4c2ce585d6fabbb635f9ed",
+    "tag": "v1.0.0-rc.7",
+    "annotatedTagObject": "fb12d418373d3dd9823b0257d7a6c0fd2d149435"
+  },
+  "supportedShape": {
+    "productionBuild": true,
+    "project": "chromium",
+    "device": "Desktop Chrome",
+    "workers": 1,
+    "traceMode": "on",
+    "syntheticCampaignOnly": true,
+    "liveplayOnly": true
+  },
+  "journey": {
+    "files": 9,
+    "testsScheduled": 16,
+    "testsPassed": 16,
+    "testsFailed": 0,
+    "testsSkipped": 0,
+    "tracesRetained": 16,
+    "traceBytes": 71862981,
+    "traceAggregateSha256": "ac2ec997b2c6bcebf577d4d674966cd70a064edec310ccd8f88d7bfc5fbba5e9",
+    "completeLoop": [
+      "onboarding",
+      "commerce-and-item-authority",
+      "encounter-settlement",
+      "campaign-day-continuation",
+      "breeding-workshop",
+      "contests",
+      "gm-campaign-toolkit",
+      "skill-check-liveplay",
+      "contest-battle-encounter-link"
+    ],
+    "productionBuildPassed": true,
+    "roleProjectionPassed": true,
+    "keyboardAccessibilityPassed": true,
+    "axePassed": true,
+    "responsiveAndOverflowPassed": true,
+    "criticalUsabilityDefects": 0,
+    "seriousOrCriticalAccessibilityDefects": 0
+  },
+  "operatorLocalEvidence": {
+    "tracked": false,
+    "privacySafe": true,
+    "logPath": ".pi/logs/release-acceptance/1.0.0-rc.7/desktop/playwright.log",
+    "logSha256": "b455817525b11fd315b73b3ee1c6d5a6dfb4c06f7c3ba55b92614f42245db99e",
+    "traceManifestPath": ".pi/logs/release-acceptance/1.0.0-rc.7/desktop/trace-manifest.v1.json",
+    "traceManifestSha256": "85103045f391217af3783a817a1e6ddc6e04b750f7ae9fc3fbb650bc6994b0ad",
+    "contactSheetPath": ".pi/logs/release-acceptance/1.0.0-rc.7/desktop/contact-sheet.png",
+    "contactSheetSha256": "cfbdd87747f9cc19b89a29ce59762f84c0bd108cf8461f632ade0e9a11a0a17e",
+    "visualReviewPath": ".pi/logs/release-acceptance/1.0.0-rc.7/desktop/visual-review.v1.json",
+    "visualReviewSha256": "8d5adf56909845cda363cdea291c8e44c2eb3d87f69190debf04bb8d327ea9a8",
+    "recordedExitStatus": 0
+  },
+  "journeySourceBindings": [
+    { "path": "tests/e2e/onboarding-first-slice.spec.ts", "sha256": "18f842e489be4a1fcc417afa39641d748a51526c0a8571a7fcd3d575f79841f0" },
+    { "path": "tests/e2e/commerce-item-loop-certification.spec.ts", "sha256": "a8e1ebac428b7d1a19251b54e212ed41abadcf8445d0162ff9721e57f57581bb" },
+    { "path": "tests/e2e/finish-encounter.spec.ts", "sha256": "4bd26345126aa9a544cd1c8d18a2e868feaa9ae22793745d4a078a7cebe4cad4" },
+    { "path": "tests/e2e/campaign-day-continuation.spec.ts", "sha256": "7769fb73d50084d746e0c926665a3be138dbc02b963b7d012c0698a621d31e64" },
+    { "path": "tests/e2e/breeding-workshop.spec.ts", "sha256": "14a827f401fe7af29a255573f080f77f4236782e85271c567026e1bdcf67a123" },
+    { "path": "tests/e2e/contests-acceptance.spec.ts", "sha256": "e1d4388772cdcd920ab6130b133cfbd279080f751ba58a5f9a49983c8796d322" },
+    { "path": "tests/e2e/gm-campaign-toolkit-liveplay.spec.ts", "sha256": "8d63fabce9686d69e2ec99593e2e3677b4a3bf39b54b5353df8e8041ab7486ee" },
+    { "path": "tests/e2e/skill-check-liveplay.spec.ts", "sha256": "22b92ae903417cd16586d27a7e930d2885de2c549af67df6052e56c91f0d21b2" },
+    { "path": "tests/e2e/contest-battle-encounter-link.spec.ts", "sha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349" },
+    { "path": "playwright.config.ts", "sha256": "be67ece60a8e4d2a29b73c4a2581ef6177fc91a1802bb1d58f7bbab3a857a503" }
+  ],
+  "gateRows": [
+    {
+      "id": "acceptance-desktop",
+      "state": "Certified",
+      "authority": "data/release-readiness/desktop-liveplay-acceptance.v1.json"
+    }
+  ],
+  "privacy": {
+    "realCampaignDataRecorded": false,
+    "credentialsRecorded": false,
+    "privateHostsRecorded": false,
+    "browserStorageTracked": false,
+    "tracesTracked": false
+  },
+  "nextTicket": "P13-079"
+}

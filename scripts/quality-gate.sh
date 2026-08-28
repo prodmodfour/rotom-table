@@ -121,6 +121,15 @@ if have npm; then
   if [[ -f scripts/release-readiness/check-release-rehearsal.mjs ]]; then
     run_cmd node scripts/release-readiness/check-release-rehearsal.mjs
   fi
+  if [[ -f scripts/release-readiness/check-final-candidate-evidence.mjs ]]; then
+    run_cmd node scripts/release-readiness/check-final-candidate-evidence.mjs
+  fi
+  if [[ -f scripts/release-readiness/check-zero-unresolved.mjs ]]; then
+    run_cmd node scripts/release-readiness/check-zero-unresolved.mjs
+  fi
+  if [[ -f scripts/release-readiness/check-acceptance-dossier.mjs ]]; then
+    run_cmd node scripts/release-readiness/check-acceptance-dossier.mjs
+  fi
 
   pp_section "Encounter presentation contract"
   run_cmd npm run check:encounter-presentation

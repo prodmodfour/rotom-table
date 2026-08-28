@@ -50,7 +50,7 @@
   "evidence": {
     "command": "npm run check:release-readiness:distribution-acceptance",
     "distributionManifest": "data/release-readiness/distribution-manifest.v1.json",
-    "sourcePaths": 16876,
+    "sourcePaths": 16886,
     "noticeLocations": 9,
     "documentaryFamilies": 6,
     "licensingFamilies": 8,
@@ -80,7 +80,7 @@
     },
     {
       "path": "data/release-readiness/distribution-manifest.v1.json",
-      "sha256": "f3e0dd9ad1f039f4e9bcf7a5176e6d3de96a227308050e6ffb01baccf05dcf1c"
+      "sha256": "f9c3b96b62d79193a33b066ea2f6b66e1af09c42e6bcbb52f6bf379c83ee3044"
     },
     {
       "path": "data/release-readiness/documentary-tree-disposition.v1.json",
@@ -88,7 +88,7 @@
     },
     {
       "path": "data/release-readiness/private-artifact-audit.v1.json",
-      "sha256": "73f341d20847a60566758c7601aaebb7cada9907d54f466f6a4622005801c811"
+      "sha256": "36dac81888eb31c0ab7e71f94ae2e44fbd4325eaccbe21c5d4f1850f9c469d1a"
     },
     {
       "path": "data/release-readiness/deployment-instruction-certification.v1.json",

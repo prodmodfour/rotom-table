@@ -279,7 +279,7 @@
     },
     {
       "path": "scripts/quality-gate.sh",
-      "sha256": "df68ef83a489ee3a6a0be53dff69c9290bbd4ed073ab740b6fdde3c098b970fe"
+      "sha256": "137702ea8e4f9a78a538cc3426ed7ca32d1840e971ff342e0d2dc2387bd37130"
     },
     {
       "path": "data/release-readiness/schemas/rehearsal.schema.v1.json",

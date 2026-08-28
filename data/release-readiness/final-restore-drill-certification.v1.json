@@ -1,0 +1,113 @@
+{
+  "artifact": "release-final-restore-drill-certification",
+  "schemaVersion": 1,
+  "certificationId": "p13-080-v1.0.0-rc.7",
+  "ticket": "P13-080",
+  "status": "Certified",
+  "certifiedAt": "2026-08-28T09:40:24.205Z",
+  "identity": {
+    "version": "1.0.0-rc.7",
+    "storageSchemaVersion": 56,
+    "commit": "95521c497ace395e7681aa20f4606926169aa6a3",
+    "tree": "ed6592a3351544a61e4c2ce585d6fabbb635f9ed",
+    "tag": "v1.0.0-rc.7",
+    "annotatedTagObject": "fb12d418373d3dd9823b0257d7a6c0fd2d149435"
+  },
+  "supportedShape": {
+    "platform": "linux",
+    "architecture": "x64",
+    "node": "v24.16.0",
+    "productionNitro": true,
+    "stoppedServiceBackup": true,
+    "syntheticCampaignOnly": true
+  },
+  "v55RestoreThenUpgrade": {
+    "fromVersion": 55,
+    "toVersion": 56,
+    "appliedVersions": [56],
+    "sourceSha256": "ee70be4bc640dd7b4c669e94c9a47eb4f244a39d2347630dae64083ab5702ec5",
+    "archiveSha256": "691659e7841e11ec6664ab56dcc4140b0266873c680bd7be0209ccb4311a0820",
+    "restoredSha256": "ee70be4bc640dd7b4c669e94c9a47eb4f244a39d2347630dae64083ab5702ec5",
+    "preUpgradeBackupSha256": "ee70be4bc640dd7b4c669e94c9a47eb4f244a39d2347630dae64083ab5702ec5",
+    "upgradedSha256": "988aa46f094a55404aeb856c6fe9eed263dc9b1dcfb1f181e41d77e08f04dd75",
+    "byteExactRestore": true,
+    "byteExactPreUpgradeBackup": true,
+    "integrity": "passed",
+    "foreignKeyViolations": 0,
+    "manualRepairSteps": 0
+  },
+  "freshHostRestoreRestart": {
+    "archiveSha256": "ddadbf7046f6bc12c94256d0f268054de738c69fe93f451ddbb4d64109b0e43c",
+    "storageSchemaVersion": 56,
+    "databaseByteExactAtRestore": true,
+    "privateSettingRestored": true,
+    "productionStarts": 2,
+    "healthChecksPassed": 2,
+    "versionChecksPassed": 2,
+    "stableMapResponseSha256": "a17a41e38e3dc92a3a210c48a016b6f0ce5e09ffc4fc62241bbf6d09875ae191",
+    "mapAuthorityStableAcrossRestart": true,
+    "auditBeforeStart": "passed",
+    "auditAfterSecondStart": "passed",
+    "auditedTables": 82,
+    "auditedRows": 10,
+    "auditedJsonColumns": 126,
+    "invalidJsonRows": 0,
+    "foreignKeyViolations": 0,
+    "manualRepairSteps": 0
+  },
+  "attemptHistory": [
+    {
+      "outcome": "discarded-harness-attempt",
+      "reason": "The initial unauthenticated map probe correctly received 401 and exposed missing trusted-role cookie setup in the operator-local harness."
+    },
+    {
+      "outcome": "discarded-harness-attempt",
+      "reason": "The immediate retry detected that the failed harness had orphaned its local server; its zero status was not admitted as evidence."
+    },
+    {
+      "outcome": "passed",
+      "reason": "The corrected harness asserted an unused port, owned both server PIDs, proved each stop, and completed the drill from a regenerated synthetic fixture."
+    }
+  ],
+  "operatorLocalEvidence": {
+    "tracked": false,
+    "privacySafe": true,
+    "reportPath": ".pi/logs/release-acceptance/1.0.0-rc.7/restore/drill-report.v1.json",
+    "reportSha256": "55cc222d7af9ab03ada84d07fedb4296505597bbfc76f7e90d8f1143727380c8",
+    "logPath": ".pi/logs/release-acceptance/1.0.0-rc.7/restore/drill.log",
+    "logSha256": "375ef7b1895a0aed097ca8788099398c6919bd00e0ff4b0f9099ced7c2aa235f",
+    "recordedExitStatus": 0
+  },
+  "taggedSourceBindings": [
+    { "path": "scripts/release-readiness/backup-campaign.ts", "sha256": "6d4bebcb4717b49114e095897f3647a1fce185d1d98ebf3bb6afd1b66ce1f28c" },
+    { "path": "scripts/release-readiness/restore-campaign.ts", "sha256": "496b4c8a2c917d902b880923744b27e8f91c662078f27a34c1fb12be824f02a4" },
+    { "path": "scripts/release-readiness/upgrade-campaign.ts", "sha256": "0d11a558f999e5c5f857ba32557f33c8e3527bb87ff8d6bf19aface93307fcb0" },
+    { "path": "scripts/release-readiness/audit-campaign.ts", "sha256": "e7a44e8200aca25c44ed69752dfc901ce80bfaabfdf71ec21a84ee82a0271e86" },
+    { "path": "server/storage/releaseBackup.ts", "sha256": "9028177a4910241a2a8ec3019bd53780c981f82df3b6bc3da0be6b3b49aba40b" },
+    { "path": "server/storage/releaseUpgrade.ts", "sha256": "8dfa03b912e34082997bfce98c9b65003fd5d9ab8b3a5c6e64e0567b17e73fe8" },
+    { "path": "server/storage/releaseIntegrityAudit.ts", "sha256": "791b7d1a99df305e197958172718f388f9f8582d5502111c94b1edd63ba22794" }
+  ],
+  "gateRows": [
+    {
+      "id": "acceptance-restore",
+      "state": "Certified",
+      "authority": "data/release-readiness/final-restore-drill-certification.v1.json"
+    }
+  ],
+  "privacy": {
+    "realCampaignDataRecorded": false,
+    "credentialsRecorded": false,
+    "privateHostsRecorded": false,
+    "databaseTracked": false,
+    "backupsTracked": false,
+    "operatorLocalEvidenceIgnored": true
+  },
+  "commands": [
+    "npm run backup:campaign -- --method stopped-service-copy ...",
+    "npm run restore:campaign -- --archive ... --target-root ... --sha256 ... --json",
+    "npm run upgrade:campaign -- --database ... --backup ... --json",
+    "npm run audit:campaign -- --database ... --json",
+    "node .output/server/index.mjs"
+  ],
+  "nextTicket": "P13-081"
+}

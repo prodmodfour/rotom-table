@@ -1,0 +1,94 @@
+{
+  "artifact": "release-mobile-liveplay-acceptance",
+  "schemaVersion": 1,
+  "acceptanceId": "p13-079-v1.0.0-rc.7-mobile",
+  "ticket": "P13-079",
+  "status": "Certified",
+  "acceptedAt": "2026-08-28T09:35:54.000Z",
+  "identity": {
+    "version": "1.0.0-rc.7",
+    "storageSchemaVersion": 56,
+    "commit": "95521c497ace395e7681aa20f4606926169aa6a3",
+    "tree": "ed6592a3351544a61e4c2ce585d6fabbb635f9ed",
+    "tag": "v1.0.0-rc.7",
+    "annotatedTagObject": "fb12d418373d3dd9823b0257d7a6c0fd2d149435"
+  },
+  "supportedShape": {
+    "productionBuild": true,
+    "project": "mobile-chromium",
+    "device": "Pixel 7",
+    "workers": 1,
+    "traceMode": "on",
+    "syntheticCampaignOnly": true,
+    "liveplayOnly": true
+  },
+  "journey": {
+    "files": 9,
+    "mobileApplicableTestsScheduled": 15,
+    "testsPassed": 15,
+    "testsFailed": 0,
+    "desktopOnlyTestsExcluded": 1,
+    "desktopOnlyExclusion": "Workshop reflows at acceptance widths and honors reduced motion without horizontal essential-content overflow",
+    "tracesRetained": 15,
+    "traceBytes": 72770654,
+    "traceAggregateSha256": "58e48e925b9f8a1be3d8e815745d65cec6da0386956834b653a2aa29f1e301b2",
+    "completeLoop": [
+      "onboarding",
+      "commerce-and-item-authority",
+      "encounter-settlement",
+      "campaign-day-continuation",
+      "breeding-workshop",
+      "contests",
+      "gm-campaign-toolkit",
+      "skill-check-liveplay",
+      "contest-battle-encounter-link"
+    ],
+    "productionBuildPassed": true,
+    "roleProjectionPassed": true,
+    "keyboardAndTouchAccessibilityPassed": true,
+    "axePassed": true,
+    "responsiveAndOverflowPassed": true,
+    "criticalUsabilityDefects": 0,
+    "seriousOrCriticalAccessibilityDefects": 0
+  },
+  "operatorLocalEvidence": {
+    "tracked": false,
+    "privacySafe": true,
+    "logPath": ".pi/logs/release-acceptance/1.0.0-rc.7/mobile/playwright.log",
+    "logSha256": "f0841be6df967574a131953ff15eac7a9270dc9dd588d9bf69374e00a952c270",
+    "traceManifestPath": ".pi/logs/release-acceptance/1.0.0-rc.7/mobile/trace-manifest.v1.json",
+    "traceManifestSha256": "b95d102644409801f79ec2f54c29915d7acef0c470b1f04da8702f0b9abf9494",
+    "contactSheetPath": ".pi/logs/release-acceptance/1.0.0-rc.7/mobile/contact-sheet.png",
+    "contactSheetSha256": "5979771b20784c053ec40a07914526b50ac2f1811b32169240eeebdffb8222d3",
+    "visualReviewPath": ".pi/logs/release-acceptance/1.0.0-rc.7/mobile/visual-review.v1.json",
+    "visualReviewSha256": "bf25e6cc5aeaf3305d4598a698d02dc9bbab6664f30d1b3aff15812d6b780ecc",
+    "recordedExitStatus": 0
+  },
+  "journeySourceBindings": [
+    { "path": "tests/e2e/onboarding-first-slice.spec.ts", "sha256": "18f842e489be4a1fcc417afa39641d748a51526c0a8571a7fcd3d575f79841f0" },
+    { "path": "tests/e2e/commerce-item-loop-certification.spec.ts", "sha256": "a8e1ebac428b7d1a19251b54e212ed41abadcf8445d0162ff9721e57f57581bb" },
+    { "path": "tests/e2e/finish-encounter.spec.ts", "sha256": "4bd26345126aa9a544cd1c8d18a2e868feaa9ae22793745d4a078a7cebe4cad4" },
+    { "path": "tests/e2e/campaign-day-continuation.spec.ts", "sha256": "7769fb73d50084d746e0c926665a3be138dbc02b963b7d012c0698a621d31e64" },
+    { "path": "tests/e2e/breeding-workshop.spec.ts", "sha256": "14a827f401fe7af29a255573f080f77f4236782e85271c567026e1bdcf67a123" },
+    { "path": "tests/e2e/contests-acceptance.spec.ts", "sha256": "e1d4388772cdcd920ab6130b133cfbd279080f751ba58a5f9a49983c8796d322" },
+    { "path": "tests/e2e/gm-campaign-toolkit-liveplay.spec.ts", "sha256": "8d63fabce9686d69e2ec99593e2e3677b4a3bf39b54b5353df8e8041ab7486ee" },
+    { "path": "tests/e2e/skill-check-liveplay.spec.ts", "sha256": "22b92ae903417cd16586d27a7e930d2885de2c549af67df6052e56c91f0d21b2" },
+    { "path": "tests/e2e/contest-battle-encounter-link.spec.ts", "sha256": "866b9d685c664dd0a672bd5cc3f9a6912804324c9a31f8a8c641277bf6ae0349" },
+    { "path": "playwright.config.ts", "sha256": "be67ece60a8e4d2a29b73c4a2581ef6177fc91a1802bb1d58f7bbab3a857a503" }
+  ],
+  "gateRows": [
+    {
+      "id": "acceptance-mobile",
+      "state": "Certified",
+      "authority": "data/release-readiness/mobile-liveplay-acceptance.v1.json"
+    }
+  ],
+  "privacy": {
+    "realCampaignDataRecorded": false,
+    "credentialsRecorded": false,
+    "privateHostsRecorded": false,
+    "browserStorageTracked": false,
+    "tracesTracked": false
+  },
+  "nextTicket": "P13-080"
+}

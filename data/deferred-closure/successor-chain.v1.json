@@ -7742,6 +7742,42 @@
       ],
       "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:agents-md:p13-successor-v5",
+      "ticket": "P13-046",
+      "surface": "AGENTS.md",
+      "beforeSha256": "757621eddce3ade8599d2f8539f38128e18b0dcecf253fff0863a0b9a8e6c5e3",
+      "afterSha256": "e0e490ea57b8b6114115028a2b6b58c40270de591e3b6ea729b8d41ea7d6c3cd",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-plan-order-md:p13-successor-v5",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "1d7a58b5ec5a6a797e34e6afbcc9852d17e4b9fc0f35c10c461d2877dd8e965d",
+      "afterSha256": "5ad3d5d4ca5c7ee6e2e64bf89d00f67fac787388819d651b3a6733fc4e36902d",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:scripts-quality-gate-sh:p13-successor-v4",
+      "ticket": "P13-046",
+      "surface": "scripts/quality-gate.sh",
+      "beforeSha256": "df68ef83a489ee3a6a0be53dff69c9290bbd4ed073ab740b6fdde3c098b970fe",
+      "afterSha256": "137702ea8e4f9a78a538cc3426ed7ca32d1840e971ff342e0d2dc2387bd37130",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [

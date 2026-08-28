@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "dossierId": "rotom-table-1.0-pre-acceptance-v1.0.0-rc.7",
+  "ticket": "P13-082",
+  "status": "READY_FOR_OWNER_REVIEW",
+  "compiledAt": "2026-08-28T09:50:00.000Z",
+  "candidate": {
+    "version": "1.0.0-rc.7",
+    "storageSchemaVersion": 56,
+    "commit": "95521c497ace395e7681aa20f4606926169aa6a3",
+    "tree": "ed6592a3351544a61e4c2ce585d6fabbb635f9ed",
+    "tag": "v1.0.0-rc.7",
+    "annotatedTagObject": "fb12d418373d3dd9823b0257d7a6c0fd2d149435",
+    "tagPublished": false
+  },
+  "certifications": [
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/phase-1-acceptance.v1.json", "sha256": "5a4a624cd1e62f742a65b53f4e3a9f0b6d52eed0e6460929d52fb7031e0188ce", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/version-identity-certification.v1.json", "sha256": "180b817c08be3c48bbc402ef5b6a73f82de8cdd55776f391c5e872721ae80d0a", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/upgrade-certification.v1.json", "sha256": "867e211b903f35245b0c03406b194123bdf35b59a8b0ca0ab06be0b49895ef1f", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/backup-restore-certification.v1.json", "sha256": "a782a0f9295dd92f635b0271ef0213b35d835a00a25b5ef86a0e51c173425533", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/catalog-regression-certification.v1.json", "sha256": "909a48a83c75865ce1e72c7f042c3756dfb69e6233a01effeb032f86fb4d95db", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/repository-presentation-certification.v1.json", "sha256": "6b71a7582301fe1d5d041641e7861e9628cd3acfcd0543e4baf427b20cb4ec28", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/deployment-instruction-certification.v1.json", "sha256": "74658d6da2bb9e106dd8c6ef102a224dea92766883e2dccf63225d4bcbe6a72e", "status": "Repaired" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/distribution-notices-certification.v1.json", "sha256": "2f8d5a80cdedd89105ac9e62cda58d4079ed5eca71a805a4d7569c5fec4730fa", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/release-command-certification.v1.json", "sha256": "31196dc7914e203437c48cbcf9368cb6e6babedd12afedca9a06bca45037c277", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/built-artifact-audit-certification.v1.json", "sha256": "531684479b8743d84a5fd5c92b9cb60d53861773d59afeccefbc492984fa579f", "status": "Certified" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/clean-host-install-certification.v1.json", "sha256": "d44352a1d5454163b7c94555ec0968b28eb1c64404f72da9f3796d8200e1f379", "status": "Repaired" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/release-rehearsal-certification.v1.json", "sha256": "0455c4baadfb2dbaf61b8c8d988b5e65c843f5160171acaa4f0f5fbab43b653d", "status": "Certified" },
+    { "ref": "post-tag-acceptance", "path": "data/release-readiness/full-repository-validation-certification.v1.json", "sha256": "7d1cfddbc932490659ee8ad0bd3b200374512f1d6546bf6de79426a54457d932", "status": "Certified" },
+    { "ref": "post-tag-acceptance", "path": "data/release-readiness/desktop-liveplay-acceptance.v1.json", "sha256": "baa04047156c1c678364c733e43c0191c5ba381a1160aab438a666932c73e78e", "status": "Certified" },
+    { "ref": "post-tag-acceptance", "path": "data/release-readiness/mobile-liveplay-acceptance.v1.json", "sha256": "c494d089ecd23908e90814874d424a8b66406f5b4bed9527e24d6b499b09f351", "status": "Certified" },
+    { "ref": "post-tag-acceptance", "path": "data/release-readiness/final-restore-drill-certification.v1.json", "sha256": "d712b94de6d3667e48e6f817c20b4ba78c0588fee947aeef4674df064092dadb", "status": "Certified" },
+    { "ref": "post-tag-acceptance", "path": "data/release-readiness/zero-unresolved-certification.v1.json", "sha256": "b9737e8cb5f38300151848341857e59d49f87d401d71b2315f7fe5e5ae916249", "status": "Certified" }
+  ],
+  "evidence": [
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/canonical-census.v1.json", "sha256": "c7817ad9d0a7281b7411cbd299e7960d02481ca847fcdacade3b4f93f20d6c35" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/mechanics-registry-finality.v1.json", "sha256": "ba0e5b72f05fa7a6ced055cd3ee9a54a7e6aff79e53e3d01b82df644eb1a18fd" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/release-golden-replay-report.v1.json", "sha256": "968b8399ed49a8b28dba17f696d774330770436f2dbad915756c12879438d4a6" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/release-privacy-report.v1.json", "sha256": "d752b84f1fcbc2bf9875343dc56c0bf0ef199065c51f2bf41012ad255d26bfd9" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/release-performance-report.v1.json", "sha256": "b4711e89ab5fa25763f6edf780a54dc6b05fe832baff7e0a44ffbe1af225aa91" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/distribution-manifest.v1.json", "sha256": "f3e0dd9ad1f039f4e9bcf7a5176e6d3de96a227308050e6ffb01baccf05dcf1c" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/dependency-license-report.v1.json", "sha256": "78896465557b330865a7c484993f1c6de0c8a7af3ce216cbd1d8571370df17a3" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/media-asset-inventory.v1.json", "sha256": "0d22c7a493f2d718ff8e959a7649c092d5c9e22a744d6b6a85d7a3e075e77f50" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/tracked-tree-inventory.v1.json", "sha256": "32e223f779281c0da79670014f7d2b61839d156bc89504615e64b897b2846a8d" },
+    { "ref": "v1.0.0-rc.7", "path": "data/release-readiness/version-mints.v1.json", "sha256": "a769404b2b22d841515846ac8b3fd3d9c036c5f4784fcddf272266838520da5b" },
+    { "ref": "v1.0.0-rc.7", "path": "CHANGELOG.md", "sha256": "d805568a492f8ef5299c7b1a0a0e1a28e275ab154cb764d56b204c847c20c44b" },
+    { "ref": "v1.0.0-rc.7", "path": "docs/releases/1.0.0.md", "sha256": "0765959c46e4aeaf2f9a9e203393d8eaada0a67731b1d603ee4777570b95a691" },
+    { "ref": "v1.0.0-rc.7", "path": "docs/release/releasing.md", "sha256": "419bb89a5dee03167003d373cf0dcd410dc0b660e6839e555615f9aa40cedfd1" }
+  ],
+  "gateOutcome": {
+    "releaseRubricRows": 67,
+    "rowsFinalBeforeOwnerReview": 63,
+    "certified": 54,
+    "approved": 2,
+    "repaired": 1,
+    "documentedBoundary": 6,
+    "blocked": 0,
+    "futureOwnerAndTransitionRows": 4,
+    "futureRows": [
+      "acceptance-owner-go",
+      "transition-atomic",
+      "transition-released-identity",
+      "transition-archive"
+    ]
+  },
+  "dispositions": [
+    {
+      "id": "documentary-trees",
+      "ref": "v1.0.0-rc.7",
+      "path": "data/release-readiness/documentary-tree-disposition.v1.json",
+      "sha256": "94ef35f3ea65db79ca3278fca74c72f2b8681397982407bfae34be96e73b91ec",
+      "status": "OWNER_APPROVED_APPLIED"
+    },
+    {
+      "id": "licensing-and-notices",
+      "ref": "v1.0.0-rc.7",
+      "path": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "sha256": "ff08c3baf101b92faa4f96493f27ca203e48f751f88eba550a88c9b30bdf16ee",
+      "status": "OWNER_APPROVED_AND_IMPLEMENTED",
+      "legalClearanceClaimed": false
+    },
+    {
+      "id": "known-limitations",
+      "ref": "v1.0.0-rc.7",
+      "path": "data/release-readiness/known-limitations.v1.json",
+      "sha256": "cf731b8144de936de353afc4cab676123f3acab366066c5a2c714bbd9e2abc4b",
+      "status": "OWNER_ACCEPTED_FROZEN"
+    },
+    {
+      "id": "repository-metadata",
+      "ref": "v1.0.0-rc.7",
+      "path": "data/release-readiness/repository-metadata-disposition.v1.json",
+      "sha256": "4dddd548b7ce0a849c993f2ed2117352fdc0bed2833cb3c0c96898675ab703c6",
+      "status": "APPLIED"
+    },
+    {
+      "id": "recommendation-5-retained-trainer-profiles",
+      "ref": "v1.0.0-rc.7",
+      "path": "data/release-readiness/licensing-notice-disposition.v1.json",
+      "sha256": "ff08c3baf101b92faa4f96493f27ca203e48f751f88eba550a88c9b30bdf16ee",
+      "status": "DECLINED_OWNER_ACCEPTED_RISK",
+      "affectedFiles": 1460,
+      "noticeCuresRisk": false
+    }
+  ],
+  "boundaries": {
+    "knownLimitations": 6,
+    "trustedRolePickerIsAuthentication": false,
+    "supportedPrivateVpsPerCampaignGroup": 1,
+    "browserFamiliesCertified": ["Desktop Chrome", "Pixel 7 Chromium"],
+    "localHostingSupported": false,
+    "databaseDowngradeSupported": false,
+    "rollbackIsExactBackupRestore": true
+  },
+  "ownerReview": {
+    "decision": "PENDING_OWNER_GO_NO_GO",
+    "automationMayDecide": false,
+    "releaseTransactionsAuthorized": 0,
+    "requiredReview": [
+      "candidate certifications and local trace availability",
+      "six frozen known limitations",
+      "licensing and notice dispositions",
+      "recommendation-5 owner-accepted residual risk",
+      "prospective 1.0 notes and changelog",
+      "atomic release transaction plan"
+    ],
+    "goEffect": "Authorizes exactly one P13-084 atomic release transaction.",
+    "noGoEffect": "Returns execution to the failing phase without moving or publishing an immutable tag."
+  },
+  "releaseTransactionPlan": {
+    "authorized": false,
+    "steps": [
+      "record explicit owner GO in the decision log",
+      "mint 1.0.0 once through the version authority",
+      "finalize changelog, notes, generated identity evidence, and PRODUCT_PHASE",
+      "record data/release-readiness/final-acceptance.v1.json",
+      "run the bounded release gates at the release commit",
+      "create one reviewed release commit and immutable annotated v1.0.0 tag",
+      "verify released identity and reproducible checksums before publication",
+      "archive Plan 13 only after released-identity verification"
+    ],
+    "tagMutationAllowed": false,
+    "publicationOwnerControlled": true
+  },
+  "validation": {
+    "finalCandidateEvidence": "passed",
+    "zeroUnresolved": "passed",
+    "focusedCheckerTests": {
+      "filesPassed": 2,
+      "testsPassed": 6,
+      "testsFailed": 0
+    },
+    "targetedLintErrors": 0,
+    "aggregateReleaseReadiness": {
+      "command": "npm run check:release-readiness",
+      "recordedExitStatus": 0,
+      "operatorLocalLogPath": ".pi/logs/release-acceptance/1.0.0-rc.7/dossier/release-readiness.log",
+      "operatorLocalLogSha256": "e1fdbefcd889b7529294affe4f4119111c0c8e2792db84aa494c8a94f50b9285",
+      "tracked": false
+    }
+  },
+  "gateRows": [
+    {
+      "id": "acceptance-dossier",
+      "state": "Certified",
+      "authority": "data/release-readiness/acceptance-dossier.v1.json"
+    }
+  ],
+  "finalAssertions": {
+    "candidateEvidenceComplete": true,
+    "zeroUnresolvedRule7Findings": true,
+    "ownerAcceptedRiskExplicit": true,
+    "legalClearanceNotClaimed": true,
+    "finalReleaseNotClaimed": true,
+    "ownerDecisionPending": true,
+    "atomicTransactionUnauthorized": true
+  }
+}
