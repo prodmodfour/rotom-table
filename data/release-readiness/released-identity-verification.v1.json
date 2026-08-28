@@ -92,6 +92,21 @@
       "admissibleAsReleaseAcceptance": false,
       "reason": "repair source was intentionally untagged during diagnosis"
     },
+    "committedSourceDiagnostic": {
+      "repairCommit": "5ebd076030dae1aadf1e660eead6faf507de2383",
+      "repairTree": "babac030b90d9234d1e7cf13f7820fc55f1d4e01",
+      "buildCount": 2,
+      "outputFilesEach": 12663,
+      "totalBytesEach": 377746951,
+      "checksumManifestSha256Each": "8d93aba80714dfd18cc09121f14ab5b39cb3ae9c2b539ee6bb717ce69865d982",
+      "byteExact": true,
+      "artifactAuditFindings": 0,
+      "documentaryRuntimeDependence": false,
+      "tagResolvesToRepairCommit": false,
+      "reportPath": ".pi/logs/release-acceptance/reproducibility-repair/committed-source/report.v1.json",
+      "reportSha256": "96046fa46bc22280c242fa8079b6cbdca383388c40dfdd7d9742b05628eff3d9",
+      "admissibleAsReleaseAcceptance": false
+    },
     "productionLiveplaySmoke": {
       "status": "passed",
       "rolePickerStyleSheetsLoaded": 3,
