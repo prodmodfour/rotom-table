@@ -6,7 +6,7 @@ Rotom Table has one fail-closed release preparation command:
 npm run release:prepare
 ```
 
-It creates an operator-local, git-ignored `release-evidence/` bundle for the immutable commit and annotated tag at `HEAD`. It does not publish a tag, release, artifact, hostname, or evidence file. Publication remains an owner action.
+It creates an operator-local, git-ignored `release-evidence/` **reference** bundle for the immutable commit and annotated tag at `HEAD`. It does not by itself prove reproducibility: release acceptance requires a second clean exact-lock build whose complete checksum manifest matches this reference byte for byte. The command does not publish a tag, release, artifact, hostname, or evidence file. Publication remains an owner action.
 
 ## Preconditions
 
@@ -46,7 +46,7 @@ A failed step exits non-zero and no later step is treated as passed. Evidence is
 
 ## Deterministic local evidence bundle
 
-A successful run creates exactly these root files:
+A successful reference run creates exactly these root files:
 
 - `release-evidence/checksums.sha256` — one sorted SHA-256 row for every `.output` file;
 - `release-evidence/provenance.json` — package/schema/source/builder/build identity;
@@ -56,13 +56,13 @@ A successful run creates exactly these root files:
 
 The bundle contains no wall-clock completion field, campaign value, credential, private hostname, or hosted-write value. Commit time is the deterministic time authority. Release builds disable nondeterministic per-component SSR style aggregators, derive Nuxt's build ID from package/commit identity, sort Nitro's embedded public-asset map, and replace generated Nitro dates/asset mtimes with `SOURCE_DATE_EPOCH`. Normal development and unreleased production builds are not rewritten. Files use exact mode `0640` (owner read/write, group read, no access for others); the evidence directory uses `0750` and remains outside the source distribution.
 
-Verify an existing bundle without rebuilding:
+Verify the integrity of an existing reference bundle without rebuilding:
 
 ```bash
 npm run release:check-evidence
 ```
 
-The check requires the same immutable commit/tag and exact `.output` bytes. Any source-binding, checksum, permission, identity, or audit drift fails.
+The check requires the same immutable commit/tag and exact `.output` bytes. Any source-binding, checksum, permission, identity, or audit drift fails. It validates the reference bundle only; P13 released-identity acceptance separately rebuilds from an exact lock and compares the entire `checksums.sha256` file. The internal `ROTOM_RELEASE_REFERENCE_BUILD=1` gate posture is set by `release:prepare` only to permit generation of that first tagged reference while verification is pending; it is not a publication or verification bypass.
 
 ## Recovery from failure
 

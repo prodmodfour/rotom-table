@@ -215,11 +215,11 @@
     },
     {
       "path": "public/THIRD_PARTY_NOTICES.txt",
-      "sha256": "deaf5ecd4b64f68521ee0f904a9bc13dc7e956428cfe31ce3b1f138e25a1793a"
+      "sha256": "9b6f0732bcdd4d6667c96f25ddab17ea47d9e858508c9fbadf607a37d8e01bf0"
     },
     {
       "path": "data/release-readiness/licensing-attribution-inventory.v1.json",
-      "sha256": "c7cb457df1ccd582a87d1bfe610817372b3fd3a4f2dc462c758066c0294daced"
+      "sha256": "aac82ec42ddab3e0905d79223daa6f7f6693ed59cccbb3baa47cbf1cac7d76b2"
     },
     {
       "path": "data/release-readiness/dependency-license-policy.v1.json",
@@ -227,7 +227,7 @@
     },
     {
       "path": "data/release-readiness/dependency-license-report.v1.json",
-      "sha256": "ca69e298145539b33d092fb637e2171f92514eed4a9a06bff13cfd7b504a6c9b"
+      "sha256": "175ac2755538cc39aee73c0e97460a12af3d4f1dbee9620c70456245f4d91ab6"
     },
     {
       "path": "data/release-readiness/media-asset-policy.v1.json",
@@ -235,7 +235,7 @@
     },
     {
       "path": "data/release-readiness/media-asset-inventory.v1.json",
-      "sha256": "76a8adbb09ac7dcad24bd00ec3cdfbe4d4f75fbc50c90f4b7325487c373b72e9"
+      "sha256": "ed47003b51f437179d88ed858b4a9de72f61ac73ed47d9640f1657730dd704bb"
     },
     {
       "path": "src/components/TypeBadge.vue",
@@ -271,11 +271,11 @@
     },
     {
       "path": "package.json",
-      "sha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a"
+      "sha256": "5cfcb61bdbbe209e5ee86f02ddf6fc67bb2013b9ddba44de7e6cb365199e897d"
     },
     {
       "path": "package-lock.json",
-      "sha256": "95793c40c834b5ae01f7057da8a53ad01281d0d5a3ab7f0595fe946f8eccf2a0"
+      "sha256": "d47da245c4889a9799fae38cc354f2e10d5cf80a9c6d9661b6ea04a6ea1a5e3f"
     }
   ]
 }

@@ -1,7 +1,7 @@
 # Rotom Table
 
 [![CI](https://github.com/prodmodfour/rotom-table/actions/workflows/ci.yml/badge.svg)](https://github.com/prodmodfour/rotom-table/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-1.0.0-ef4444)
+![Version](https://img.shields.io/badge/version-1.0.1-ef4444)
 ![Nuxt 4](https://img.shields.io/badge/Nuxt-4-00DC82?logo=nuxtdotjs&logoColor=white)
 ![Node 24](https://img.shields.io/badge/Node-24.x-339933?logo=nodedotjs&logoColor=white)
 ![Private VPS](https://img.shields.io/badge/deployment-private%20VPS-334155)
@@ -13,9 +13,9 @@ Rotom Table is a fan project. It is not official, endorsed, or a commercial Pok√
 
 ## Release identity
 
-The current package identity is **1.0.0**, storage schema **v56**. Released-identity verification found that the immutable local `v1.0.0` tag did not reproduce its build checksums, so it was not remotely published and must not be deployed as a verified release. A deterministic repair is prepared for a separately authorized `1.0.1` successor.
+The current release is **1.0.1**, storage schema **v56**. It is the deterministic successor to the immutable, unpublished `v1.0.0` tag that failed exact checksum reproduction. No gameplay, canonical PTU data, or campaign migration changed in this patch.
 
-A running private deployment reports its package/build identity at:
+A running private deployment reports the same package/build identity at:
 
 - `/api/health`
 - `/api/version`

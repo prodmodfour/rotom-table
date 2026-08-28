@@ -36,6 +36,7 @@ try {
     if (source.includes(`'${pkg.version}'`) || source.includes(`"${pkg.version}"`)) fail(`Duplicated runtime version literal in ${path}`)
   }
   const finalAcceptancePath = 'data/release-readiness/final-acceptance.v1.json'
+  const releasedIdentityPath = 'data/release-readiness/released-identity-verification.v1.json'
   if (pkg.version === '1.0.0') {
     const finalAcceptance = readJson(finalAcceptancePath)
     if (finalAcceptance.status !== 'accepted'
@@ -43,6 +44,15 @@ try {
       || finalAcceptance.tag !== `v${pkg.version}`
       || finalAcceptance.productPhase !== 'released') {
       fail('Final package identity disagrees with the machine-readable 1.0 acceptance record')
+    }
+  }
+  if (pkg.version === '1.0.1') {
+    const releasedIdentity = readJson(releasedIdentityPath)
+    if (!['PATCH_TRANSACTION_ACCEPTED_VERIFICATION_PENDING', 'VERIFIED'].includes(releasedIdentity.status)
+      || releasedIdentity.patchRelease?.version !== pkg.version
+      || releasedIdentity.patchRelease?.tag !== `v${pkg.version}`
+      || releasedIdentity.ownerPatchDecision?.decision !== 'GO') {
+      fail('Patch package identity disagrees with the machine-readable released-identity transaction')
     }
   }
   if (process.argv.includes('--require-tag')) {
@@ -56,6 +66,13 @@ try {
       const taggedAcceptance = runGit(['show', `${tag}:${finalAcceptancePath}`])
       const currentAcceptance = readFileSync(resolve(ROOT, finalAcceptancePath), 'utf8').trim()
       if (taggedAcceptance !== currentAcceptance) fail(`${tag} does not bind the current final acceptance record`)
+    }
+    if (pkg.version === '1.0.1') {
+      const taggedVerification = JSON.parse(runGit(['show', `${tag}:${releasedIdentityPath}`]))
+      if (taggedVerification.status !== 'PATCH_TRANSACTION_ACCEPTED_VERIFICATION_PENDING'
+        || taggedVerification.ownerPatchDecision?.decision !== 'GO') {
+        fail(`${tag} does not bind the owner-approved patch transaction`)
+      }
     }
   }
   process.stdout.write(`Release identity guard passed for ${pkg.version} across package, lock, mint history, server, UI, and build configuration.\n`)

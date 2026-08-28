@@ -51,7 +51,8 @@ async function main() {
     "run('npm', ['ci', '--include=dev'])",
     "assertCleanTree('after exact-lock install')",
     "run('node', ['scripts/release-readiness/check-identity.mjs', '--require-tag'])",
-    "run('npm', ['run', 'check:release-readiness'])",
+    "ROTOM_RELEASE_REFERENCE_BUILD: '1'",
+    "run('npm', ['run', 'check:release-readiness'], referenceGateEnvironment)",
     "assertCleanTree('after gates')",
     'rmSync(OUTPUT_ROOT',
     'rmSync(EVIDENCE_ROOT',
@@ -63,9 +64,11 @@ async function main() {
     "run('node', ['scripts/release-readiness/check-release-evidence.mjs'])",
     "assertCleanTree('after evidence generation')",
   ])
-  for (const binding of ['package.json', 'package-lock.json', 'CHANGELOG.md', 'docs/releases/1.0.0.md', 'data/release-readiness/distribution-manifest.v1.json', 'data/release-readiness/known-limitations.v1.json']) {
+  for (const binding of ['package.json', 'package-lock.json', 'CHANGELOG.md', 'data/release-readiness/distribution-manifest.v1.json', 'data/release-readiness/known-limitations.v1.json']) {
     assert(command.includes(`'${binding}'`), `Release gate summary omits source binding: ${binding}`)
   }
+  assert(command.includes('RELEASE_NOTES_PATH') && command.includes('docs/releases/${packageMetadata.version}.md'), 'Release gate summary does not bind version-specific notes.')
+  assert(command.includes("purpose: 'tagged-release-reference'") && command.includes("verificationRole: 'reference'"), 'Release command blurs reference generation with independent verification.')
   for (const environment of ["NODE_ENV: 'production'", "ROTOM_RELEASE_BUILD: '1'", 'ROTOM_BUILD_COMMIT: commit', 'ROTOM_BUILD_TAG: TAG', 'SOURCE_DATE_EPOCH: sourceDateEpoch']) {
     assert(command.includes(environment), `Release production build omits deterministic environment: ${environment}`)
   }
@@ -77,7 +80,7 @@ async function main() {
   assert(generator.includes("if (releaseMode)"), 'Build evidence generator has no release mode.')
   assert(generator.includes('Release evidence requires a full Git commit SHA'), 'Build evidence does not require a full commit.')
   assert(generator.includes('Release tag must be v${packageMetadata.version}'), 'Build evidence does not require tag/version agreement.')
-  for (const requirement of ['Release evidence check accepts no arguments.', 'annotated tag at HEAD', 'Release evidence hash drift', 'Release output checksum drift', 'source binding drift', 'Built-artifact audit contains a finding']) {
+  for (const requirement of ['Release evidence check accepts no arguments.', 'annotated tag at HEAD', 'Release evidence hash drift', 'Release output checksum drift', 'source binding drift', 'Built-artifact audit contains a finding', 'tagged-release-reference', "verificationRole !== 'reference'"]) {
     assert(evidenceCheck.includes(requirement), `Release evidence verifier omits fail-closed rule: ${requirement}`)
   }
   assert(evidenceCheck.includes('(statSync(path).mode & 0o777) !== 0o640'), 'Release evidence verifier does not enforce the writer-owned 0640 file mode.')
@@ -104,7 +107,7 @@ async function main() {
   const rubricRow = rubric.rows.find(row => row.id === 'provenance-release-command')
   assert(rubricRow?.allowedFinalStates?.includes('Certified'), 'Release-command rubric row no longer permits Certified.')
 
-  console.log(`Release command verified for ${packageJson.version}: exact-lock install, clean/tag gates, bounded aggregate, normalized deterministic build, artifact audit, five-file evidence bundle, and zero bypass arguments.`)
+  console.log(`Release command verified for ${packageJson.version}: exact-lock install, clean/tag gates, bounded reference aggregate, normalized deterministic build, artifact audit, five-file reference bundle, and zero bypass arguments.`)
 }
 
 main().catch(error => {

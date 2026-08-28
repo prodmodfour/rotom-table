@@ -8,8 +8,8 @@ Never edit either package file directly. Use the reviewed mint authority with th
 
 ```bash
 npm run release:mint-version -- \
-  --from 1.0.0 \
-  --to 1.0.1 \
+  --from 1.0.1 \
+  --to 1.0.2 \
   --ticket P14-001 \
   --recorded-at YYYY-MM-DD
 ```
@@ -40,6 +40,6 @@ node scripts/release-readiness/check-identity.mjs --require-tag
 
 Tag publication remains owner-controlled. Never force-move or replace a tag. If a release-candidate rehearsal diverges, leave its evidence immutable, fix the source, mint the next release candidate, and create a new annotated tag. If any final tagged release diverges from its commit, package identity, notes, or checksums—even before publication—stop deployment and issue the next patch version; do not mutate history or weaken checksum comparison.
 
-The immutable local `v1.0.0` tag is the first exercised example of this rule: released-identity verification produced three different output checksum manifests from identical supported-shape builds. It remains unpublished and cannot be represented as verified. The prepared deterministic repair must be minted and tagged as `v1.0.1` only through a separately authorized reviewed release transaction.
+The immutable local `v1.0.0` tag is the first exercised example of this rule: released-identity verification produced three different output checksum manifests from identical supported-shape builds. It remains unpublished and cannot be represented as verified. The owner separately authorized `v1.0.1` as its deterministic successor; that patch is accepted only after a second clean tagged build reproduces every reference checksum.
 
 Post-1.0 fixes are tagged `v1.0.x` from `main`. Long-lived release branches are not part of the supported workflow.

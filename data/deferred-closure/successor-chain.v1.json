@@ -7874,6 +7874,42 @@
       ],
       "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
       "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:agents-md:p13-successor-v8",
+      "ticket": "P13-046",
+      "surface": "AGENTS.md",
+      "beforeSha256": "e7ba0d9855f3848ef9a290fd361a34438f474c6c4a8c58899de71fc7d4b32dad",
+      "afterSha256": "f4429824d675312d2fb7649d6f0f1e784a0f7a225ce45f06d34426a83fa79984",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:implementation-plans-plan-order-md:p13-successor-v8",
+      "ticket": "P13-046",
+      "surface": "implementation-plans/plan-order.md",
+      "beforeSha256": "da4660295ecbb0eb7c1e77c96dd083e2b89cf84bcb93c31ba3505bb93897ce24",
+      "afterSha256": "e4c90c289a8a3a5dc4b47d665d02cf3919f9e3dd42fd088d3088d2e74751420c",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
+    },
+    {
+      "migrationId": "release-readiness:package-json:p13-successor-v11",
+      "ticket": "P13-046",
+      "surface": "package.json",
+      "beforeSha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a",
+      "afterSha256": "5cfcb61bdbbe209e5ee86f02ddf6fc67bb2013b9ddba44de7e6cb365199e897d",
+      "changedStableRows": [
+        "release-readiness-reviewed-successor"
+      ],
+      "changePolicy": "Plan 13 release certification or documentation successor; archived final mechanics states and canonical semantics remain unchanged.",
+      "reviewStatus": "accepted"
     }
   ],
   "pendingSurfaces": [

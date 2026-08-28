@@ -15,14 +15,19 @@ Rotom Table uses [Semantic Versioning](https://semver.org/). Rotom Table 1.0.0 i
 
 ## [Unreleased]
 
+No changes have been recorded after 1.0.1.
+
+## [1.0.1] - 2026-08-28
+
 ### Fixed
 
-- Prepared deterministic release-output generation by deriving release-only Nuxt build identity from package/commit authority, using stable linked CSS instead of asynchronously grouped SSR style chunks, sorting Nitro's embedded public assets, and normalizing generated dates and mtimes to the immutable commit timestamp.
+- Made production output reproducible by deriving release-only Nuxt build identity from package/commit authority, using stable linked CSS instead of asynchronously grouped SSR style chunks, sorting Nitro's embedded public assets, and normalizing generated dates and mtimes to the immutable commit timestamp.
 - Made the one-command release workflow install the exact checked-in dependency lock before gates and fail closed if generated Nitro metadata cannot be normalized.
 
 ### Operations
 
-- Released-identity verification found that the local, unpublished `v1.0.0` tag produced three different checksum manifests from identical supported-shape builds. The tag remains immutable, must not be published or deployed as a verified release, and requires a separately authorized `1.0.1` successor after the deterministic repair passes tagged verification.
+- Preserved the local, unpublished `v1.0.0` checksum failure instead of moving or rewriting its tag. `v1.0.1` is its owner-authorized deterministic successor; remote publication remains a separate owner action.
+- Kept storage authority at schema v56 with no gameplay, canonical PTU data, or campaign migration change.
 
 ## [1.0.0] - 2026-08-28
 

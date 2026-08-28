@@ -18,8 +18,8 @@ async function main() {
     readFile(path.join(repositoryRoot, 'implementation-plans/plan-order.md'), 'utf8'),
   ])
 
-  const finalRelease = packageSource.version === '1.0.0'
-  const releaseDate = finalRelease ? '2026-08-28' : '2026-08-27'
+  const stableRelease = !packageSource.version.includes('-')
+  const releaseDate = stableRelease ? '2026-08-28' : '2026-08-27'
   for (const heading of [
     '# Changelog',
     '## Changelog convention',
@@ -42,7 +42,7 @@ async function main() {
     'GM/Player picker is a trusted-table role choice, not public authentication',
     'Local hosting is deprecated',
     'recommendation-5 residual risk',
-    finalRelease
+    stableRelease
       ? 'Rotom Table 1.0.0 is the first core-complete trusted-table release'
       : 'Final `1.0.0` remains pending the explicit owner go/no-go',
   ]) {
@@ -50,15 +50,16 @@ async function main() {
   }
 
   assert(!/\bP\d{1,2}-\d{3}\b/u.test(changelog), 'CHANGELOG.md contains internal ticket noise.')
-  if (finalRelease) {
-    assert(/^## \[1\.0\.0\] - 2026-08-28$/m.test(changelog), 'CHANGELOG.md must carry the dated final 1.0.0 entry.')
+  if (stableRelease) {
+    assert(new RegExp(`^## \\[${packageSource.version.replaceAll('.', '\\.')}\\] - 2026-08-28$`, 'm').test(changelog), `CHANGELOG.md must carry the dated ${packageSource.version} entry.`)
+    assert(/^## \[1\.0\.0\] - 2026-08-28$/m.test(changelog), 'CHANGELOG.md must preserve the dated final 1.0.0 entry.')
     assert(!changelog.includes('Final `1.0.0` remains pending'), 'CHANGELOG.md retains a pending-final claim after release.')
   } else {
     assert(!/^## \[1\.0\.0\] - /m.test(changelog), 'CHANGELOG.md must not claim final 1.0.0 before the atomic release transaction.')
   }
   assert(packageSource.scripts?.['check:release-readiness:changelog'] === 'node scripts/release-readiness/check-changelog.mjs', 'Changelog drift check is not registered.')
 
-  console.log(`Changelog spine verified: ${planNames.length} plan-level milestones, ${packageSource.version} ${finalRelease ? 'release' : 'candidate'} history, future SemVer convention, and no ticket noise.`)
+  console.log(`Changelog spine verified: ${planNames.length} plan-level milestones, ${packageSource.version} ${stableRelease ? 'release' : 'candidate'} history, future SemVer convention, and no ticket noise.`)
 }
 
 main().catch(error => {

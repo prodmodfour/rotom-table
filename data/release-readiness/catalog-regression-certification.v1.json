@@ -114,7 +114,7 @@
     },
     {
       "path": "data/deferred-closure/successor-chain.v1.json",
-      "sha256": "d3587b1edd4911f633fbc60211e8be9e643e31d0c774358c43e541ef7900c013"
+      "sha256": "e2b1646b287eabe19ae999c73d633b4ee3842d8c2b91c239959f64bcdf4373b1"
     },
     {
       "path": "data/release-readiness/release-golden-journey.v1.json",
@@ -150,7 +150,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "bc4dc5ba1daea6705e788b300f4a0b378053d560c44cf8919fcf0f4e4796635a"
+      "sha256": "5cfcb61bdbbe209e5ee86f02ddf6fc67bb2013b9ddba44de7e6cb365199e897d"
     }
   ]
 }

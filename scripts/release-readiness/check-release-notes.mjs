@@ -6,8 +6,6 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
-const notesPath = 'docs/releases/1.0.0.md'
-
 function assert(condition, message) {
   if (!condition) throw new Error(message)
 }
@@ -37,11 +35,42 @@ async function verifyLocalLinks(repositoryPath, source) {
 }
 
 async function main() {
-  const [notes, packageJson, knownLimitations] = await Promise.all([
+  const packageJson = await readFile(path.join(repositoryRoot, 'package.json'), 'utf8').then(JSON.parse)
+  const notesPath = `docs/releases/${packageJson.version}.md`
+  const [notes, knownLimitations] = await Promise.all([
     readFile(path.join(repositoryRoot, notesPath), 'utf8'),
-    readFile(path.join(repositoryRoot, 'package.json'), 'utf8').then(JSON.parse),
     readFile(path.join(repositoryRoot, 'data/release-readiness/known-limitations.v1.json'), 'utf8').then(JSON.parse),
   ])
+
+  if (packageJson.version === '1.0.1') {
+    assert(notes.startsWith('# Rotom Table 1.0.1 release notes\n'), 'Patch release notes title drifted.')
+    for (const heading of ['Why this patch exists', 'Deterministic build repair', 'Release identity', 'Deployment and campaign data', 'Verification and publication boundary']) {
+      section(notes, heading, 3)
+    }
+    for (const requirement of [
+      '> **Released locally:** Rotom Table 1.0.1',
+      'immutable, unpublished `v1.0.0`',
+      'released-identity-verification.v1.json',
+      'version `1.0.1` and storage schema v56',
+      'npm ci --include=dev',
+      'SOURCE_DATE_EPOCH',
+      'second clean exact-lock build',
+      'reproduces every output checksum',
+      'No database migration is introduced',
+      'Database downgrade remains unsupported',
+      'remote publication, deployment, artifact upload, and evidence upload remain unauthorized',
+      '1,460-file recommendation-5 Trainer-profile residual risk',
+      '`legalClearanceClaimed: false`',
+    ]) {
+      assert(notes.toLowerCase().includes(requirement.toLowerCase()), `Patch release notes omit: ${requirement}`)
+    }
+    assert(!/(?:password|token|secret)\s*[=:]\s*[^\s<]+/iu.test(notes), 'Patch release notes appear to contain a credential value.')
+    assert(!/\b(?:\d{1,3}\.){3}\d{1,3}\b/u.test(notes.replaceAll('127.0.0.1', '')), 'Patch release notes contain an unapproved host address.')
+    await verifyLocalLinks(notesPath, notes)
+    assert(packageJson.scripts?.['check:release-readiness:release-notes'] === 'node scripts/release-readiness/check-release-notes.mjs', 'Release-notes drift command is not registered.')
+    console.log('Patch release notes verified: deterministic repair, unchanged schema/mechanics, exact checksum gate, immutable predecessor, and owner-controlled publication.')
+    return
+  }
 
   const finalRelease = packageJson.version === '1.0.0'
   assert(notes.startsWith('# Rotom Table 1.0 release notes\n'), 'Release notes title drifted.')

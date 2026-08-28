@@ -20,6 +20,7 @@ const OUTPUT_ROOT = resolve(ROOT, '.output')
 const BUILD_ROOT = resolve(ROOT, '.nuxt-build')
 const EVIDENCE_ROOT = resolve(ROOT, 'release-evidence')
 const TAG = `v${packageMetadata.version}`
+const RELEASE_NOTES_PATH = `docs/releases/${packageMetadata.version}.md`
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
 const posix = value => value.split(sep).join('/')
 const fail = message => { throw new Error(message) }
@@ -94,7 +95,11 @@ function main() {
   run('npm', ['ci', '--include=dev'])
   assertCleanTree('after exact-lock install')
   run('node', ['scripts/release-readiness/check-identity.mjs', '--require-tag'])
-  run('npm', ['run', 'check:release-readiness'])
+  const referenceGateEnvironment = {
+    ...process.env,
+    ROTOM_RELEASE_REFERENCE_BUILD: '1',
+  }
+  run('npm', ['run', 'check:release-readiness'], referenceGateEnvironment)
   assertCleanTree('after gates')
 
   rmSync(OUTPUT_ROOT, { recursive: true, force: true })
@@ -122,7 +127,7 @@ function main() {
     'package.json',
     'package-lock.json',
     'CHANGELOG.md',
-    'docs/releases/1.0.0.md',
+    RELEASE_NOTES_PATH,
     'data/release-readiness/distribution-manifest.v1.json',
     'data/release-readiness/known-limitations.v1.json',
   ].map(path => ({ path, sha256: sha256(readFileSync(resolve(ROOT, path))) }))
@@ -130,6 +135,7 @@ function main() {
     artifact: 'rotom-table-release-gate-summary',
     schemaVersion: 1,
     status: 'passed',
+    purpose: 'tagged-release-reference',
     identity: {
       version: packageMetadata.version,
       tag: TAG,
@@ -146,7 +152,7 @@ function main() {
     commands: [
       { command: 'npm ci --include=dev', status: 'passed', bounded: true },
       { command: 'node scripts/release-readiness/check-identity.mjs --require-tag', status: 'passed', bounded: true },
-      { command: 'npm run check:release-readiness', status: 'passed', bounded: true },
+      { command: 'ROTOM_RELEASE_REFERENCE_BUILD=1 npm run check:release-readiness', status: 'passed', bounded: true },
       { command: 'npm run build', status: 'passed', bounded: true },
       { command: 'node scripts/release-readiness/generate-build-evidence.mjs --release --output .output --evidence-dir release-evidence', status: 'passed', bounded: true },
       { command: 'npm run release:audit-artifact', status: 'passed', bounded: true },
@@ -176,13 +182,14 @@ function main() {
       sourceDateEpoch,
       outputChecksums: 'release-evidence/checksums.sha256',
       noWallClockFields: true,
+      verificationRole: 'reference',
     },
   }
   writeJson('release-evidence/release-bundle-manifest.json', bundleManifest)
   run('node', ['scripts/release-readiness/check-release-evidence.mjs'])
   assertCleanTree('after evidence generation')
 
-  process.stdout.write(`\nRelease evidence bundle complete for ${TAG} at ${commit}: ${evidence.length} bound files under release-evidence/.\n`)
+  process.stdout.write(`\nRelease reference evidence bundle complete for ${TAG} at ${commit}: ${evidence.length} bound files under release-evidence/; independent checksum reproduction is still required.\n`)
 }
 
 try {

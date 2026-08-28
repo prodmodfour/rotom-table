@@ -51,6 +51,7 @@ function main() {
   if (process.argv.length !== 2) fail('Release evidence check accepts no arguments.')
   if (!existsSync(OUTPUT_ROOT)) fail('Release build output is absent.')
   const expectedTag = `v${packageMetadata.version}`
+  const expectedReleaseNotes = `docs/releases/${packageMetadata.version}.md`
   const expectedFiles = ['artifact-audit.json', 'checksums.sha256', 'gate-summary.json', 'provenance.json']
   const rootFiles = readdirSync(EVIDENCE_ROOT, { withFileTypes: true })
     .filter(entry => entry.isFile() && entry.name !== 'release-bundle-manifest.json')
@@ -96,14 +97,14 @@ function main() {
   }
   if (provenance.build?.outputFileCount !== output.length || audit.output?.fileCount !== output.length) fail('Release output file-count evidence disagrees.')
 
-  if (gateSummary.status !== 'passed' || !gateSummary.commands?.length || gateSummary.commands.some(row => row.status !== 'passed' || row.bounded !== true)) {
+  if (gateSummary.status !== 'passed' || gateSummary.purpose !== 'tagged-release-reference' || !gateSummary.commands?.length || gateSummary.commands.some(row => row.status !== 'passed' || row.bounded !== true)) {
     fail('Release bounded-gate summary is not wholly passed.')
   }
   for (const binding of gateSummary.sourceBindings ?? []) {
     const bytes = readFileSync(resolve(ROOT, binding.path))
     if (sha256(bytes) !== binding.sha256) fail(`Release gate source binding drift: ${binding.path}`)
   }
-  if (!gateSummary.sourceBindings?.some(row => row.path === 'docs/releases/1.0.0.md')) fail('Release gate summary omits release notes.')
+  if (!gateSummary.sourceBindings?.some(row => row.path === expectedReleaseNotes)) fail('Release gate summary omits current release notes.')
   if (!gateSummary.sourceBindings?.some(row => row.path === 'CHANGELOG.md')) fail('Release gate summary omits the changelog.')
 
   if (audit.status !== 'clean' || Object.values(audit.scans ?? {}).some(value => value !== 0)) fail('Built-artifact audit contains a finding.')
@@ -111,11 +112,11 @@ function main() {
   if (provenance.environmentPosture?.campaignMaterialIncluded !== false || provenance.environmentPosture?.secretsIncluded !== false || provenance.environmentPosture?.documentaryRuntimeSourcesIncluded !== false) {
     fail('Build provenance privacy posture is not fail-closed.')
   }
-  if (manifest.deterministicInputs?.noWallClockFields !== true || /(?:generatedAt|completedAt|timestamp)/u.test(JSON.stringify(manifest))) {
+  if (manifest.deterministicInputs?.noWallClockFields !== true || manifest.deterministicInputs?.verificationRole !== 'reference' || /(?:generatedAt|completedAt|timestamp)/u.test(JSON.stringify(manifest))) {
     fail('Release bundle manifest introduced a wall-clock field.')
   }
 
-  process.stdout.write(`Release evidence verified for ${expectedTag}: ${output.length} output files, ${manifest.evidence.length} deterministic evidence files, zero artifact-audit findings.\n`)
+  process.stdout.write(`Release reference evidence verified for ${expectedTag}: ${output.length} output files, ${manifest.evidence.length} deterministic evidence files, zero artifact-audit findings; independent reproduction remains separate.\n`)
 }
 
 try {

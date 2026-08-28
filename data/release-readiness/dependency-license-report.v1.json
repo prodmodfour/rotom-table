@@ -2,12 +2,12 @@
   "artifact": "release-dependency-license-report",
   "schemaVersion": 1,
   "reportId": "p13-dependency-license-report-v1",
-  "releaseVersion": "1.0.0",
+  "releaseVersion": "1.0.1",
   "status": "OWNER_DISPOSITION_RECORDED",
   "sources": {
     "npmLock": {
       "path": "package-lock.json",
-      "sha256": "95793c40c834b5ae01f7057da8a53ad01281d0d5a3ab7f0595fe946f8eccf2a0",
+      "sha256": "d47da245c4889a9799fae38cc354f2e10d5cf80a9c6d9661b6ea04a6ea1a5e3f",
       "lockfileVersion": 3
     },
     "pythonRequirements": {

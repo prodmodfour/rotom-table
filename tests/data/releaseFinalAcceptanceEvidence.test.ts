@@ -33,21 +33,28 @@ describe('release final-acceptance evidence', () => {
     })).toContain('1.0.0 minted once, owner GO consumed once')
   })
 
-  it('records released-identity divergence as a fail-closed blocker', () => {
-    const diagnostic = execFileSync(process.execPath, [
-      'scripts/release-readiness/check-released-identity.mjs',
-      '--allow-blocked',
-    ], {
-      cwd: root,
-      encoding: 'utf8',
-    }).trim()
-    expect(diagnostic).toContain('immutable v1.0.0 produced 3 distinct checksum manifests')
+  it('preserves failed v1.0.0 while gating the authorized v1.0.1 successor', () => {
+    const artifact = JSON.parse(readFileSync(resolve(
+      root,
+      'data/release-readiness/released-identity-verification.v1.json',
+    ), 'utf8'))
+    if (artifact.status === 'PATCH_TRANSACTION_ACCEPTED_VERIFICATION_PENDING') {
+      expect(run('scripts/release-readiness/check-released-identity.mjs', {
+        ...process.env,
+        ROTOM_RELEASE_TRANSACTION_PRETAG: '1',
+      })).toContain('1.0.1 transaction accepted for reference generation')
 
-    const gate = spawnSync(process.execPath, [
-      'scripts/release-readiness/check-released-identity.mjs',
-    ], { cwd: root, encoding: 'utf8' })
-    expect(gate.status).toBe(1)
-    expect(gate.stderr).toContain('OWNER_PATCH_RELEASE_AUTHORIZATION_P13_085')
+      const gate = spawnSync(process.execPath, [
+        'scripts/release-readiness/check-released-identity.mjs',
+      ], { cwd: root, encoding: 'utf8' })
+      expect(gate.status).toBe(1)
+      expect(gate.stderr).toMatch(/(?:v1\.0\.1 must exist as an annotated tag|P13-085 verification is pending)/u)
+    }
+    else {
+      expect(artifact.status).toBe('VERIFIED')
+      expect(run('scripts/release-readiness/check-released-identity.mjs'))
+        .toContain('two clean tagged builds reproduced every output checksum exactly')
+    }
   })
 
   it('registers all five final-acceptance checkers directly in the full quality gate', () => {

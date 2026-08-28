@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "inventoryId": "p13-tracked-tree-inventory-v1",
-  "releaseVersion": "1.0.0",
+  "releaseVersion": "1.0.1",
   "status": "COMPLETE",
   "policy": {
     "id": "p13-tracked-tree-classification-v1",
@@ -9,16 +9,16 @@
     "sha256": "54a972c431cbaf35f680bb4d72961f1e48353031f1241e96586fb540c9b3b6dd"
   },
   "sourceCommand": "git ls-files --cached --others --exclude-standard -z",
-  "trackedPathCount": 16892,
-  "trackedPathSetSha256": "d003c3f5100974b9fc2505df055549071063d5584ad4252c6acd7e33bd9d4eab",
-  "trackedContentSetSha256": "8c7ec33fb97e80b87d9183088c7cc324a7f80315c32ac36ac55a90df848d4d41",
+  "trackedPathCount": 16893,
+  "trackedPathSetSha256": "6a6bd80bd8a28d667803aa8c93d030718872432f53253131b35ffc353f8a9a57",
+  "trackedContentSetSha256": "326f48edb805f3830ece1fff4eb639c970a84c408df60e8c1db8539de29ede5a",
   "contentDigestExclusions": [
     "data/release-readiness/distribution-manifest.v1.json",
     "data/release-readiness/tracked-tree-inventory.v1.json"
   ],
   "categoryPathCounts": {
     "authored": 5061,
-    "documentary": 1323,
+    "documentary": 1324,
     "generated": 1078,
     "private-data-sensitive": 5,
     "third-party": 9425
@@ -29,7 +29,7 @@
     "authored-source-trees": 4681,
     "authored-trainer-generator": 1,
     "documentary-root-files": 9,
-    "documentary-trees": 1314,
+    "documentary-trees": 1315,
     "generated-dependency-lock": 1,
     "generated-release-evidence": 57,
     "generated-screenshots": 3,
@@ -178,9 +178,9 @@
     },
     {
       "path": "docs",
-      "pathCount": 225,
+      "pathCount": 226,
       "categories": {
-        "documentary": 222,
+        "documentary": 223,
         "generated": 3
       }
     },
@@ -448,7 +448,7 @@
       "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 7956,
       "pathSetSha256": "b6f870724e3edb2ca4c8d981d0361f28724c18d6061f9a7728b3f5258291bd07",
-      "contentSetSha256": "5b72a95b7a4627cbc63befaf8b7c6cef557633806346c663103a57af347af757"
+      "contentSetSha256": "1d2eb9c48e12d0377019b3b06a0e27f82fa10c09d547b1371a294fbf7131c46c"
     },
     {
       "id": "P13-LICENSE-REFERENCE-DATA",
@@ -470,7 +470,7 @@
       "status": "OWNER_APPROVED_APPLIED",
       "matchedPathCount": 1,
       "pathSetSha256": "62d1b5e7751856dfa5d7d9fb28996e1e32b47223f0098ea6169c4984ad0d2645",
-      "contentSetSha256": "8cd905b21043b1277c2c79f90ef01a803d58a4f6a2bf5163f771f2b2ac401c68"
+      "contentSetSha256": "591472c4318236ddf28ac452db622b1c7dfce4b8149f8fb2749fe11d1d438386"
     }
   ],
   "resolvedPrunedTrees": [
